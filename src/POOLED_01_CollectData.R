@@ -64,9 +64,14 @@ dev.off()
 
 
 
+cleanCoeff <- function(x){
+  x[x == "Mye_Cas9"] <- "Effect Mye"
+  x[x == "V1Cas9"] <- "Effect Und"
+  x[x == "V1Cas9:V2Mye"] <- "Interaction"
+  x
+}
 
-
-lAnn <- ann[V3 == "As" & V6 == "Mye"]
+lAnn <- ann[V3 == "As" & V6 == "Mye" & V7 != "Nov2019.txt"]
 lAnn$V1 <- factor(lAnn$V1, levels=c("WT", unique(lAnn[V1 != "WT"]$V1)))
 lAnn$V2 <- factor(lAnn$V2, levels=c("Und", unique(lAnn[V2 != "Und"]$V2)))
 
@@ -188,3 +193,20 @@ p <- gridExtra::grid.arrange(
   p_coef, 
   nrow=1, ncol=2, widths=c(5,4))
 ggsave(out("Interaction_Analysis_combined.pdf"), h=15, w=9, plot=p)
+
+
+
+
+(p_coef2 <- ggplot(sig.res, 
+                  aes(x=cleanCoeff(coef), y=rn, fill=logFC, size=-log10(padj), color=padj < 0.05)) + 
+    geom_point(shape=21) +
+    scale_color_manual(values=c("TRUE"="black", "FALSE"="white")) +
+    scale_fill_gradient2(low="blue", high="red") +
+    facet_wrap(~gene,scales = "free_y", ncol=10) +
+    theme_bw(12) +
+    xRot() +
+    theme(axis.text.y = element_blank())
+    )
+ggsave(out("AllGenes_Coefficients.pdf"), w=12,h=8, plot=p_coef2)
+
+write.tsv(sig.res, out("Interaction_model_results.tsv"))
