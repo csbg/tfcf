@@ -39,7 +39,8 @@ dirout_load <- function(out, ext=""){
 PATHS <- list()
 
 PATHS$DATA <- list(
-
+  matrix=dirout_load("POOLED_01_CollectData")("Matrix.csv"),
+  annotation=dirout_load("POOLED_01_CollectData")("Annotation.tsv")
 )
 
 PATHS$ANALYSIS <- list(
