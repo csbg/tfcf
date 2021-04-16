@@ -43,6 +43,15 @@ for(fnam in names(dDT)){
 
 lapply(data.table(do.call(rbind,strsplit(gsub(" .+", "", grep("^V1$", do.call(c, lapply(dDT, colnames)), invert = TRUE, value = TRUE)), "_"))), unique)
 
+
+
+# Correct names -----------------------------------------------------------
+x <- dDT[["LibA_Mye-Nov2019.txt"]]
+colnames(x) <- gsub("^Cas9", "XXX", colnames(x))
+colnames(x) <- gsub("^WT", "Cas9", colnames(x))
+colnames(x) <- gsub("^XXX", "WT", colnames(x))
+dDT[["LibA_Mye-Nov2019.txt"]] <- x
+
 # Extract guides into one matrix ----------------------------------------------------------
 lapply(dDT, function(dt) head(dt$V1))
 dDT2 <-lapply(dDT, function(dt){
