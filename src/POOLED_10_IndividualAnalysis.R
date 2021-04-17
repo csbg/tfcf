@@ -59,10 +59,8 @@ COLOR.Genotypes = c(WT="#33a02c", Cas9="#6a3d9a")
 
 
 
-# Comparing Genotypes within Populations -----------------------------------------------------
-
+# Get raw scores ------------------------------------------
 res <- data.table()
-
 datex <- "Nov2019_Nov2019"
 libx <- "A"
 for(datex in unique(ann$Date)){
@@ -117,7 +115,7 @@ for(datex in unique(ann$Date)){
 #   facet_wrap(~Library + Date + Population1 + Population2, scales = "free", ncol=6)
 # ggsave(out("PopulationScores_ECDF.pdf"), w=20,h=20)
 
-
+# Add second parallel comparisons
 res2 <- copy(res)
 res2[,PopulationX := Population1]
 res2[,Population1 := Population2]
@@ -129,8 +127,10 @@ rm(list = c("res2"))
 res[,Analysis := paste(Population1, Population2, Date, Library)]
 
 write.tsv(res, out("Results_Scores.tsv"))
+#res <- fread(out("Results_Scores.tsv"))
 
 
+# Get mean and sd summary statistics ------------------------------------------
 stats <- data.table()
 ax <- res$Analysis[1]
 for(ax in unique(res$Analysis)){
@@ -146,14 +146,15 @@ for(ax in unique(res$Analysis)){
 }
 
 write.tsv(stats, out("Results_SummaryStats.tsv"))
+#stats <- fread(out("Results_SummaryStats.tsv"))
 
+
+# Plot calculation of p-values ------------------------------------------
 stat.rnorm <- data.table()
 for(ax in unique(stats$Analysis)){
   x <- stats[Analysis == ax]
   stat.rnorm <- rbind(stat.rnorm, data.table(x, Score=rnorm(10000, mean=x$mean, sd=x$sd)))
 }
-
-
 ggplot(res, aes(x=Score)) + 
   geom_density(data=stat.rnorm, fill="#b2df8a", color=NA) +
   scale_color_manual(values=COLOR.Genotypes) +
@@ -163,9 +164,7 @@ ggplot(res, aes(x=Score)) +
 ggsave(out("PopulationScores_Density_BgNormal.pdf"), w=20,h=20)
 
 
-
-# Calculate p-values
-# Plot p-values for wt / cas9 and for non-targeting guides
+# Calculate z-scores and p-values ------------------------------------------
 res.stats <- data.table()
 ax <- res$Analysis[1]
 for(ax in unique(res$Analysis)){
@@ -181,14 +180,50 @@ for(ax in unique(res$Analysis)){
 res.stats[, GuideType := ifelse(grepl("NonTargeting", Guide), "CTRL", "Targeted")]
 res.stats[,Gene := gsub("_.+", "", Guide)]
 write.tsv(res.stats, out("Results_Pvalues.tsv"))
+#res.stats <- fread(out("Results_Pvalues.tsv"))
 
+
+# Plot Summaries of z-scores and number of hits ------------------------------------------
+
+# Z scores
 ggplot(res.stats[Type == 1], aes(y=z, x=paste(Genotype, GuideType))) + 
   geom_violin(color=NA, fill="#a6cee3") + geom_boxplot(coef=Inf, fill=NA) +
   facet_wrap(~Library + Date + Population1 + Population2, scales = "free", ncol = 6) +
   theme_bw(12) +
+  ylab("z scores") + 
   xRot()
-ggsave(out("PopulationScores_Z_Boxplots.pdf"), w=20,h=20)
+ggsave(out("PopulationScores_Z_Boxplots_all.pdf"), w=20,h=20)
 
+ggplot(res.stats[Genotype == "Cas9" & GuideType == "Targeted"], 
+       aes(y=z, x=paste(Population2, Date))) + 
+  geom_violin(color=NA, fill="#a6cee3") + geom_boxplot(coef=Inf, fill=NA) +
+  facet_grid(Library~Population1, scales = "free_x", space = "free_x") +
+  theme_bw(12) +
+  ylab("z scores") + 
+  xRot()
+ggsave(out("PopulationScores_Z_Boxplots_Cas9_Targeted.pdf"), w=12,h=8)
+
+# Number of hits
+pDT <- res.stats[Genotype == "Cas9" & GuideType == "Targeted"]
+pDT[, direction := ifelse(z < 0, "down", "up")]
+# make sure we are counting unique guides in the next step
+stopifnot(all(pDT[,.N, by=c("Population1", "Population2", "Date", "Guide", "Library")][order(N)]$N == 1)) 
+pDT <- pDT[,.(sig=sum(padj < 0.05), total=.N), by=c("Population1", "Population2", "Date", "direction", "Library")]
+pDT[direction == "down", sig := -sig]
+pDT[,percent := sig/total * 100]
+
+ggplot(pDT, aes(y=percent, x=paste(Population2, Date), fill=direction)) + 
+  geom_bar(stat="identity") + 
+  scale_fill_manual(values=c(up="#e31a1c", down="#1f78b4")) + 
+  facet_grid(Library~Population1, scales = "free_x", space = "free_x") +
+  theme_bw(12) +
+  ylab("Number of significant guides") + 
+  xRot()
+ggsave(out("PopulationScores_N_Significant_Cas9_Targeted.pdf"), w=12,h=8)
+
+
+
+# Plot specific genes and guides ------------------------------------------
 libx <- res$Library[1]
 for(libx in unique(res.stats$Library)){
   lDT <- res.stats[Library == libx][Gene != "NonTargetingControlGuideForMouse"]
@@ -207,3 +242,30 @@ for(libx in unique(res.stats$Library)){
   ggsave(out("PopulationScores_Results_",libx,".pdf"), w=length(unique(lDT$Analysis)) * 0.5 + 6, h=length(unique(lDT$Guide))*0.2 + 4)
 }
 
+
+
+
+# Plot examples -----------------------------------------------------------
+m.norm <- t(t(m)/colSums(m, na.rm = TRUE)) * 1e-6
+m.norm <- log2(m.norm + 1)
+table(is.na(m.norm))
+
+genex <- "Spi1"
+
+guides <- unique(res.stats[Gene == genex]$Guide)
+gx <- guides[1]
+pDT <- data.table()
+for(gx in guides){
+  ret <- copy(ann)
+  ret$NormCounts <- m.norm[gx, ret$sample]
+  pDT <- rbind(pDT, data.table(ret, Guide=gx))
+}
+pDT <- pDT[!is.na(NormCounts)]
+pDT <- pDT[Genotype == "Cas9"]
+ggplot(pDT, aes(x=paste(Population, Date),y=Guide, fill=NormCounts)) + 
+  geom_tile() +
+  facet_grid(. ~ Library,scales="free", space = "free") + 
+  scale_fill_gradient2(low="blue", high="red") +
+  theme_bw(12) +
+  xRot()
+ggsave(out("Example_", genex, ".pdf"), w=length(unique(pDT$sample)) * 0.2 + 2,h=length(unique(pDT$Guide)) * 0.2 + 3)
