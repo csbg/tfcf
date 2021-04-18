@@ -217,7 +217,7 @@ ggplot(pDT, aes(y=percent, x=paste(Population2, Date), fill=direction)) +
   scale_fill_manual(values=c(up="#e31a1c", down="#1f78b4")) + 
   facet_grid(Library~Population1, scales = "free_x", space = "free_x") +
   theme_bw(12) +
-  ylab("Number of significant guides") + 
+  ylab("Significant guides (% of tested guides)") + 
   xRot()
 ggsave(out("PopulationScores_N_Significant_Cas9_Targeted.pdf"), w=12,h=8)
 
@@ -262,10 +262,11 @@ for(gx in guides){
 }
 pDT <- pDT[!is.na(NormCounts)]
 pDT <- pDT[Genotype == "Cas9"]
-ggplot(pDT, aes(x=paste(Population, Date),y=Guide, fill=NormCounts)) + 
+pDT[, NormCounts2 := scale(NormCounts), by="Guide"]
+ggplot(pDT, aes(x=paste(Population, Date),y=Guide, fill=NormCounts2)) + 
   geom_tile() +
   facet_grid(. ~ Library,scales="free", space = "free") + 
-  scale_fill_gradient2(low="blue", high="red") +
+  scale_fill_gradient2(name="Normalized\ncounts", low="blue", high="red") +
   theme_bw(12) +
   xRot()
 ggsave(out("Example_", genex, ".pdf"), w=length(unique(pDT$sample)) * 0.2 + 2,h=length(unique(pDT$Guide)) * 0.2 + 3)
