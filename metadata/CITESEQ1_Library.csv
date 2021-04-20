@@ -1,3 +1,3 @@
 fastqs,sample,library_type
-~/GFS/PROJECTS/TfCf/Data/Raw_data_CITESEQ1/,SITTD1,Gene Expression
-~/GFS/PROJECTS/TfCf/Data/Raw_data_CITESEQ1/,SINTG12,CRISPR Guide Capture
+.,SITTD1,Gene Expression
+.,SINTG12,CRISPR Guide Capture
