@@ -5,6 +5,10 @@ cd Data/Raw_data_CITESEQ1
 python crukci_to_illumina.py
 
 cd $HOME/omicstmp/
+mkdir nf
+cd nf
+
+# cp -R ~/GFS/PROJECTS/TfCf/Data/Raw_data_CITESEQ1/ .
 ~/code/cellranger-6.0.1/cellranger count --id=CITESEQ1 \
 	--no-bam \
     --libraries=$CODEBASE/tfcf/metadata/CITESEQ1_Library.csv \
@@ -13,6 +17,8 @@ cd $HOME/omicstmp/
     --localcores=24 \
     --localmem=64 \
     --expect-cells=10000 &> CITESEQ1.log
+
+cp -R CITESEQ1 ~/GFS/PROJECTS/TfCf/Data/
 
 # gunzip -c SLX-20609.SINTG12.H5JH3DRXY.s_2.r_2.fq.gz | head -20000 | perl -ne 'print unless (0 != ($.-2) % 4)' | rev | cut -c58-84
 #

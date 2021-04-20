@@ -48,3 +48,9 @@ PATHS$ANALYSIS <- list(
 )
 
 sapply(PATHS$DATA, file.exists)
+
+
+
+# COLORS ------------------------------------------------------------------
+COLOR.Genotypes = c(WT="#33a02c", Cas9="#6a3d9a")
+

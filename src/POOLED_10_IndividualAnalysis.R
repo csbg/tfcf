@@ -11,8 +11,6 @@ ann[,Date := paste0(Date, "_",Date2)]
 stopifnot(all(ann$sample == colnames(m)))
 
 
-COLOR.Genotypes = c(WT="#33a02c", Cas9="#6a3d9a")
-
 # # Comparing Genotypes within Populations -----------------------------------------------------
 # res <- data.table()
 # 
