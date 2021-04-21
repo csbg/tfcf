@@ -38,16 +38,22 @@ dirout_load <- function(out, ext=""){
 
 PATHS <- list()
 
-PATHS$DATA <- list(
+PATHS$POOLED <- list()
+PATHS$POOLED$DATA <- list(
   matrix=dirout_load("POOLED_01_CollectData")("Matrix.csv"),
   annotation=dirout_load("POOLED_01_CollectData")("Annotation.tsv")
 )
+sapply(PATHS$POOLED$DATA, file.exists)
 
-PATHS$ANALYSIS <- list(
 
+PATHS$CITESEQ1 <- list()
+PATHS$CITESEQ1$DATA <- list(
+  matrix=paste(Sys.getenv("DATA"), "CITESEQ1", "outs", "filtered_feature_bc_matrix.h5", sep="/"),
+  umap=paste(Sys.getenv("DATA"), "CITESEQ1", "outs", "analysis", "umap", "2_components", "projection.csv", sep="/"),
+  clusters=paste(Sys.getenv("DATA"), "CITESEQ1", "outs", "analysis", "clustering", "graphclust", "clusters.csv", sep="/")
 )
 
-sapply(PATHS$DATA, file.exists)
+sapply(PATHS$CITESEQ1$DATA, file.exists)
 
 
 
