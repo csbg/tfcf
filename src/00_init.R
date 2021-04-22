@@ -46,11 +46,14 @@ PATHS$POOLED$DATA <- list(
 sapply(PATHS$POOLED$DATA, file.exists)
 
 
+
+
 PATHS$CITESEQ1 <- list()
 PATHS$CITESEQ1$DATA <- list(
   matrix=paste(Sys.getenv("DATA"), "CITESEQ1", "outs", "filtered_feature_bc_matrix.h5", sep="/"),
   umap=paste(Sys.getenv("DATA"), "CITESEQ1", "outs", "analysis", "umap", "2_components", "projection.csv", sep="/"),
-  clusters=paste(Sys.getenv("DATA"), "CITESEQ1", "outs", "analysis", "clustering", "graphclust", "clusters.csv", sep="/")
+  clusters=paste(Sys.getenv("DATA"), "CITESEQ1", "outs", "analysis", "clustering", "graphclust", "clusters.csv", sep="/"),
+  de=paste(Sys.getenv("DATA"), "CITESEQ1", "outs", "analysis", "diffexp", "graphclust", "differential_expression.csv", sep="/")
 )
 
 sapply(PATHS$CITESEQ1$DATA, file.exists)
