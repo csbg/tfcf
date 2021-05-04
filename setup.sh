@@ -1,4 +1,4 @@
 
 export CODE="$HOME/code/tfcf/"
-export DATA="$HOME/GFS/PROJECTS/TfCf/Data/"
-export ANALYSIS="$HOME/GFS/PROJECTS/TfCf/Analysis/"
+export DATA="$GFS/PROJECTS/TfCf/Data/"
+export ANALYSIS="$GFS/PROJECTS/TfCf/Analysis/"
