@@ -3,15 +3,22 @@ out <- dirout("INT_02_SeuratIntegration/")
 
 require(Seurat)
 
+
+
+# Integrating the two datasets --------------------------------------------
+
+# Read data
 data.c1 <- Read10X_h5(PATHS$CITESEQ1_CLEAN$DATA$matrix)
 data.e1 <- Read10X_h5(PATHS$ECCITE1$DATA$matrix)
 
+# Read clusters
 clusters.c1 <- fread(PATHS$CITESEQ1_CLEAN$DATA$clusters)
 clusters.c1$dataset <- "CITESEQ1"
 clusters.e1 <- fread(PATHS$ECCITE1$DATA$clusters)
 clusters.e1$dataset <- "ECCITE1"
 clusters <- rbind(clusters.c1, clusters.e1)
 
+# Read guides merge with clusters
 guides <- fread(PATHS$ECCITE1$DATA$guides)
 names(guides) <- gsub("^(.)", "\\U\\1", names(guides), perl = T)
 guides$dataset <- "ECCITE1"
@@ -42,16 +49,23 @@ sobj <- RunUMAP(sobj, reduction = "pca", dims = 1:20)
 sobj <- FindNeighbors(sobj, reduction = "pca", dims = 1:20)
 sobj <- FindClusters(sobj, resolution = 0.5)
 
+# Store full dataset
+#sobj <- DietSeurat(sobj)
+save(sobj, file=out("SeuratObject.RData"))
 
-# Plot integration
-DimPlot(sobj, reduction = "umap", group.by = "dataset")
-
-
+# Collect information
 ann <- data.table(sobj[["umap"]]@cell.embeddings, keep.rownames = TRUE)
 ann <- merge(ann, data.table(sobj@meta.data, keep.rownames = TRUE), by="rn")
 ann[, Barcode := gsub("_\\d+$", "", rn)]
 ann <- merge(ann, clusters, by=c("Barcode", "dataset"))
 colnames(ann) <- gsub("_", ".", colnames(ann))
+write.tsv(ann, out("Metadata.tsv"))
+
+# Plots -------------------------------------------------------------------
+ggplot(ann, aes(x=UMAP.1, y=UMAP.2)) + 
+  geom_point(aes(color=dataset), alpha=1, size=0.1) +
+  theme_bw(12)
+ggsave(out("UMAP_datasets.pdf"), w=6, h=5)
 
 ggplot(ann, aes(x=UMAP.1, y=UMAP.2)) + 
   geom_point(aes(color=factor(Cluster))) +

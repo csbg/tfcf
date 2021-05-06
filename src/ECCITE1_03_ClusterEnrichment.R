@@ -10,9 +10,9 @@ dat <- merge(clusters, guides, by=c("Barcode"))
 
 
 res <- data.table()
-for(gx in unique(dat[!grepl(" ", Guide)]$Guide)){
+for(gx in unique(dat[!grepl(" ", Guide)][Guide != "None"]$Guide)){
   for(cx in unique(dat$Cluster)){
-    fish <- fisher.test(as.matrix(with(dat, table(Cluster == cx, Guide == gx))))
+    fish <- fisher.test(as.matrix(with(dat[Guide %in% c(gx, "None")], table(Cluster == cx, Guide == gx))))
     res <- rbind(res, data.table(Cluster=cx, Guide=gx, p=fish$p.value, OR=fish$estimate))
   }
 }
@@ -30,4 +30,4 @@ ggplot(res, aes(
   scale_color_gradient2(name="log2OR", low="blue", high="red") +
   scale_size_continuous(name="padj") + 
   theme_bw(12)
-ggsave(out("Fisher.pdf"), w=5, h=5)
+ggsave(out("Fisher.pdf"), w=5, h=4)
