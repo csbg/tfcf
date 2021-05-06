@@ -6,6 +6,17 @@ require(Seurat)
 data.c1 <- Read10X_h5(PATHS$CITESEQ1_CLEAN$DATA$matrix)
 data.e1 <- Read10X_h5(PATHS$ECCITE1$DATA$matrix)
 
+clusters.c1 <- fread(PATHS$CITESEQ1_CLEAN$DATA$clusters)
+clusters.c1$dataset <- "CITESEQ1"
+clusters.e1 <- fread(PATHS$ECCITE1$DATA$clusters)
+clusters.e1$dataset <- "ECCITE1"
+clusters <- rbind(clusters.c1, clusters.e1)
+
+guides <- fread(PATHS$ECCITE1$DATA$guides)
+names(guides) <- gsub("^(.)", "\\U\\1", names(guides), perl = T)
+guides$dataset <- "ECCITE1"
+clusters <- merge(clusters, guides, by=c("Barcode", "dataset"), all=TRUE)
+
 # Create Seurat objects
 # 1
 seurat.c1 <- CreateSeuratObject(counts = data.c1$"Gene Expression", project = "CITESEQ1", min.cells = 5)
@@ -33,7 +44,41 @@ sobj <- FindClusters(sobj, resolution = 0.5)
 
 
 # Plot integration
-DimPlot(immune.combined, reduction = "umap", group.by = "dataset")
+DimPlot(sobj, reduction = "umap", group.by = "dataset")
+
+
+ann <- data.table(sobj[["umap"]]@cell.embeddings, keep.rownames = TRUE)
+ann <- merge(ann, data.table(sobj@meta.data, keep.rownames = TRUE), by="rn")
+ann[, Barcode := gsub("_\\d+$", "", rn)]
+ann <- merge(ann, clusters, by=c("Barcode", "dataset"))
+colnames(ann) <- gsub("_", ".", colnames(ann))
+
+ggplot(ann, aes(x=UMAP.1, y=UMAP.2)) + 
+  geom_point(aes(color=factor(Cluster))) +
+  facet_grid(. ~ dataset) +
+  theme_bw(12) +
+  geom_label(data=ann[,.(UMAP.1=median(UMAP.1), UMAP.2=median(UMAP.2)), by=c("Cluster", "dataset")], aes(label=Cluster))
+ggsave(out("UMAP_Clusters_points.pdf"), w=11, h=5)
+
+ggplot(ann, aes(x=UMAP.1, y=UMAP.2)) + 
+  geom_hex() +
+  scale_fill_gradient(low="lightgrey", high="blue") +
+  facet_grid(. ~ dataset) +
+  theme_bw(12) +
+  geom_label(data=ann[,.(UMAP.1=median(UMAP.1), UMAP.2=median(UMAP.2)), by=c("Cluster", "dataset")], aes(label=Cluster))
+ggsave(out("UMAP_Clusters.pdf"), w=11, h=5)
+
+pDT <- ann[!is.na(Guide) & !grepl("None", Guide) & !grepl(" ", Guide)]
+ggplot(pDT, aes(x=UMAP.1, y=UMAP.2)) + 
+  geom_hex() +
+  scale_fill_gradient(low="lightgrey", high="blue") +
+  #geom_point(data=, aes(color=Guide)) +
+  facet_wrap(~ Guide) +
+  theme_bw(12)
+ggsave(out("UMAP_Guides.pdf"), w=10, h=6)
+
+ann[dataset == "CITESEQ1" & !is.na(Guide)]
+
 
 
 # TESTING IF OUR FUNCTION WORKS
