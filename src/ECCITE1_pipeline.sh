@@ -27,6 +27,7 @@ nano  crukci_to_illumina.py # END OF THIS NOTE
 cp -R RNA/ RNA_illumina/
 python3 crukci_to_illumina.py RNA_illumina/
 ~/code/cellranger-5.0.1/cellranger count --id=RNA_cellranger --transcriptome=$HOME/GFS/RESOURCES/Genomes/refdata-gex-mm10-2020-A/ --no-bam --expect-cells=10000 --localcores=1 --fastqs=$HOME/GFS/DATA_David/Raw_data_ECCITE/RNA_illumina/ --localmem=64 &> RNA_cellranger.log
+$CODEBASE/cellranger-6.0.1/cellranger count --id=ECCITE1_RNA_cellranger_601 --transcriptome=$GFS/RESOURCES/Genomes/refdata-gex-mm10-2020-A/ --no-bam --expect-cells=10000 --localcores=1 --fastqs=$DATA/Raw_ECCITE1/RNA_illumina/ --localmem=64 &> ECCITE1_RNA_cellranger_601.log
 
 
 # CITESEQ - barcodes from cellranger
