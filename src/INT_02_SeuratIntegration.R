@@ -3,8 +3,6 @@ out <- dirout("INT_02_SeuratIntegration/")
 
 require(Seurat)
 
-
-
 # Integrating the two datasets --------------------------------------------
 
 # Read data

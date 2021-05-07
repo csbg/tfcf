@@ -38,5 +38,5 @@ $CODEBASE/cellranger-6.0.1/cellranger reanalyze \
  --localcores=24 \
  --localmem=64 &> $name.log
 
-rm -r $name/SC_RNA_AGGREGATOR_CS/
-mv "${name}*" $DATA/
+rm -r $name/SC_RNA_REANALYZER_CS/
+mv ${name}* $DATA/

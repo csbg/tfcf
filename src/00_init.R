@@ -66,15 +66,26 @@ PATHS$CITESEQ1_CLEAN$DATA <- list(
 )
 sapply(PATHS$CITESEQ1_CLEAN$DATA, file.exists)
 
+# PATHS$ECCITE1 <- list()
+# PATHS$ECCITE1$DATA <- list(
+#   matrix=paste(Sys.getenv("DATA"), "ECCITE1_RNA_cellranger", "outs", "filtered_feature_bc_matrix.h5", sep="/"),
+#   umap=paste(Sys.getenv("DATA"), "ECCITE1_RNA_cellranger", "outs", "analysis", "umap", "2_components", "projection.csv", sep="/"),
+#   clusters=paste(Sys.getenv("DATA"), "ECCITE1_RNA_cellranger", "outs", "analysis", "clustering", "graphclust", "clusters.csv", sep="/"),
+#   de=paste(Sys.getenv("DATA"), "ECCITE1_RNA_cellranger", "outs", "analysis", "diffexp", "graphclust", "differential_expression.csv", sep="/"),
+#   guides=paste(Sys.getenv("ANALYSIS"), "ECCITESEQ1_01_Guides", "citeseq_guides2cells2.csv", sep="/")
+# )
+# sapply(PATHS$ECCITE1$DATA, file.exists)
+
 PATHS$ECCITE1 <- list()
 PATHS$ECCITE1$DATA <- list(
-  matrix=paste(Sys.getenv("DATA"), "ECCITE1_RNA_cellranger", "outs", "filtered_feature_bc_matrix.h5", sep="/"),
-  umap=paste(Sys.getenv("DATA"), "ECCITE1_RNA_cellranger", "outs", "analysis", "umap", "2_components", "projection.csv", sep="/"),
-  clusters=paste(Sys.getenv("DATA"), "ECCITE1_RNA_cellranger", "outs", "analysis", "clustering", "graphclust", "clusters.csv", sep="/"),
-  de=paste(Sys.getenv("DATA"), "ECCITE1_RNA_cellranger", "outs", "analysis", "diffexp", "graphclust", "differential_expression.csv", sep="/"),
-  guides=paste(Sys.getenv("ANALYSIS"), "ECCITESEQ1_01_Guides", "citeseq_guides2cells2.csv", sep="/")
+  matrix=paste(Sys.getenv("DATA"), "ECCITE1_RNA_cellranger_601", "outs", "filtered_feature_bc_matrix.h5", sep="/"),
+  umap=paste(Sys.getenv("DATA"), "ECCITE1_RNA_cellranger_601", "outs", "analysis", "umap", "2_components", "projection.csv", sep="/"),
+  clusters=paste(Sys.getenv("DATA"), "ECCITE1_RNA_cellranger_601", "outs", "analysis", "clustering", "graphclust", "clusters.csv", sep="/"),
+  de=paste(Sys.getenv("DATA"), "ECCITE1_RNA_cellranger_601", "outs", "analysis", "diffexp", "graphclust", "differential_expression.csv", sep="/"),
+  guides=paste(Sys.getenv("ANALYSIS"), "ECCITE1_01_Guides", "citeseq_guides2cells.csv", sep="/")
 )
 sapply(PATHS$ECCITE1$DATA, file.exists)
+
 
 # COLORS ------------------------------------------------------------------
 COLOR.Genotypes = c(WT="#33a02c", Cas9="#6a3d9a")

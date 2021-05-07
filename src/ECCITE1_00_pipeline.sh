@@ -1,49 +1,65 @@
 # TO BE RUN ON THE CAME SERVER
 
-# To install cellranger
-# wget --no-check-certificate -O cellranger-6.0.1.tar.gz 
+### DATA:
 
-basedir=$HOME/GFS/PROJECTS/TfCf/
+# The Original data was SLX-19954.HY75WDRXX
+# - Pattern of files with guide RNA reads: SLX-19954.HY75WDRXX.s_?.r_?.lostreads.fq.gz
+# --> These were moved to the folder gRNA/
+# - Pattern of files with mRNA reads (transcriptome): SLX-19954.HY75WDRXX.s_?.r_?.fq.gz
+# --> These were moved to the folder RNA/ and  then renamed and moved to RNA_illumina/
 
-cd $HOME/GFS/DATA_David/Raw_data_ECCITE/gRNA/
-ls  $HOME/code/tfcf/crukci_to_illumina.py # END OF THIS NOTE
+# The guide RNAs were resequenced in SLX-20379.HYHJ2DRXX
+# - Pattern of files with guide RNA reads: SLX-20379.HYHJ2DRXX.s_?.r_?.fq.gz
+# - In this case, the transcriptome was not sequenced
+# --> These were moved to the folder gRNA/
+
+basedir=$DATA
+
+# Here we rename the lost reads to illumina names so that we can run them through cellranger (this was not used later as CITE-seq worked)
+cd $DATA/Raw_ECCITE1/gRNA/
+ls $CODE/crukci_to_illumina.py # END OF THIS NOTE - not used here but done manually
 mv SLX-19954.HY75WDRXX.s_1.r_1.lostreads.fq.gz SITTH12_S1_L001_R1_001.fastq.gz
 mv SLX-19954.HY75WDRXX.s_1.r_2.lostreads.fq.gz SITTH12_S1_L001_R2_001.fastq.gz
 mv SLX-19954.HY75WDRXX.s_1.i_1.lostreads.fq.gz SITTH12_S1_L001_I1_001.fastq.gz
 mv SLX-19954.HY75WDRXX.s_1.i_2.lostreads.fq.gz SITTH12_S1_L001_I2_001.fastq.gz
 
-# CITESEQ - all barcodes
-#conda create -n tfcf
-conda activate tfcf
-#conda install pip
-#pip install CITE-seq-Count==1.4.4
-cd ~/GFS/DATA_David/
-CITE-seq-Count -R1 Raw_data_ECCITE/gRNA/SITTH12_S1_L001_R1_001.fastq.gz -R2 Raw_data_ECCITE/gRNA/SITTH12_S1_L001_R2_001.fastq.gz -trim 18 -t TAG_LIST.csv -cbf 1 -cbl 16 -umif 17 -umil 26 --expected_cells 10000 -o citeseq_all_barcodes --whitelist /home/people/nfortelny/code/cellranger-5.0.1/lib/python/cellranger/barcodes/737K-august-2016.txt &> citeseq_all_barcodes.log
-conda deactivate
+# CITESEQ - first run using all cell barcodes (obtained from the cellranger code)
+# conda activate tfcf
+# cd ~/GFS/DATA_David/
+# CITE-seq-Count -R1 Raw_data_ECCITE/gRNA/SITTH12_S1_L001_R1_001.fastq.gz -R2 Raw_data_ECCITE/gRNA/SITTH12_S1_L001_R2_001.fastq.gz -trim 18 -t TAG_LIST.csv -cbf 1 -cbl 16 -umif 17 -umil 26 --expected_cells 10000 -o citeseq_all_barcodes --whitelist /home/people/nfortelny/code/cellranger-5.0.1/lib/python/cellranger/barcodes/737K-august-2016.txt &> citeseq_all_barcodes.log
+# conda deactivate
 
-# CELLRANGER
-cd $HOME/GFS/DATA_David/Raw_data_ECCITE/
-nano  crukci_to_illumina.py # END OF THIS NOTE
+# CELLRANGER - gRNA - Not used
+# cd $HOME/omicstmp/
+# ~/code/cellranger-5.0.1/cellranger count --id=gRNA_cellranger --transcriptome=$HOME/GFS/RESOURCES/Genomes/refdata-gex-mm10-2020-A/ --no-bam --expect-cells=10000 --localcores=1 --fastqs=$HOME/GFS/DATA_David/Raw_ECCITE1/gRNA/ --localmem=64 &> gRNA_cellranger.log
+
+# CELLRANGER - mRNA (transcriptome)
+cd $DATA/Raw_ECCITE1/
 cp -R RNA/ RNA_illumina/
-python3 crukci_to_illumina.py RNA_illumina/
-~/code/cellranger-5.0.1/cellranger count --id=RNA_cellranger --transcriptome=$HOME/GFS/RESOURCES/Genomes/refdata-gex-mm10-2020-A/ --no-bam --expect-cells=10000 --localcores=1 --fastqs=$HOME/GFS/DATA_David/Raw_data_ECCITE/RNA_illumina/ --localmem=64 &> RNA_cellranger.log
+cd RNA_illumina/
+# Convert names to cellranger compatible names
+python3 $CODE/crukci_to_illumina.py
+cd ~/omicstmp/nf/
+# Cellranger analysis (5.0.1) - not used
+# ~/code/cellranger-5.0.1/cellranger count --id=RNA_cellranger --transcriptome=$HOME/GFS/RESOURCES/Genomes/refdata-gex-mm10-2020-A/ --no-bam --expect-cells=10000 --localcores=1 --fastqs=$HOME/GFS/DATA_David/Raw_data_ECCITE/RNA_illumina/ --localmem=64 &> RNA_cellranger.log
+# Cellranger analysis (6.0.1) - USED
 $CODEBASE/cellranger-6.0.1/cellranger count --id=ECCITE1_RNA_cellranger_601 --transcriptome=$GFS/RESOURCES/Genomes/refdata-gex-mm10-2020-A/ --no-bam --expect-cells=10000 --localcores=1 --fastqs=$DATA/Raw_ECCITE1/RNA_illumina/ --localmem=64 &> ECCITE1_RNA_cellranger_601.log
+# TODO / MISSING copy the correct files to the GFS
 
+# CITESEQ - second run using barcodes from the dataset processed with cellranger (not used)
+# conda activate tfcf
+# zcat RNA_cellranger/outs/filtered_feature_bc_matrix/barcodes.tsv.gz | sed 's/\-[0-9]*$//g' > RNA_cellranger_barcodes.txt
+# cd ~/GFS/DATA_David/
+# CITE-seq-Count -R1 Raw_data_ECCITE/gRNA/SITTH12_S1_L001_R1_001.fastq.gz -R2 Raw_data_ECCITE/gRNA/SITTH12_S1_L001_R2_001.fastq.gz -trim 18 -t Raw_ECCITE1/TAG_LIST.csv -cbf 1 -cbl 16 -umif 17 -umil 26 --expected_cells 10000 -o citeseq_filtered_barcodes --whitelist RNA_cellranger_barcodes.txt &> citeseq_filtered_barcodes.log
+# conda deactivate
 
-# CITESEQ - barcodes from cellranger
-conda activate tfcf
-zcat RNA_cellranger/outs/filtered_feature_bc_matrix/barcodes.tsv.gz | sed 's/\-[0-9]*$//g' > RNA_cellranger_barcodes.txt
-cd ~/GFS/DATA_David/
-CITE-seq-Count -R1 Raw_data_ECCITE/gRNA/SITTH12_S1_L001_R1_001.fastq.gz -R2 Raw_data_ECCITE/gRNA/SITTH12_S1_L001_R2_001.fastq.gz -trim 18 -t Raw_data_ECCITE/TAG_LIST.csv -cbf 1 -cbl 16 -umif 17 -umil 26 --expected_cells 10000 -o citeseq_filtered_barcodes --whitelist RNA_cellranger_barcodes.txt &> citeseq_filtered_barcodes.log
-conda deactivate
-
-# CITESEQ - combined - barcodes from cellranger
+# CITESEQ - using barcodes from the cellranger code, analyzing both sets of data together (SLX-19954.HY75WDRXX and SLX-20379.HYHJ2DRXX)
 conda activate tfcf
 cd $basedir
-CITE-seq-Count -R1 Raw_data_ECCITE/gRNA/SITTH12_S1_L001_R1_001.fastq.gz,Raw_data_ECCITE/gRNA/SLX-20379.HYHJ2DRXX.s_2.r_1.lostreads.fq.gz -R2 Raw_data_ECCITE/gRNA/SITTH12_S1_L001_R2_001.fastq.gz,Raw_data_ECCITE/gRNA/SLX-20379.HYHJ2DRXX.s_2.r_2.lostreads.fq.gz -trim 18 -t Raw_data_ECCITE/TAG_LIST.csv -cbf 1 -cbl 16 -umif 17 -umil 26 --expected_cells 10000 -o citeseq_combined --whitelist /home/people/nfortelny/code/cellranger-5.0.1/lib/python/cellranger/barcodes/737K-august-2016.txt &> citeseq_combined.log
+CITE-seq-Count \
+ -R1 Raw_ECCITE1/gRNA/SITTH12_S1_L001_R1_001.fastq.gz,Raw_ECCITE1/gRNA/SLX-20379.HYHJ2DRXX.s_2.r_1.lostreads.fq.gz \
+ -R2 Raw_ECCITE1/gRNA/SITTH12_S1_L001_R2_001.fastq.gz,Raw_ECCITE1/gRNA/SLX-20379.HYHJ2DRXX.s_2.r_2.lostreads.fq.gz \
+ -trim 18 -t Raw_ECCITE1/TAG_LIST.csv -cbf 1 -cbl 16 -umif 17 -umil 26 --expected_cells 10000 -o citeseq_combined \
+ --whitelist $CODEBASE/cellranger-6.0.1/lib/python/cellranger/barcodes/737K-august-2016.txt &> citeseq_combined.log
 conda deactivate
-
-# CELLRANGER
-cd $HOME/omicstmp/
-~/code/cellranger-5.0.1/cellranger count --id=gRNA_cellranger --transcriptome=$HOME/GFS/RESOURCES/Genomes/refdata-gex-mm10-2020-A/ --no-bam --expect-cells=10000 --localcores=1 --fastqs=$HOME/GFS/DATA_David/Raw_data_ECCITE/gRNA/ --localmem=64 &> gRNA_cellranger.log
 
