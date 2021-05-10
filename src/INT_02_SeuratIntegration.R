@@ -3,13 +3,7 @@ out <- dirout("INT_02_SeuratIntegration/")
 
 require(Seurat)
 
-# Integrating the two datasets --------------------------------------------
-
-# Read data
-data.c1 <- Read10X_h5(PATHS$CITESEQ1_CLEAN$DATA$matrix)
-data.e1 <- Read10X_h5(PATHS$ECCITE1$DATA$matrix)
-
-# Read clusters
+# Read cellranger analysis results --------------------------------------------
 clusters.c1 <- fread(PATHS$CITESEQ1_CLEAN$DATA$clusters)
 clusters.c1$dataset <- "CITESEQ1"
 clusters.e1 <- fread(PATHS$ECCITE1$DATA$clusters)
@@ -22,7 +16,12 @@ names(guides) <- gsub("^(.)", "\\U\\1", names(guides), perl = T)
 guides$dataset <- "ECCITE1"
 clusters <- merge(clusters, guides, by=c("Barcode", "dataset"), all=TRUE)
 
-# Create Seurat objects
+# Read data --------------------------------------------
+data.c1 <- Read10X_h5(PATHS$CITESEQ1_CLEAN$DATA$matrix)
+data.e1 <- Read10X_h5(PATHS$ECCITE1$DATA$matrix)
+
+# Seurat integration --------------------------------------------
+
 # 1
 seurat.c1 <- CreateSeuratObject(counts = data.c1$"Gene Expression", project = "CITESEQ1", min.cells = 5)
 seurat.c1 <- subset(seurat.c1, subset = nFeature_RNA > 500)
@@ -51,7 +50,15 @@ sobj <- FindClusters(sobj, resolution = 0.5)
 #sobj <- DietSeurat(sobj)
 save(sobj, file=out("SeuratObject.RData"))
 
-# Collect information
+
+# Cell Cycle --------------------------------------------------------------
+sobj <- CellCycleScoring(sobj, 
+  s.features = cc.genes$s.genes, 
+  g2m.features = cc.genes$g2m.genes, 
+  set.ident = TRUE)
+
+
+# Collect and export metadata --------------------------------------------------------------
 ann <- data.table(sobj[["umap"]]@cell.embeddings, keep.rownames = TRUE)
 ann <- merge(ann, data.table(sobj@meta.data, keep.rownames = TRUE), by="rn")
 ann[, Barcode := gsub("_\\d+$", "", rn)]
@@ -64,6 +71,11 @@ ggplot(ann, aes(x=UMAP.1, y=UMAP.2)) +
   geom_point(aes(color=dataset), alpha=1, size=0.1) +
   theme_bw(12)
 ggsave(out("UMAP_datasets.pdf"), w=6, h=5)
+
+ggplot(ann, aes(x=UMAP.1, y=UMAP.2)) + 
+  geom_point(aes(color=Phase), alpha=1, size=0.1) +
+  theme_bw(12)
+ggsave(out("UMAP_CellCycle.pdf"), w=6, h=5)
 
 ggplot(ann, aes(x=UMAP.1, y=UMAP.2)) + 
   geom_point(aes(color=factor(Cluster))) +
@@ -93,7 +105,7 @@ ann[dataset == "CITESEQ1" & !is.na(Guide)]
 
 
 
-# TESTING IF OUR FUNCTION WORKS
+# TESTING IF OUR FUNCTION TO IMPORT DATA WORKS
 # c1.dat.scrna <- SCRNA.read_10Xh5.610(PATHS$CITESEQ1_CLEAN$DATA$matrix) 
 # c1.dat.scrna.ex <- c1.dat.scrna$matrix[c1.dat.scrna$features[feature_type == "Gene Expression"]$id,]
 # gg.unique <- c1.dat.scrna$features[feature_type == "Gene Expression"][,.N, by="name"][order(N)][N == 1]
