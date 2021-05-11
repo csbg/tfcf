@@ -1,19 +1,16 @@
-# Analyze citeseq output
+source(paste0(Sys.getenv("CODE"), "src/00_init.R"))
 
-# install.packages('Seurat')
-library(Seurat)
 library(Matrix)
+out <- dirout("ECCITE1_01_Guides/")
 require(data.table)
-
-setwd("/Volumes/GFS_MBIO_AGFORTELNY/PROJECTS/TfCf/")
 
 # barcodes <- fread("barcodes.tsv.gz", header = F)$V1
 # features <- fread("features.tsv.gz", header = F)$V1
 # mtx <- fread("matrix.mtx.gz")
 
-
-matrix_dir = "citeseq_all_barcodes/umi_count/"
-matrix_dir = "citeseq_combined//umi_count/"
+list.files(Sys.getenv("DATA"))
+#matrix_dir = "citeseq_all_barcodes/umi_count/"
+matrix_dir = paste(Sys.getenv("DATA"), "ECCITE1_citeseq_combined//umi_count/", sep="/")
 barcode.path <- paste0(matrix_dir, "barcodes.tsv.gz")
 features.path <- paste0(matrix_dir, "features.tsv.gz")
 matrix.path <- paste0(matrix_dir, "matrix.mtx.gz")
@@ -26,14 +23,13 @@ rownames(mat) = feature.names$V1
 apply(mat[1:6,], 1, table)
 
 
-
 # Export counts -----------------------------------------------------------
 res <- data.table(melt(as.matrix(mat[1:6,])))
 res[,Var1 := gsub("\\-.+", "", Var1)]
 res <- res[,.(number_of_barcodes_with_UMIs = .N), by=c("Var1", "value")]
 colnames(res) <- c("TAG", "UMIs", "number_of_barcodes_with_UMIs")
 res <- res[UMIs != 0][order(TAG, UMIs)]
-write.table(res, sep="\t", quote=F, "citeseq.tsv", row.names = FALSE)
+write.table(res, sep="\t", quote=F, out("citeseq.tsv"), row.names = FALSE)
 res[UMIs > 5][,sum(number_of_barcodes_with_UMIs), by="TAG"]
 sum(res[UMIs > 5][,sum(number_of_barcodes_with_UMIs), by="TAG"]$V1)
 
@@ -61,7 +57,7 @@ guideDT[,.N, by="guide"]
 mat2[,triplets$barcode] # seems reliable
 
 # compare to the barcodes from the RNA
-barcodes <- fread("RNA_cellranger/outs/filtered_feature_bc_matrix/barcodes.tsv.gz", header = F)$V1
+barcodes <- fread(paste(Sys.getenv("DATA"), "ECCITE1_RNA_cellranger_601/outs/filtered_feature_bc_matrix/barcodes.tsv", sep="/"), header = F)$V1
 #barcodes <- fread("~/Downloads/citeseq_guides2cells.csv")$barcode
 
 # for 5 cells we have guides assigned but no transcriptome
@@ -73,4 +69,4 @@ guideDT <- rbind(
   data.table(barcode=setdiff(barcodes, guideDT$barcode), guide="None")
 )
 
-write.table(guideDT, "citeseq_guides2cells2.csv", sep=",", quote=FALSE, row.names = FALSE)
+write.table(guideDT, out("citeseq_guides2cells.csv"), sep=",", quote=FALSE, row.names = FALSE)

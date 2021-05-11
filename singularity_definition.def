@@ -1,0 +1,40 @@
+# Use the rstudio docker image of the rocker project,
+# which bases upon Ubuntu 20.04 and has R 4.0.2 as well as
+# RStudio Server 1.3.1093 pre-installed
+BootStrap: docker
+From: rocker/rstudio:4.0.2
+
+%files
+  # Copy the renv lockfile into the container
+  renv.lock /usr/local/renv/renv.lock
+
+%post
+  # install build dependencies
+  #
+  # library            required by
+  # ------------------------------
+  # libgdal-dev        sf
+  # libmagick++-dev    magick
+  # libpng-dev         png
+  # libudunits2-dev    units
+  #
+  apt-get update
+  apt-get install -y --no-install-recommends \
+    curl \
+    libgdal-dev \
+    libmagick++-dev \
+    libpng-dev \
+    libudunits2-dev
+
+  # install renv and packages with versions registered in the lockfile
+  R -e 'install.packages("renv")
+        renv::consent(provided = TRUE)
+        renv::settings$use.cache(FALSE)
+        renv::restore(lockfile = "/usr/local/renv/renv.lock")'
+  
+  # create directory where the GFS will be mounted
+  mkdir /media/AGFORTELNY
+
+%runscript
+  # running the container will execute an R script
+  exec Rscript "$@"
