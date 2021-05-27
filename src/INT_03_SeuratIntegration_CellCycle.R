@@ -16,45 +16,53 @@ names(guides) <- gsub("^(.)", "\\U\\1", names(guides), perl = T)
 guides$dataset <- "ECCITE1"
 clusters <- merge(clusters, guides, by=c("Barcode", "dataset"), all=TRUE)
 
-# Read data --------------------------------------------
-data.c1 <- Read10X_h5(PATHS$CITESEQ1_CLEAN$DATA$matrix)
-data.e1 <- Read10X_h5(PATHS$ECCITE1$DATA$matrix)
-
-# Seurat integration --------------------------------------------
-
-# 1
-seurat.c1 <- CreateSeuratObject(counts = data.c1$"Gene Expression", project = "CITESEQ1", min.cells = 5)
-seurat.c1 <- subset(seurat.c1, subset = nFeature_RNA > 500)
-seurat.c1 <- NormalizeData(seurat.c1, verbose = FALSE)
-seurat.c1 <- FindVariableFeatures(seurat.c1, selection.method = "vst", nfeatures = 2000)
-# 2
-seurat.e1 <- CreateSeuratObject(counts = data.e1, project = "ECCITE1", min.cells = 5)
-seurat.e1 <- subset(seurat.e1, subset = nFeature_RNA > 500)
-seurat.e1 <- NormalizeData(seurat.e1, verbose = FALSE)
-seurat.e1 <- FindVariableFeatures(seurat.e1, selection.method = "vst", nfeatures = 2000)
-
-# Integrate
-anchors <- FindIntegrationAnchors(object.list = list(seurat.c1, seurat.e1), dims = 1:20)
-sobj <- IntegrateData(anchorset = anchors, dims = 1:20)
-DefaultAssay(sobj) <- "integrated"
-sobj@meta.data$dataset <- sobj@meta.data$orig.ident
-
-# Cell Cycle scoring
-sobj <- CellCycleScoring(sobj, 
-                         s.features = cc.genes$s.genes, 
-                         g2m.features = cc.genes$g2m.genes, 
-                         set.ident = TRUE)
-
-# Process full dataset
-sobj <- ScaleData(sobj, vars.to.regress = c("S.Score", "G2M.Score"), verbose = FALSE)
-sobj <- RunPCA(sobj, npcs = 30, verbose = FALSE)
-sobj <- RunUMAP(sobj, reduction = "pca", dims = 1:20)
-sobj <- FindNeighbors(sobj, reduction = "pca", dims = 1:20)
-sobj <- FindClusters(sobj, resolution = 0.5)
-
-# Store full dataset
-#sobj <- DietSeurat(sobj)
-save(sobj, file=out("SeuratObject.RData"))
+# Read data  and Seurat integration --------------------------------------------
+seurat.file <- out("SeuratObject.RData")
+if(!file.exists(seurat.file)){
+  data.c1 <- Read10X_h5(PATHS$CITESEQ1_CLEAN$DATA$matrix)
+  data.e1 <- Read10X_h5(PATHS$ECCITE1$DATA$matrix)
+  
+  # 1
+  #seurat.c1 <- CreateSeuratObject(counts = data.c1$"Gene Expression"[1:4000,1:1000], project = "CITESEQ1", min.cells = 5)
+  seurat.c1 <- CreateSeuratObject(counts = data.c1$"Gene Expression", project = "CITESEQ1", min.cells = 5)
+  seurat.c1 <- subset(seurat.c1, subset = nFeature_RNA > 500)
+  seurat.c1 <- NormalizeData(seurat.c1, verbose = FALSE)
+  seurat.c1 <- FindVariableFeatures(seurat.c1, selection.method = "vst", nfeatures = 2000)
+  
+  # 2
+  #seurat.e1 <- CreateSeuratObject(counts = data.e1[1:4000,1:1000], project = "ECCITE1", min.cells = 5)
+  seurat.e1 <- CreateSeuratObject(counts = data.e1, project = "ECCITE1", min.cells = 5)
+  seurat.e1 <- subset(seurat.e1, subset = nFeature_RNA > 500)
+  seurat.e1 <- NormalizeData(seurat.e1, verbose = FALSE)
+  seurat.e1 <- FindVariableFeatures(seurat.e1, selection.method = "vst", nfeatures = 2000)
+  
+  # Integrate
+  anchors <- FindIntegrationAnchors(object.list = list(seurat.c1, seurat.e1), dims = 1:20)
+  sobj <- IntegrateData(anchorset = anchors, dims = 1:20)
+  DefaultAssay(sobj) <- "integrated"
+  sobj@meta.data$dataset <- sobj@meta.data$orig.ident
+  
+  # Cell Cycle scoring
+  sobj <- CellCycleScoring(sobj, 
+                           s.features = cc.genes$s.genes, 
+                           g2m.features = cc.genes$g2m.genes, 
+                           set.ident = TRUE)
+  
+  # Process full dataset
+  sobj <- ScaleData(sobj, vars.to.regress = c("S.Score", "G2M.Score"), verbose = FALSE)
+  sobj <- RunPCA(sobj, npcs = 30, verbose = FALSE)
+  sobj <- RunUMAP(sobj, reduction = "pca", dims = 1:20)
+  sobj <- FindNeighbors(sobj, reduction = "pca", dims = 1:20)
+  sobj <- FindClusters(sobj, resolution = 0.5)
+  
+  # Store full dataset
+  sobj2 <- sobj
+  sobj <- SCRNA.DietSeurat(sobj)
+  save(sobj, file=seurat.file)
+} else {
+  load(seurat.file)
+  sobj <- SCRNA.UndietSeurat(sobj)
+}
 
 
 # Collect and export metadata --------------------------------------------------------------
@@ -196,3 +204,46 @@ ggplot(resN, aes(x=SCluster, y=Antibody, fill=percentage)) +
   ggtitle("Percent of cell in SCluster\nthat are above 90th percentile of antibody signal") + 
   scale_fill_gradient(low="white", high="blue")
 ggsave(out("Antibodies_Percentile.pdf"), w=5, h=4)
+
+
+
+# 20-neighbors method -----------------------------------------------------
+sobj2 <- sobj
+x <- unique(gsub(".+_(\\d+)$", "\\1", data.table(sobj2@meta.data, keep.rownames = T)[dataset == "ECCITE1"]$rn))
+stopifnot(length(x) == 1)
+g2 <- guides[!grepl(" ", Guide)][Guide != "None"]
+sobj2@meta.data$guide <- g2[match(row.names(sobj2@meta.data), paste0(g2$Barcode, "_", x))]$Guide
+with(data.table(sobj2@meta.data), table(guide, dataset))
+with(g2, table(Guide))
+stopifnot(all(data.table(sobj2@meta.data, keep.rownames = TRUE)[guide == "NTC"][order(rn)]$rn == paste0(g2[Guide == "NTC"][order(Barcode)]$Barcode, "_",x)))
+
+
+sobj2 <- sobj2[,!is.na(sobj2@meta.data$guide)]
+eccite <- CalcPerturbSig(
+  object = sobj2, assay = "RNA", slot = "data", 
+  gd.class ="guide",nt.cell.class = "NTC",
+  reduction = "pca",ndims = 20,num.neighbors = 20,
+  new.assay.name = "PRTB")
+
+eccite <- ScaleData(object = eccite, assay = "PRTB", do.scale = F, do.center = T)
+
+#Idents(eccite) <- "guide"
+
+eccite <- RunMixscape(
+  object = eccite,assay = "PRTB",slot = "scale.data",
+  labels = "guide",nt.class.name = "NTC",
+  min.de.genes = 5,
+  iter.num = 10,
+  de.assay = "RNA",
+  verbose = TRUE,
+  prtb.type = "KO")
+
+table(eccite$mixscape_class.global, eccite$guide)
+prop.table(table(eccite$mixscape_class.global, eccite$guide),2)
+
+Idents(eccite) <- "guide"
+MixscapeHeatmap(object = eccite,
+  ident.1 = "Pu.1", ident.2 = "NTC",balanced = F,
+  assay = "RNA",max.genes = 20, angle = 0, 
+  group.by = "mixscape_class", 
+  max.cells.group = 300, size=3.5) + NoLegend()
