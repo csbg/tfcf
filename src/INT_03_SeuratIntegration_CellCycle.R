@@ -60,12 +60,14 @@ if(!file.exists(seurat.file)){
   sobj <- SCRNA.DietSeurat(sobj)
   save(sobj, file=seurat.file)
 } else {
+  print("Loading Seurat file")
   load(seurat.file)
   sobj <- SCRNA.UndietSeurat(sobj)
 }
 
 
 # Collect and export metadata --------------------------------------------------------------
+
 ann <- data.table(sobj[["umap"]]@cell.embeddings, keep.rownames = TRUE)
 ann <- merge(ann, data.table(sobj@meta.data, keep.rownames = TRUE), by="rn")
 ann[, Barcode := gsub("_\\d+$", "", rn)]
@@ -77,6 +79,12 @@ ann$integrated.snn.res.0.5 <- NULL
 write.tsv(ann, out("Metadata.tsv"))
 
 stopifnot(nrow(ann[dataset == "CITESEQ1" & !is.na(Guide)]) == 0)
+
+
+
+# SETUP ENDS HERE ---------------------------------------------------------
+
+
 
 # PLOT DATASET AND CELL CYCLE -------------------------------------------------------------------
 ggplot(ann, aes(x=UMAP.1, y=UMAP.2)) + 
@@ -207,7 +215,7 @@ ggsave(out("Antibodies_Percentile.pdf"), w=5, h=4)
 
 
 
-# 20-neighbors method -----------------------------------------------------
+# MIXSCAPE -----------------------------------------------------
 sobj2 <- sobj
 x <- unique(gsub(".+_(\\d+)$", "\\1", data.table(sobj2@meta.data, keep.rownames = T)[dataset == "ECCITE1"]$rn))
 stopifnot(length(x) == 1)
@@ -216,19 +224,14 @@ sobj2@meta.data$guide <- g2[match(row.names(sobj2@meta.data), paste0(g2$Barcode,
 with(data.table(sobj2@meta.data), table(guide, dataset))
 with(g2, table(Guide))
 stopifnot(all(data.table(sobj2@meta.data, keep.rownames = TRUE)[guide == "NTC"][order(rn)]$rn == paste0(g2[Guide == "NTC"][order(Barcode)]$Barcode, "_",x)))
-
-
 sobj2 <- sobj2[,!is.na(sobj2@meta.data$guide)]
+with(data.table(sobj2@meta.data), table(guide, dataset))
 eccite <- CalcPerturbSig(
   object = sobj2, assay = "RNA", slot = "data", 
   gd.class ="guide",nt.cell.class = "NTC",
   reduction = "pca",ndims = 20,num.neighbors = 20,
   new.assay.name = "PRTB")
-
 eccite <- ScaleData(object = eccite, assay = "PRTB", do.scale = F, do.center = T)
-
-#Idents(eccite) <- "guide"
-
 eccite <- RunMixscape(
   object = eccite,assay = "PRTB",slot = "scale.data",
   labels = "guide",nt.class.name = "NTC",
@@ -241,9 +244,48 @@ eccite <- RunMixscape(
 table(eccite$mixscape_class.global, eccite$guide)
 prop.table(table(eccite$mixscape_class.global, eccite$guide),2)
 
-Idents(eccite) <- "guide"
-MixscapeHeatmap(object = eccite,
-  ident.1 = "Pu.1", ident.2 = "NTC",balanced = F,
-  assay = "RNA",max.genes = 20, angle = 0, 
-  group.by = "mixscape_class", 
-  max.cells.group = 300, size=3.5) + NoLegend()
+Idents(eccite) <- "mixscape_class"
+res <- data.table()
+for(guidex in unique(grep(" KO$", eccite@meta.data$mixscape_class, value = TRUE))){
+  print(guidex)
+  markers <- FindMarkers(
+    eccite, ident.1 = guidex, ident.2 = "NTC", logfc.threshold = log(2),
+    assay = "RNA",only.pos = FALSE, test.use="negbinom")
+  res <- rbind(res, data.table(markers, guide=guidex, keep.rownames = TRUE))
+}
+
+
+
+
+# Create Dotplot ----------------------------------------------------------
+gg <- unique(c(
+  res[order(avg_log2FC, decreasing = TRUE)][,head(.SD,n=5), by="guide"]$rn,
+  res[order(avg_log2FC, decreasing = FALSE)][,head(.SD,n=5), by="guide"]$rn))
+
+eccite@meta.data$mix_cluster <- with(eccite@meta.data, paste(gsub(" ", "_", mixscape_class), seurat_clusters))
+Idents(eccite) <- "mix_cluster"
+avExp <- AverageExpression(eccite, assays="RNA")
+perExp <- sapply(
+  with(data.table(eccite@meta.data, keep.rownames = TRUE), split(rn, mix_cluster)),
+  function(cells){
+    rowSums(eccite@assays$RNA@counts[,cells, drop = FALSE] != 0) / length(cells)
+  }) * 100
+
+dotplotDT <- merge(
+  melt(data.table(avExp$RNA, keep.rownames = TRUE), id.vars = "rn", value.name = "average"),
+  melt(data.table(perExp, keep.rownames = TRUE), id.vars = "rn", value.name = "percentage"),
+  by=c("rn", "variable"))
+
+dotplotDT[, scaleExp := scale(average), by=c("rn")]
+
+ggplot(dotplotDT[rn %in% gg], aes(x=as.character(variable), y=rn, size=percentage, color=scaleExp)) + 
+  geom_point() + 
+  scale_color_gradient2(low='blue', high = "red") +
+  scale_size_continuous(limits=c(0, 100)) +
+  theme_bw() +
+  facet_grid(. ~ variable) + 
+  xRot()
+
+matrix <- as.matrix(colMeans(exp  > 0))*100
+
+DotPlot(eccite, features = gg, assay="RNA") + xRot() + coord_flip()
