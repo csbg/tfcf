@@ -73,7 +73,7 @@ ann <- merge(ann, data.table(sobj@meta.data, keep.rownames = TRUE), by="rn")
 ann[, Barcode := gsub("_\\d+$", "", rn)]
 ann <- merge(ann, clusters, by=c("Barcode", "dataset"))
 colnames(ann) <- gsub("_", ".", colnames(ann))
-ann[,SCluster := as.numeric(seurat.clusters) + 1]
+ann[,SCluster := as.numeric(as.character(seurat.clusters))]
 ann$seurat.clusters <- NULL
 ann$integrated.snn.res.0.5 <- NULL
 write.tsv(ann, out("Metadata.tsv"))
@@ -254,7 +254,7 @@ for(guidex in unique(grep(" KO$", eccite@meta.data$mixscape_class, value = TRUE)
   res <- rbind(res, data.table(markers, guide=guidex, keep.rownames = TRUE))
 }
 
-
+markers.all <- res
 
 
 # Create Dotplot ----------------------------------------------------------
@@ -263,29 +263,83 @@ gg <- unique(c(
   res[order(avg_log2FC, decreasing = FALSE)][,head(.SD,n=5), by="guide"]$rn))
 
 eccite@meta.data$mix_cluster <- with(eccite@meta.data, paste(gsub(" ", "_", mixscape_class), seurat_clusters))
-Idents(eccite) <- "mix_cluster"
+Idents(eccite) <- "mixscape_class"
 avExp <- AverageExpression(eccite, assays="RNA")
 perExp <- sapply(
-  with(data.table(eccite@meta.data, keep.rownames = TRUE), split(rn, mix_cluster)),
+  with(data.table(eccite@meta.data, keep.rownames = TRUE), split(rn, mixscape_class)),
   function(cells){
     rowSums(eccite@assays$RNA@counts[,cells, drop = FALSE] != 0) / length(cells)
   }) * 100
 
 dotplotDT <- merge(
-  melt(data.table(avExp$RNA, keep.rownames = TRUE), id.vars = "rn", value.name = "average"),
-  melt(data.table(perExp, keep.rownames = TRUE), id.vars = "rn", value.name = "percentage"),
+  melt(data.table(avExp$RNA, keep.rownames = TRUE), id.vars = "rn", value.name = "average",variable.factor = FALSE),
+  melt(data.table(perExp, keep.rownames = TRUE), id.vars = "rn", value.name = "percentage",variable.factor = FALSE),
   by=c("rn", "variable"))
 
-dotplotDT[, scaleExp := scale(average), by=c("rn")]
+dotplotDT <- merge(dotplotDT, dotplotDT[variable == "NTC"][,c("rn", "average")], by="rn", suffixes = c("", "_NTC"))
+dotplotDT[, scaleExp := average - average_NTC]
+dotplotDT[, scaleExp := scale(scaleExp, center = FALSE), by="rn"]
 
-ggplot(dotplotDT[rn %in% gg], aes(x=as.character(variable), y=rn, size=percentage, color=scaleExp)) + 
+#dotplotDT <- cbind(dotplotDT, setNames(data.table(do.call(rbind, strsplit(dotplotDT$variable, " "))), c("guide", "cluster")))
+markers.all.plot <- markers.all
+markers.all.plot[, percentage := pct.1 * 100]
+markers.all.plot[, variable := guide]
+ggplot(dotplotDT[rn %in% gg], aes(x=variable, y=rn, size=percentage, color=scaleExp)) + 
+  geom_point() + 
+  geom_point(data=markers.all.plot[rn %in% gg & p_val_adj < 0.05], shape=1, color="black") + 
+  scale_color_gradient2(low='blue', high = "red") +
+  scale_size_continuous(limits=c(0, 100)) +
+  theme_bw() +
+  xRot()
+ggsave(out("Mixscape_Guides.pdf"), w=8,h=8)
+
+
+
+ggplot(markers.all[rn %in% gg], aes(x=guide, y=rn, size=percentage, color=scaleExp)) + 
   geom_point() + 
   scale_color_gradient2(low='blue', high = "red") +
   scale_size_continuous(limits=c(0, 100)) +
   theme_bw() +
-  facet_grid(. ~ variable) + 
   xRot()
 
-matrix <- as.matrix(colMeans(exp  > 0))*100
+DoHeatmap(size = 3,
+  eccite, features = gg, group.by = "mix_cluster", assay = "RNA", slot="data",
+  cells=data.table(eccite@meta.data, keep.rownames = TRUE)[guide %in% c("NTC", "Pu.1")]$rn)
+ggsave(out("Mixscape_HM.jpeg"), w=20,h=6, dpi = 100)
+
+# ggplot(dotplotDT[rn %in% gg], aes(x=factor(as.numeric(cluster)), y=rn, size=percentage, color=scaleExp)) + 
+#   geom_point() + 
+#   scale_color_gradient2(low='blue', high = "red") +
+#   scale_size_continuous(limits=c(0, 100)) +
+#   theme_bw() +
+#   facet_grid(. ~ guide) + 
+#   xRot()
+# 
+# 
+# matrix <- as.matrix(colMeans(exp  > 0))*100
 
 DotPlot(eccite, features = gg, assay="RNA") + xRot() + coord_flip()
+ggsave(out("Mixscape_Guides_Seurat.pdf"), w=8,h=8)
+
+
+
+
+# Second approach, by cluster ---------------------------------------------
+Idents(eccite) <- "mixscape_class"
+cons.markers <- FindConservedMarkers(min.cells.group=0,
+  object = eccite, ident.1="Pu.1 KO", ident.2 = "NTC", 
+  assay = "RNA", grouping.var = "seurat_clusters")
+
+x <- data.table(cons.markers, keep.rownames = TRUE)
+res <- data.table()
+i <- 0
+for(i in unique(eccite@meta.data$seurat_clusters)){
+  ret <- data.table(x[,c("rn", grep(paste0("^", i), colnames(x), value=TRUE)),with=F], cluster=i)
+  colnames(ret) <- gsub("^\\d+_", "", colnames(ret))
+  res <- rbind(res, ret, fill=TRUE)
+}
+
+ggplot(res, aes(x=factor(as.numeric(cluster)), y=rn, color=avg_log2FC, size=pmin(5, -log10(p_val_adj)))) + 
+  geom_point() + scale_color_gradient2(low="blue", high="red") +
+  theme_bw(12)
+ggsave(out("Mixscape_byCluster.pdf"), w=8,h=8)
