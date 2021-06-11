@@ -9,7 +9,7 @@ source $CODEBASE/tfcf/setup.sh
 cd $HOME/omicstmp
 
 id="ECCITE3_low_7d"
-id="ECCITE3_low_14d"
+#id="ECCITE3_low_14d"
 
 ~/code/cellranger-6.0.1/cellranger count --id=$id \
  --no-bam \
