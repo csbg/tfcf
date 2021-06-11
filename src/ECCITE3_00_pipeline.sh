@@ -14,3 +14,6 @@ id="ECCITE3_low_7d"
  --localmem=64 \
  --expect-cells=10000 &> ${id}.log
 
+rm -rf $id/SC_RNA_COUNTER_CS
+
+mv ${id}* $GFS/PROJECTS/TfCf/Data/
