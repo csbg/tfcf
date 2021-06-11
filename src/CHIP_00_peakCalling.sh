@@ -26,8 +26,30 @@ source $HOME/python_venvs/macs3/bin/activate
 mkdir $DATA/ChIP_Peaks/
 cd $_
 
+ls $RAWDATA/Raw_ChIP/ | grep -v "bai$" | grep "bam$" > bam.files.txt
+sampleGroups=$(sed "s/_.*$//g" bam.files.txt | sort | uniq)
 
-f="CUT_PU1-100221_S14"
-macs3 callpeak -t $RAWDATA/Raw_ChIP/$f.sort.rmdup.rmblackls.rmchr.bam -c $RAWDATA/Raw_ChIP/CUT_IgG-100221_S16.sort.rmdup.rmblackls.rmchr.bam -f BAMPE -g mm -n $f &> $f.log
+for g in ${sampleGroups[@]}; do
+    echo $g
+    
+    control=$(grep "^${g}_" bam.files.txt | grep "input")
+    
+    if [ -z "$control" ]; then
+        control=$(grep "^${g}_" bam.files.txt | grep "IgG")
+    fi
+    
+    if [ ! -z "$control" ]; then
+        
+        echo "CONTROL: $control"
+        
+        samples=$(grep "^${g}_" bam.files.txt | grep -v $control)
+        for s in ${samples[@]}; do
+            f=$(echo $s | sed "s/.sort.rmdup.rmblackls.rmchr.bam//g")
+            echo "SAMPLE: $f"
+            macs3 callpeak -t $RAWDATA/Raw_ChIP/$f.sort.rmdup.rmblackls.rmchr.bam -c $RAWDATA/Raw_ChIP/$control -f BAMPE -g mm -n $f &> $f.log
+        done
+    fi
+done
+
 
 deactivate
