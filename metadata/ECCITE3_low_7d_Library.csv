@@ -1,3 +1,3 @@
 fastqs,sample,library_type
-/usr/local/AGFORTELNY//PROJECTS/TfCf/Data2/20210608-scRNA-seq/demux_fastq/,T_low_3expression_d7_24052021,Gene Expression
-/usr/local/AGFORTELNY//PROJECTS/TfCf/Data2/20210608-scRNA-seq/demux_fastq/,T_low_sgRNA_d7_24052021,CRISPR Guide Capture
+/usr/local/AGFORTELNY//PROJECTS/TfCf/Data/Raw_ECCITE3/demux_fastq/,T_low_3expression_d7_24052021,Gene Expression
+/usr/local/AGFORTELNY//PROJECTS/TfCf/Data/Raw_ECCITE3/demux_fastq/,T_low_sgRNA_d7_24052021,CRISPR Guide Capture
