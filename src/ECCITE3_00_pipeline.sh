@@ -1,5 +1,11 @@
 source $CODEBASE/tfcf/setup.sh
 
+
+
+
+
+
+
 cd $HOME/omicstmp
 
 id="ECCITE3_low_7d"

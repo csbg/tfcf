@@ -12,6 +12,10 @@ Rscript ANALYSIS.R
 # Top 5000 reads sorted
 gunzip -c SLX-19954.SITTH12.HY75WDRXX.s_1.r_2.fq.gz | head -20000 | perl -ne 'print unless (0 != ($.-2) % 4)' | sort > x2.fq
 
+gunzip -c T_high_sgRNA_d7_24052021_S4_R2_001.fastq.gz | head -20000 | perl -ne 'print unless (0 != ($.-2) % 4)' | sort > x2.fq
+
+
+
 # FastQC
 gunzip -c SLX-19954.SITTH12.HY75WDRXX.s_1.r_2.fq.gz | head -50000 > test.fq
 gzip test.fq
