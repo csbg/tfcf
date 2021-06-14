@@ -1,6 +1,6 @@
 source $CODEBASE/tfcf/setup.sh
 
-# # Figuring out where the guides are
+# # # Figuring out where the guides are
 # cd $RAWDATA/Raw_ECCITE3/demux_fastq/
 #
 # sequences=( TGTGGCGATAGAGCTGCTGT CGGGGAACTTTCACCCATCA CTCGTTCCCTAACGGCGCGG ACAGCAGCTCTATCGCCACA TGATGGGTGAAAGTTCCCCG CCGCGCCGTTAGGGAACGAG)
@@ -20,6 +20,24 @@ source $CODEBASE/tfcf/setup.sh
 #
 # # ECCITE2:
 # gunzip -c SINTF10_S1_L001_R2_001.fastq.gz | grep "GACTCCGGGTACTAAATGTC"
+
+# # COUNT SEQUENCES
+# files=($(ls *sgRNA*R2_001.fastq.gz))
+# for f in "${files[@]}"; do
+#   echo $f
+#   gunzip -c $f | head -4000 | grep "AAGCAGTGGTATCAACGCAGAGTACAT" | wc -l >   ~/$f.spacer.counts.txt
+#   gunzip -c $f | grep "AAGCAGTGGTATCAACGCAGAGTACAT" | sed "s/AAGCAGTGGTATCAACGCAGAGTACAT//g" | head -10000 | sort | uniq -c | sort -k1 | tail -50 > ~/$f.guide.counts.txt
+# done
+
+# # COPY CLOUPE
+# cd ~/GFS/PROJECTS/TfCf/
+#
+# files=($(ls Data | grep "ECCITE3" | grep -v ".log"))
+# for f in "${files[@]}"; do
+#   echo $f
+#   cp Data/$f/outs/cloupe.cloupe $f.cloupe
+# done
+
 
 cd $HOME/omicstmp
 
