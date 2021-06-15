@@ -42,7 +42,7 @@ source $CODEBASE/tfcf/setup.sh
 cd $HOME/omicstmp
 
 #for id in ECCITE3_low_7d ECCITE3_low_14d ECCITE3_high_7d ECCITE3_high_14d; do
-for id in ECCITE3_low_14d ECCITE3_high_7d ECCITE3_high_14d; do
+for id in ECCITE3_low_7d; do
         
     echo $id
     #id="ECCITE3_low_7d"
