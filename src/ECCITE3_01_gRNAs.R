@@ -81,7 +81,7 @@ for(mnam in names(gMT)){
   (triplets <- guideDT[sapply(ii, length) > 2])
   mat2[,triplets$barcode] # seems reliable
   
-  print(sort(table(guideDT$guide)))
+  print(guideDT[,.N, by="guide"][order(guide)])
   write.table(guideDT, out("guides2cells_",mnam,".csv"), sep=",", quote=FALSE, row.names = FALSE)
   write.table(guideDT[!grepl(" ", guide)], out("guides2cells_withoutCombinations_",mnam,".csv"), sep=",", quote=FALSE, row.names = FALSE)
 }
@@ -112,7 +112,7 @@ for(mnam in names(gMT)){
   (triplets <- guideDT[sapply(ii, length) > 2])
   mat2[,triplets$barcode] # seems reliable
   
-  print(sort(table(guideDT$guide)))
+  print(guideDT[,.N, by="guide"][order(guide)])
   write.table(guideDT, out("gfp2cells_",mnam,".csv"), sep=",", quote=FALSE, row.names = FALSE)
   write.table(guideDT[!grepl(" ", guide)], out("gfp2cells_withoutCombinations_",mnam,".csv"), sep=",", quote=FALSE, row.names = FALSE)
 }
