@@ -183,5 +183,6 @@ colnames(m) <- make.names(colnames(m))
 stopifnot(all(ann$sample %in% colnames(m)))
 ann <- setNames(ann, c("sample", "Genotype", "Population", "Library", "Date", "Library2", "System", "Date2"))
 ann[,Date2 := gsub("\\.txt", "", Date2)]
+ann[Date2 == "Feb2021" & Library == "R2.Br", Date := "10022021"]
 write.table(m[,ann$sample], quote = F, sep = ",", row.names = TRUE, col.names = TRUE, file = out("Matrix.csv"))
 write.tsv(ann, out("Annotation.tsv"))

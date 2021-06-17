@@ -60,8 +60,8 @@ stopifnot(all(ann$sample == colnames(m)))
 
 # Get raw scores ------------------------------------------
 res <- data.table()
-datex <- "Nov2019_Nov2019"
-libx <- "A"
+datex <- "10022021_Feb2021"
+libx <- "R2.Br"
 for(datex in unique(ann$Date)){
   for(libx in unique(ann[Date == datex]$Library)){
     
@@ -239,7 +239,7 @@ for(libx in unique(res.stats$Library)){
   ggplot(lDT, aes(x=paste(Population2, Date), y=Guide, color=Score, size=pmin(5, -log10(padj)))) + 
     geom_point() +
     geom_point(data=lDT[padj < 0.05], color="black", shape=1) +
-    scale_color_gradient2(name="log2FC", low="red", high="blue") +
+    scale_color_gradient2(name="log2FC", low="blue", high="red") +
     scale_size_continuous(name="padj (cap = 5)") + 
     facet_grid(Gene ~ Library + Genotype + Population1,  space = "free", scales = "free") + 
     theme_bw(12) +
