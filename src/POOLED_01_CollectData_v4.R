@@ -56,12 +56,19 @@ lapply(data.table(do.call(rbind,strsplit(gsub(" .+", "", grep("^V1$", do.call(c,
 
 
 
-# Correct names -----------------------------------------------------------
-# x <- dDT[["LibA_Mye_Nov2019.txt"]]
-# colnames(x) <- gsub("^Cas9", "XXX", colnames(x))
+# Correct Cas9 and WT assignments -----------------------------------------------------------
+x <- dDT[["LibA_Mye_Nov2019.txt"]]
+colnames(x) <- gsub("^Cas9", "XXX", colnames(x))
+colnames(x) <- gsub("^WT", "Cas9", colnames(x))
+colnames(x) <- gsub("^XXX", "WT", colnames(x))
+dDT[["LibA_Mye_Nov2019.txt"]] <- x
+
+# x <- dDT[["LibTF1_GMP.Mye_July2020.txt"]]
+# colnames(x) <- gsub("^CAS9", "XXX", colnames(x))
 # colnames(x) <- gsub("^WT", "Cas9", colnames(x))
 # colnames(x) <- gsub("^XXX", "WT", colnames(x))
-# dDT[["LibA_Mye-Nov2019.txt"]] <- x
+# dDT[["LibTF1_GMP.Mye_July2020.txt"]] <- x
+
 
 # Extract guides into one matrix ----------------------------------------------------------
 lapply(dDT, function(dt) head(dt$V1))
@@ -90,13 +97,26 @@ ann[V4 == "Jul2020", VX := V2]
 ann[V4 == "Jul2020", V2 := V3]
 ann[V4 == "Jul2020", V3 := VX]
 ann$VX <- NULL
-ann[,V1 := gsub("^CAS9.+$", "Cas9", V1, ignore.case = TRUE)]
-lapply(ann, unique)
+ann[,V1 := gsub("CAS9", "Cas9", V1, ignore.case = TRUE)]
+ann[,V1 := gsub("Cas9.+", "Cas9", V1, ignore.case = TRUE)]
+table(ann$V1)
 
-stop("TODO")
-# ADD MISSING SAMPLES to annotation
+
+# Cleanup -----------------------------------------------------------------
+
+# Add those or not?
+# names2 <- grep("^Lib", colnames(m),invert = FALSE, value=TRUE)
+# ann <- data.table(sample=names1, do.call(rbind, strsplit(gsub("_.+? ", " ", gsub("Lib", "", gsub(".txt", "", names2))), " ")))
+# ann[V4 == "Jul2020", VX := V2]
+# ann[V4 == "Jul2020", V2 := V3]
+# ann[V4 == "Jul2020", V3 := VX]
+# ann$VX <- NULL
+# lapply(ann, unique)
+
 # REMOVE V2
-# Revert LibA_Mye-Nov2019.txt?
+ann <- ann[!grep("v2.t..$", V7)]
+
+# Revert LibA_Mye-Nov2019.txt above?
 
 ann.col = data.frame(row.names=ann$sample, ann[,c("V1", "V2", "V3", "V6"), with=F])
 
@@ -106,15 +126,19 @@ x$V3 <- sapply(dDT2, nrow)[x$V2]
 stopifnot(nrow(x[V1 != V3]) == 0)
 
 
+
+# Limit matrix to proper samples ------------------------------------------
+m <- m[,ann$sample]
+
 # Correlation and guide overlaps ------------------------------------------
-libs <- split(ann$sample, ann$Library)
+libs <- split(ann$sample, ann$V3)
 for(lnam in names(libs)){
   cleanDev(); pdf(out("Correlation_",lnam,".pdf"), w=12, h=12)
   #cMT <- corS(m[,ann[V3 !="B" & !grepl("\\d{4}19", V4)]$sample], use="pairwise.complete.obs")
   m2 <- m[,libs[[lnam]]]
   cMT <- corS(m2[!grepl("NonTargetingControl", row.names(m2)),], use="pairwise.complete.obs")
   diag(cMT) <- NA
-  pheatmap(cMT, cluster_rows = T, cluster_cols = T, #annotation_col = ann.col#,
+  pheatmap(cMT, cluster_rows = T, cluster_cols = T, annotation_col = ann.col,
            breaks=seq(-1,1, 0.01), color=HM.COLORS.FUNC(200)
            )
   dev.off()
@@ -124,12 +148,13 @@ for(lnam in names(libs)){
 
 # 
 # 
-# cleanDev(); pdf(out("Jaccard.pdf"), w=16, h=15)
-# pheatmap(jaccard(lapply(data.table(m), function(x) row.names(m)[!is.na(x)])), 
-#          cluster_rows = F, cluster_cols = F, annotation_col = ann.col, 
-#          breaks=seq(-1,1, 0.01), color=HM.COLORS.FUNC(200),
-#          main="Guide overlaps, jaccard coefficient")
-# dev.off()
+cleanDev(); pdf(out("Jaccard.pdf"), w=16, h=15)
+pheatmap(jaccard(lapply(data.table(m), function(x) row.names(m)[!is.na(x)])),
+         cluster_rows = F, cluster_cols = F, annotation_col = ann.col,
+         breaks=seq(-1,1, 0.01), color=HM.COLORS.FUNC(200),
+         main="Guide overlaps, jaccard coefficient")
+dev.off()
+
 # 
 # 
 # x <- melt(data.table(m, keep.rownames = TRUE), id.vars = "rn")

@@ -4,9 +4,10 @@ out <- dirout("POOLED_10_IndividualAnalysis/")
 require(limma)
 
 # Load data ---------------------------------------------------------------
-m <- as.matrix(read.csv(PATHS$DATA$matrix))
+m <- as.matrix(read.csv(PATHS$POOLED$DATA$matrix))
 str(m)
-ann <- fread(PATHS$DATA$annotation)
+ann <- fread(PATHS$POOLED$DATA$annotation)
+#ann[,Genotype := gsub("CAS9", "Cas9", Genotype, ignore.case = TRUE)]
 ann[,Date := paste0(Date, "_",Date2)]
 stopifnot(all(ann$sample == colnames(m)))
 
@@ -65,9 +66,9 @@ for(datex in unique(ann$Date)){
   for(libx in unique(ann[Date == datex]$Library)){
     
     xAnn <- ann[Date == datex & Library == libx]
-    xMT <- m[,xAnn$sample]
+    xMT <- m[,xAnn$sample,drop=F]
     #table(apply(!is.na(m[grepl("NonTargetingControl", row.names(m)),xAnn$sample]), 1, sum))
-    xMT <- xMT[apply(!is.na(xMT), 1, sum) > ncol(xMT) * 0.8,]
+    xMT <- xMT[apply(!is.na(xMT), 1, sum) > ncol(xMT) * 0.8,, drop=F]
     xMT <- voom(xMT, plot=FALSE)$E
     
     gtx <- "WT"
@@ -77,6 +78,7 @@ for(datex in unique(ann$Date)){
       #stopifnot(c("Cas9", "WT") %in% pAnn$Genotype)
       
       popx <- sort(unique(gAnn$Population))
+      if(length(popx) < 2) next
       
       for(p1 in 1:(length(popx)-1)){
         for(p2 in (p1 + 1):(length(popx))){
@@ -133,6 +135,7 @@ stats <- data.table()
 ax <- res$Analysis[1]
 for(ax in unique(res$Analysis)){
   wtDT <- res[Genotype == "WT" & Analysis == ax]
+  if(nrow(wtDT) ==0) next
   x <- wtDT$Score
   # x <- x[x > quantile(x, probs = c(0.01))]
   # x <- x[x < quantile(x, probs = c(0.99))]
@@ -153,13 +156,15 @@ for(ax in unique(stats$Analysis)){
   x <- stats[Analysis == ax]
   stat.rnorm <- rbind(stat.rnorm, data.table(x, Score=rnorm(10000, mean=x$mean, sd=x$sd)))
 }
+
+
 ggplot(res, aes(x=Score)) + 
   geom_density(data=stat.rnorm, fill="#b2df8a", color=NA) +
   scale_color_manual(values=COLOR.Genotypes) +
   geom_density(aes(color=Genotype)) +
-  facet_wrap(~Library + Date + Population1 + Population2, scales = "free", ncol = 6) + 
+  facet_wrap(~Library + Date + Population1 + Population2, scales = "free", ncol = 10) + 
   theme_bw(12)
-ggsave(out("PopulationScores_Density_BgNormal.pdf"), w=20,h=20)
+ggsave(out("PopulationScores_Density_BgNormal.pdf"), w=30,h=30)
 
 
 # Calculate z-scores and p-values ------------------------------------------
@@ -167,6 +172,7 @@ res.stats <- data.table()
 ax <- res$Analysis[1]
 for(ax in unique(res$Analysis)){
   x <- stats[Analysis == ax]
+  if(nrow(x) == 0) next
   stopifnot(nrow(x) == 1)
   ret <- res[Analysis == ax]
   ret[, z := (Score-x$mean)/x$sd]
@@ -184,22 +190,24 @@ write.tsv(res.stats, out("Results_Pvalues.tsv"))
 # Plot Summaries of z-scores and number of hits ------------------------------------------
 
 # Z scores
-ggplot(res.stats[Type == 1], aes(y=z, x=paste(Genotype, GuideType))) + 
-  geom_violin(color=NA, fill="#a6cee3") + geom_boxplot(coef=Inf, fill=NA) +
-  facet_wrap(~Library + Date + Population1 + Population2, scales = "free", ncol = 6) +
+ggplot(res.stats[Type == 1], aes(y=z, x=paste(Genotype, GuideType), fill=paste(Genotype, GuideType))) + 
+  geom_violin(color=NA) + geom_boxplot(coef=Inf, fill=NA) +
+  facet_wrap(~Library + Date + Population1 + Population2, scales = "free", ncol = 10) +
   theme_bw(12) +
   ylab("z scores") + 
-  xRot()
-ggsave(out("PopulationScores_Z_Boxplots_all.pdf"), w=20,h=20)
+  scale_fill_manual(values=c("Cas9 Targeted"="#ff7f00", "WT Targeted"="#a6cee3", "Cas9 CTRL"="#a6cee3", "WT CTRL"="#a6cee3")) +
+  xRot() +
+  guides(fill=FALSE)
+ggsave(out("PopulationScores_Z_Boxplots_all.pdf"), w=30,h=30)
 
 ggplot(res.stats[Genotype == "Cas9" & GuideType == "Targeted"], 
        aes(y=z, x=paste(Population2, Date))) + 
-  geom_violin(color=NA, fill="#a6cee3") + geom_boxplot(coef=Inf, fill=NA) +
-  facet_grid(Library~Population1, scales = "free_x", space = "free_x") +
+  geom_violin(color=NA, fill="#ff7f00") + geom_boxplot(coef=Inf, fill=NA) +
+  facet_grid(. ~ Library + Population1, scales = "free", space = "free") +
   theme_bw(12) +
   ylab("z scores") + 
   xRot()
-ggsave(out("PopulationScores_Z_Boxplots_Cas9_Targeted.pdf"), w=12,h=8)
+ggsave(out("PopulationScores_Z_Boxplots_Cas9_Targeted.pdf"), w=15,h=8)
 
 # Number of hits
 pDT <- res.stats[Genotype == "Cas9" & GuideType == "Targeted"]
@@ -213,11 +221,11 @@ pDT[,percent := sig/total * 100]
 ggplot(pDT, aes(y=percent, x=paste(Population2, Date), fill=direction)) + 
   geom_bar(stat="identity") + 
   scale_fill_manual(values=c(up="#e31a1c", down="#1f78b4")) + 
-  facet_grid(Library~Population1, scales = "free_x", space = "free_x") +
+  facet_grid(. ~ Library+Population1, scales = "free_x", space = "free_x") +
   theme_bw(12) +
   ylab("Significant guides (% of tested guides)") + 
   xRot()
-ggsave(out("PopulationScores_N_Significant_Cas9_Targeted.pdf"), w=12,h=8)
+ggsave(out("PopulationScores_N_Significant_Cas9_Targeted.pdf"), w=15,h=8)
 
 
 
@@ -231,7 +239,7 @@ for(libx in unique(res.stats$Library)){
   ggplot(lDT, aes(x=paste(Population2, Date), y=Guide, color=Score, size=pmin(5, -log10(padj)))) + 
     geom_point() +
     geom_point(data=lDT[padj < 0.05], color="black", shape=1) +
-    scale_color_gradient2(name="log2FC", low="blue", high="red") +
+    scale_color_gradient2(name="log2FC", low="red", high="blue") +
     scale_size_continuous(name="padj (cap = 5)") + 
     facet_grid(Gene ~ Library + Genotype + Population1,  space = "free", scales = "free") + 
     theme_bw(12) +
