@@ -3,7 +3,6 @@ source(paste0(Sys.getenv("CODE"), "src/00_init.R"))
 require(GenomicRanges)
 
 
-
 # Settings ----------------------------------------------------------------
 out <- dirout("CHIP_01_Overlaps/")
 cutoff <- -log10(0.01)
@@ -21,6 +20,14 @@ convertSampleNames <- function(x){
   ret[factor==sample, number := "SX"]
   return(ret)
 }
+
+
+# Blacklist ---------------------------------------------------------------
+download.file("https://raw.githubusercontent.com/Boyle-Lab/Blacklist/v2.0/lists/mm10-blacklist.v2.bed.gz", destfile = out("Blacklist.bed.gz"))
+blacklist <- fread(out("Blacklist.bed.gz"))
+table(blacklist$V4)
+colnames(blacklist) <- c("CHR", "START", "END", "X")
+blacklist <- as(blacklist, "GRanges")
 
 
 # Load data ---------------------------------------------------------------
@@ -59,15 +66,51 @@ peaks <- peaks[!sapply(peaks, is.null)]
 peaks.consensus <- GRangesList(peaks)
 peaks.consensus <- unlist(peaks.consensus)
 peaks.consensus <- reduce(peaks.consensus)
+
+
+# Remove blacklist -----------------------------------------------------------
+peaks.consensus <- peaks.consensus[countOverlaps(peaks.consensus, blacklist) == 0]
+
+
+# Peak width --------------------------------------------------------------
 hist(width(peaks.consensus))
 quantile(width(peaks.consensus))
+
+max.length <- 1000
+
+peaksDT.all <- as.data.table(peaks.consensus)
+peaksDT <- peaksDT.all[width > max.length]
+peaksDT$seqnames <- as.character(peaksDT$seqnames)
+peaksDT <- peaksDT[(grepl("^chr\\d+$", seqnames) | seqnames %in% c("chrY", "chrX"))]
+peaksDT[,n.regions := ceiling(width / max.length)]
+peaksDT[,new.width := round(width / n.regions)]
+
+start.is <- lapply(1:nrow(peaksDT), function(i) 1:peaksDT[i]$n.regions)
+start.positions <- sapply(1:nrow(peaksDT), function(i) peaksDT[i]$start + (start.is[[i]]-1) * peaksDT[i]$new.width)
+end.positions <-   sapply(1:nrow(peaksDT), function(i) peaksDT[i]$start + (start.is[[i]]+0) * peaksDT[i]$new.width)
+chr <- sapply(1:nrow(peaksDT), function(i) rep(peaksDT[i]$seqnames, times=peaksDT[i]$n.regions))
+
+peaks.consensus <- as(rbind(
+  data.table(CHR=do.call(c, chr), START=do.call(c, start.positions), END=do.call(c, end.positions)),
+  setNames(peaksDT.all[width <= max.length][,c("seqnames", "start", "end")], c("CHR", "START", "END"))
+  ), "GRanges")
+
 
 ggplot(data.table(width(peaks.consensus)), aes(x=V1)) + stat_ecdf() + 
   scale_x_log10(limits=c(1,NA)) + theme_bw(12) + xlab("width")
 ggsave(out("Peak_widths.pdf"),w=5, h=5)
 
-olMT <- sapply(peaks, function(peak) countOverlaps(peaks.consensus, peak))
 
+
+
+# Get overlap HM -------------------------------------------------------------
+olMT <- sapply(peaks, function(peak) countOverlaps(peaks.consensus, peak))
+row.names(olMT) <-  grToVec(peaks.consensus)
+write.table(olMT, quote = F, row.names = TRUE, sep=",", file = out("OverlapMT.csv"))
+
+
+
+# Correlation -------------------------------------------------------------
 cMT <- cor(olMT)
 diag(cMT) <- NA
 dd <- as.dist(1-abs(cMT))
@@ -77,6 +120,8 @@ pheatmap(cMT, clustering_distance_rows = dd, clustering_distance_cols = dd)
 dev.off()
 
 
+
+# Enrichment --------------------------------------------------------------
 i1 <- 1
 i2 <- 2
 res <- data.table()
@@ -100,7 +145,7 @@ write.tsv(res, out("Enrichments.tsv"))
 res <- fread(out("Enrichments.tsv"))
 
 cleanDev(); pdf(out("Enrichment_OR.pdf"),w=12,h=12)
-pheatmap(log2(toMT(res, row="s1", col="s2", val = "OR_cap")))
+pheatmap(log2(toMT(res, row="s1", col="s2", val = "OR_cap") + 0.01))
 dev.off()
 
 # fish.ordering <- function(dt, toOrder, orderBy, value.var, aggregate = FALSE){
