@@ -19,6 +19,12 @@ source $CODEBASE/tfcf/setup.sh
 #     echo "total:$total paired:$paired"
 # done
 
+cd $RAWDATA/Raw_ChIP/
+inName1="DM_Men1_150521_S7.sort.rmdup.rmblackls.rmchr.bam"
+inName2="DM_Men1_150521_S39.sort.rmdup.rmblackls.rmchr.bam"
+outName="DM_Men1_150521.sort.rmdup.rmblackls.rmchr.bam"
+samtools merge ${outName} ${inName1} ${inName2}
+samtools index ${outName}
 
 
 source $HOME/python_venvs/macs3/bin/activate
