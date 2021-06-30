@@ -326,3 +326,79 @@ for(typex in c("all", "hits")){
   dev.off()
 }
 
+
+
+
+
+
+
+
+# Plot individual values -------------------------------------------------------------------------
+rMT <- m
+tpmMT <- t(t(rMT) / colSums(rMT, na.rm=TRUE)*1e6)
+stopifnot(all(is.na(rMT) == is.na(tpmMT)))
+stopifnot(all(tpmMT[,1] == rMT[,1]/sum(rMT[,1],na.rm=T)*1e6, na.rm = TRUE))
+cDT <- copy(ann)
+cDT[,id := paste(Population, Library, Date, Library2, System, Date2)]
+cDT <- dcast.data.table(cDT, id ~ Genotype, value.var = "sample")
+cDT <- cDT[!is.na(WT)]
+normMT <- sapply(cDT$id, function(i){
+  tpmMT[,cDT[id == i]$Cas9] / tpmMT[,cDT[id == i]$WT]
+})
+normMT[normMT == Inf] <- 8
+
+cDT2 <- data.table(id=cDT$id, do.call(rbind, strsplit(cDT$id, " ")))
+cDT2[V1 == "LSK", V1 := V5]
+agMT <- sapply(with(cDT2, split(id, V1)), function(ids){
+  rowMeans(normMT[,ids], na.rm=TRUE)
+})
+agMT[is.nan(agMT)] <- NA
+agMT <- t(sapply(split(row.names(agMT), gsub("_.+$", "", row.names(agMT))), function(guides){
+  colMeans(agMT[guides,,drop=F], na.rm=TRUE)
+}))
+agMT[is.nan(agMT)] <- NA
+
+agDT <- melt(data.table(agMT, keep.rownames = TRUE), id.vars = "rn")[!is.na(value)]
+agDT[,log2FC := log2(value)]
+write.tsv(agDT, out("Aggregated.tsv"))
+ggplot(agDT[rn %in% hit.genes], aes(x=variable, y=rn, color=log2FC)) +
+  geom_point() +
+  theme_bw(12) + 
+  xRot() +
+  scale_color_gradient2()
+ggsave(out("Aggregated_log2TPM_vsWT.pdf"), w=4,h=15)
+
+
+
+# Hopefully Cool plot ---------------------------------------------------------------
+agDT <- fread(out("Aggregated.tsv"))
+compDT <- unique(res.stats[,c("Population1", "Population2", "Comparison"), with=F])
+compDT[Comparison %in% c("GMP.LSK", "MEP.LSK","UND.MEP", "MYE.GMP"), Comparison.Group := "Main branch"]
+compDT[is.na(Comparison.Group), Comparison.Group := Comparison]
+compDT2 <- unique(melt(compDT[,-"Comparison",with=F], id.vars = "Comparison.Group")[,-"variable"])
+mainBranchOrdering <- c("Und", "MEP", "LSKd7", "GMP", "Mye")
+agDT$Population <- factor(agDT$variable, levels=c(mainBranchOrdering, setdiff(agDT$variable, mainBranchOrdering)))
+agDT <- merge(agDT, compDT2, by.y="value", by.x="variable", allow.cartesian=TRUE)
+
+unique(agDT$Comparison.Group)
+cleanComparisons <- function(x){
+  orderX <- c("Main branch", "CKIT.LSK", "GMP.MEP", "UND.MYE", "GMPcd11.DN")
+  x <- factor(x, levels=orderX)
+}
+ggplot(agDT[rn %in% hit.genes], aes(x=Population, y=rn, color=log2FC)) +
+  geom_point() +
+  theme_bw(12) + 
+  facet_grid(. ~ cleanComparisons(Comparison.Group), scales = "free", space = "free") +
+  xRot() +
+  geom_segment(x=1.2,xend=1.8, y=5,yend=5, color="black") +
+  scale_color_gradient2()
+ggsave(out("Aggregated_log2TPM_vsWT.pdf"), w=4,h=15)
+
+
+
+# Plot network ------------------------------------------------------------
+agx <- agDT[rn == "Spi1"]
+statx <- res.stats[Gene == "Spi1"][Genotype == "Cas9"]
+statx[, keep := sum(padj < 0.05) >= 2 & (all(sign(Score[padj < 0.05]) > 0) | all(sign(Score[padj < 0.05]) < 0)), by=c("Gene", "Analysis")]
+
+agx
