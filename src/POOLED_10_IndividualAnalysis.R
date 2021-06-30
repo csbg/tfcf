@@ -2,6 +2,7 @@ source(paste0(Sys.getenv("CODE"), "src/00_init.R"))
 out <- dirout("POOLED_10_IndividualAnalysis/")
 
 require(limma)
+require(ggrepel)
 
 # Load data ---------------------------------------------------------------
 m <- as.matrix(read.csv(PATHS$POOLED$DATA$matrix))
@@ -276,3 +277,52 @@ ggplot(pDT, aes(x=paste(Population, Date),y=Guide, fill=NormCounts2)) +
   theme_bw(12) +
   xRot()
 ggsave(out("Example_", genex, ".pdf"), w=length(unique(pDT$sample)) * 0.2 + 2,h=length(unique(pDT$Guide)) * 0.2 + 3)
+
+
+
+
+# Summarize MDS -----------------------------------------------------------
+res.stats <- fread(out("Results_Pvalues.tsv"))
+mdsDT <- res.stats[GuideType == "Targeted" & Genotype == "Cas9"]
+mdsDT.hits <- copy(mdsDT)
+
+# Prepare matrix
+mdsDT[,Comparison := gsub("^.+? ", "", Analysis)]
+mdsDT <- mdsDT[,.(mean(z, na.rm=TRUE)), by=c("Gene", "Comparison")]
+mdsMT <- toMT(dt=mdsDT, row="Gene", col="Comparison", val="V1")
+mdsMT <- mdsMT[apply(!is.na(mdsMT), 1, sum)  == ncol(mdsMT),]
+
+# Define hit genes
+mdsDT.hits[, keep := sum(padj < 0.05) >= 2 & (all(sign(Score[padj < 0.05]) > 0) | all(sign(Score[padj < 0.05]) < 0)), by=c("Gene", "Analysis")]
+hit.genes <- unique(mdsDT.hits[keep==TRUE & Gene %in% row.names(mdsMT)]$Gene)
+
+for(typex in c("all", "hits")){
+  mt <- mdsMT
+  if(typex == "hits") mt <- mt[hit.genes,]
+  
+  # Correlation of guides
+  cMT <- corS(t(mt))
+  diag(cMT) <- NA
+  dd <- as.dist(2-cMT)
+  xx <- nrow(cMT)/7
+  cleanDev(); pdf(out("Correlation_",typex,"_Guides_HM.pdf"), w=xx + 2, h=xx+1)
+  pheatmap(cMT, clustering_distance_rows = dd, clustering_distance_cols = dd, breaks=seq(-1,1, 0.01), color=COLORS.HM.FUNC(200))
+  dev.off()
+  # MDS
+  mds <- data.table(cmdscale(dd, k=2), keep.rownames = TRUE)
+  ggplot(mds, aes(x=V1, y=V2, label=rn)) + 
+    geom_point(color="lightblue") + 
+    geom_point(data=mds[rn %in% hit.genes], color="red") + 
+    geom_text_repel() +
+    theme_bw(12)
+  ggsave(out("Correlation_",typex,"_MDS.pdf"), w=8,h=8)
+  
+  # Correlation of comparisons
+  cMT <- corS(mdsMT)
+  diag(cMT) <- NA
+  dd <- as.dist(2-cMT)
+  cleanDev(); pdf(out("Correlation_",typex,"_Comparisons_HM.pdf"), w=6, h=6)
+  pheatmap(cMT, clustering_distance_rows = dd, clustering_distance_cols = dd, breaks=seq(-1,1, 0.01), color=COLORS.HM.FUNC(200))
+  dev.off()
+}
+
