@@ -398,54 +398,72 @@ cleanComparisons <- function(x){
   orderX <- c("Main branch", "CKIT.LSK", "GMP.MEP", "UND.MYE", "GMPcd11.DN")
   x <- factor(x, levels=orderX)
 }
-ggplot(agDT[rn %in% hit.genes], aes(x=Population, y=rn, color=log2FC)) +
-  geom_point() +
+
+hit.genes2 <- hit.genes[1:10]
+
+pDT.stats <- res.stats[Gene %in% hit.genes]
+pDT.stats <- merge(pDT.stats, unique(compDT[,c("Comparison", "Comparison.Group")]), by="Comparison")
+
+agDT <- hierarch.ordering(agDT, toOrder = "rn", orderBy = "variable", value.var = "log2FC", aggregate = TRUE)
+ggplot(agDT[rn %in% hit.genes], aes(x=Population, y=rn)) +
   theme_bw(12) + 
+  geom_point(aes(fill=log2FC), shape=21, color="white", size=5) +
   facet_grid(. ~ cleanComparisons(Comparison.Group), scales = "free", space = "free") +
-  xRot() +
-  geom_segment(x=1.2,xend=1.8, y=5,yend=5, color="black") +
-  scale_color_gradient2()
-ggsave(out("Aggregated_log2TPM_vsWT.pdf"), w=4,h=15)
+  geom_segment(data=pDT.stats[padj < 0.05], aes(xend=Population1, x=Population2, y=Gene, yend=Gene, color=z), arrow=arrow(type="closed", length = unit(0.3, "cm"))) + 
+  scale_fill_gradient2() +
+  #geom_point(aes(fill=log2FC), shape=21, color="white", size=2) +
+  scale_color_gradient2() +
+  xRot()
+ggsave(out("Aggregated_Edges.pdf"), w=8,h=15)
 
 
 
 # Plot network ------------------------------------------------------------
-
 genex <- "Kmt2d"
-
-agx <- agDT[rn == genex]
-agx <- unique(agx[,c("variable", "log2FC"), with=F])
-
-statx <- res.stats[Gene == genex][Genotype == "Cas9"]
-statx[, keep := sum(padj < 0.05) >= 2 & (all(sign(Score[padj < 0.05]) > 0) | all(sign(Score[padj < 0.05]) < 0)), by=c("Gene", "Analysis")]
-statx <- statx[, .(mean(z), sum(keep),n=.N), by=c("Gene", "Comparison")]
-
-el <- do.call(rbind, COMPARISONS)
-statx <- statx[match(row.names(el), Comparison)][!is.na(Gene)]
-statx[,percSig := V2/n*100]
-el <- el[statx$Comparison,]
-
-g <- graph.edgelist(el[,2:1])
-V(g)$log2FC <- agx[match(V(g)$name, variable),]$log2FC
-E(g)$z <- statx$V1
-E(g)$sig <- statx$percSig
-
-g <- delete.vertices(g, is.na(V(g)$log2FC))
-V(g)$color <- mapNumericToColors(V(g)$log2FC, cols = c("#fb9a99", "white", "#a6cee3"))
-E(g)$color <- mapNumericToColors(E(g)$z, cols = c("#fb9a99", "white", "#a6cee3"))
-
-
-layout <- list(
-  "LSKd7" = c(0,2),
-  "GMP" = c(-1,1),
-  "MEP" = c(1,1),
-  "Mye" = c(-1,0),
-  "Und" = c(1,0),
-  "cKit" = c(2,2),
-  "LSKd9" = c(2,1),
-  "GMP.CD11bGr1" = c(2,0),
-  "GMP.DN" = c(2,0))
-
-layout_as_tree(g)
-
-plot.igraph(g, layout=do.call(rbind, layout)[V(g)$name,])
+for(genex in hit.genes){
+  COLORS.graph <- c("#fb9a99", "lightgrey", "#a6cee3")
+  
+  agx <- agDT[rn == genex]
+  agx <- unique(agx[,c("variable", "log2FC"), with=F])
+  
+  statx <- res.stats[Gene == genex][Genotype == "Cas9"]
+  statx[, keep := sum(padj < 0.05) >= 2 & (all(sign(Score[padj < 0.05]) > 0) | all(sign(Score[padj < 0.05]) < 0)), by=c("Gene", "Analysis")]
+  statx <- statx[, .(mean(z), sum(keep),n=.N), by=c("Gene", "Comparison")]
+  
+  el <- do.call(rbind, COMPARISONS)
+  statx <- statx[match(row.names(el), Comparison)][!is.na(Gene)]
+  statx[,percSig := V2/n*100]
+  el <- el[statx$Comparison,]
+  
+  g <- graph.edgelist(el[,2:1])
+  V(g)$log2FC <- agx[match(V(g)$name, variable),]$log2FC
+  E(g)$z <- statx$V1
+  E(g)$sig <- statx$percSig
+  
+  g <- delete.vertices(g, is.na(V(g)$log2FC))
+  V(g)$color <- mapNumericToColors(V(g)$log2FC, cols = COLORS.graph)
+  V(g)$frame.color <- NA
+  V(g)$label.color <- "black"
+  E(g)$color <- mapNumericToColors(E(g)$z, cols = COLORS.graph)
+  E(g)$width <- 2+E(g)$sig/100*3
+  E(g)$arrow.width <- 3
+  E(g)$arrow.size <- 1
+  E(g)$label <- paste0("", round(E(g)$z, 1),"\n", "(",round(E(g)$sig), "%)")
+  E(g)$label.color <- "black"
+  
+  
+  layout <- list(
+    "LSKd7" = c(0,3),
+    "GMP" = c(-1,1.5),
+    "MEP" = c(1,1.5),
+    "Mye" = c(-1,0),
+    "Und" = c(1,0),
+    "cKit" = c(3,3),
+    "LSKd9" = c(3,2),
+    "GMP.CD11bGr1" = c(3,1),
+    "GMP.DN" = c(3,0))
+  
+  cleanDev(); pdf(out("Graph_", genex, ".pdf"), w=5,h=5)
+  plot.igraph(g, layout=do.call(rbind, layout)[V(g)$name,], main=genex)
+  dev.off()
+}
