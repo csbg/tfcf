@@ -401,4 +401,7 @@ agx <- agDT[rn == "Spi1"]
 statx <- res.stats[Gene == "Spi1"][Genotype == "Cas9"]
 statx[, keep := sum(padj < 0.05) >= 2 & (all(sign(Score[padj < 0.05]) > 0) | all(sign(Score[padj < 0.05]) < 0)), by=c("Gene", "Analysis")]
 
-agx
+unique(agx[,c("variable", "log2FC"), with=F])
+statx[, .(mean(z), sum(keep),n=.N), by=c("Gene", "Comparison")]
+
+c("cKit", "LSK9", "MEP", "LSK7", "GMP", "LSK7", "MEP", "", "", "", "", "")
