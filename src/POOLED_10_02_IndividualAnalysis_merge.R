@@ -4,6 +4,7 @@ out <- dirout("POOLED_10_IndividualAnalysis/")
 require(limma)
 require(igraph)
 require(ggrepel)
+require(latex2exp)
 
 # Load data ---------------------------------------------------------------
 m <- as.matrix(read.csv(PATHS$POOLED$DATA$matrix))
@@ -323,6 +324,8 @@ for(typex in c("all", "hits")){
   dev.off()
   # MDS
   mds <- data.table(cmdscale(dd, k=2), keep.rownames = TRUE)
+  write.tsv(mds, out("Correlation_",typex,"_MDS.tsv"))
+  
   ggplot(mds, aes(x=V1, y=V2, label=rn)) + 
     geom_point(color="lightblue") + 
     geom_point(data=mds[rn %in% hit.genes], color="red") + 
@@ -374,12 +377,12 @@ agMT[is.nan(agMT)] <- NA
 agDT <- melt(data.table(agMT, keep.rownames = TRUE), id.vars = "rn")[!is.na(value)]
 agDT[,log2FC := log2(value)]
 write.tsv(agDT, out("Aggregated.tsv"))
-ggplot(agDT[rn %in% hit.genes], aes(x=variable, y=rn, color=log2FC)) +
-  geom_point() +
-  theme_bw(12) + 
-  xRot() +
-  scale_color_gradient2()
-ggsave(out("Aggregated_log2TPM_vsWT.pdf"), w=4,h=15)
+# ggplot(agDT[rn %in% hit.genes], aes(x=variable, y=rn, color=log2FC)) +
+#   geom_point() +
+#   theme_bw(12) + 
+#   xRot() +
+#   scale_color_gradient2()
+# ggsave(out("Aggregated_log2TPM_vsWT.pdf"), w=4,h=15)
 
 
 
@@ -403,18 +406,26 @@ hit.genes2 <- hit.genes[1:10]
 
 pDT.stats <- res.stats[Gene %in% hit.genes]
 pDT.stats <- merge(pDT.stats, unique(compDT[,c("Comparison", "Comparison.Group")]), by="Comparison")
+# Filter 1: two significant guides and all significant guides going into the same direction
+pDT.stats[, keep := sum(padj < 0.05) >= 2 & (all(sign(Score[padj < 0.05]) > 0) | all(sign(Score[padj < 0.05]) < 0)), by=c("Gene", "Analysis")]
+# Filter 2:  50 % of guides being significant
+pDT.stats <- pDT.stats[keep == TRUE][, .(mean(z), length(unique(Guide[padj < 0.05])),n=length(unique(Guide))), by=c("Gene", "Comparison",  "Comparison.Group", "Population1", "Population2")]
+pDT.stats[,percSig := V2/n*100]
+pDT.stats <- pDT.stats[percSig > 50]
 
-agDT <- hierarch.ordering(agDT, toOrder = "rn", orderBy = "variable", value.var = "log2FC", aggregate = TRUE)
-ggplot(agDT[rn %in% hit.genes], aes(x=Population, y=rn)) +
+mds <- fread(out("Correlation_hits_MDS.tsv"))
+#agDT <- hierarch.ordering(agDT, toOrder = "rn", orderBy = "variable", value.var = "log2FC", aggregate = TRUE)
+agDT$rn <- factor(agDT$rn, levels=mds$rn[hclust(dist(as.matrix(data.frame(mds[,c("V1", "V2"), with=F]))))$order])
+ggplot(agDT[rn %in% pDT.stats$Gene], aes(x=Population, y=rn)) +
   theme_bw(12) + 
   geom_point(aes(fill=log2FC), shape=21, color="white", size=5) +
   facet_grid(. ~ cleanComparisons(Comparison.Group), scales = "free", space = "free") +
-  geom_segment(data=pDT.stats[padj < 0.05], aes(xend=Population1, x=Population2, y=Gene, yend=Gene, color=z), arrow=arrow(type="closed", length = unit(0.3, "cm"))) + 
-  scale_fill_gradient2() +
+  geom_segment(data=pDT.stats, aes(xend=Population1, x=Population2, y=Gene, yend=Gene, color=V1), arrow=arrow(type="closed", length = unit(0.3, "cm"))) + 
+  scale_fill_gradient2(name=TeX(r'($\\overset{\Delta_{Cas9-WT}}{(dots)}$)')) +
   #geom_point(aes(fill=log2FC), shape=21, color="white", size=2) +
-  scale_color_gradient2() +
+  scale_color_gradient2(name=TeX(r'($\\overset{\Delta_{Populations}}{(arrows)}$)')) +
   xRot()
-ggsave(out("Aggregated_Edges.pdf"), w=8,h=15)
+ggsave(out("Aggregated_Edges.pdf"), w=8,h=13)
 
 
 
@@ -428,27 +439,36 @@ for(genex in hit.genes){
   
   statx <- res.stats[Gene == genex][Genotype == "Cas9"]
   statx[, keep := sum(padj < 0.05) >= 2 & (all(sign(Score[padj < 0.05]) > 0) | all(sign(Score[padj < 0.05]) < 0)), by=c("Gene", "Analysis")]
-  statx <- statx[, .(mean(z), sum(keep),n=.N), by=c("Gene", "Comparison")]
+  statx <- statx[, .(
+    z=mean(z), 
+    up=length(unique(Guide[padj < 0.05 & z > 0])),
+    dn=length(unique(Guide[padj < 0.05 & z < 0])),
+    n=length(unique(Guide))), 
+    by=c("Gene", "Comparison")]
   
   el <- do.call(rbind, COMPARISONS)
   statx <- statx[match(row.names(el), Comparison)][!is.na(Gene)]
-  statx[,percSig := V2/n*100]
   el <- el[statx$Comparison,]
   
   g <- graph.edgelist(el[,2:1])
   V(g)$log2FC <- agx[match(V(g)$name, variable),]$log2FC
-  E(g)$z <- statx$V1
-  E(g)$sig <- statx$percSig
+  E(g)$z <- statx$z
+  E(g)$up <- statx$up
+  E(g)$dn <- statx$dn
+  E(g)$n <- statx$n
+  E(g)$sig.label <- with(statx, paste(up, dn, n, sep="/"))
+  E(g)$cnt <- ifelse(E(g)$z > 0, E(g)$up, E(g)$dn)
+  E(g)$perc <- round(E(g)$cnt/E(g)$n) * 100
   
   g <- delete.vertices(g, is.na(V(g)$log2FC))
   V(g)$color <- mapNumericToColors(V(g)$log2FC, cols = COLORS.graph)
   V(g)$frame.color <- NA
   V(g)$label.color <- "black"
   E(g)$color <- mapNumericToColors(E(g)$z, cols = COLORS.graph)
-  E(g)$width <- 2+E(g)$sig/100*3
+  E(g)$width <- 2+E(g)$perc/100*3
   E(g)$arrow.width <- 3
   E(g)$arrow.size <- 1
-  E(g)$label <- paste0("", round(E(g)$z, 1),"\n", "(",round(E(g)$sig), "%)")
+  E(g)$label <- paste0("", round(E(g)$z, 1),"\n", "(",E(g)$sig.label, ")")
   E(g)$label.color <- "black"
   
   
