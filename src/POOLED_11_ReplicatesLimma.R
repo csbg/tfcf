@@ -20,14 +20,16 @@ stopifnot(all(ann$sample == colnames(m)))
 
 
 # Function 2 Clean names ----------------------------------------------------
-cleanCoeff <- function(x){
-  x[x == "Mye_Cas9"] <- "Effect Mye"
-  x[x == "GenotypeCas9"] <- "Effect Und"
-  x[x == "GenotypeCas9:PopulationMye"] <- "Interaction"
-  x
-}
+# cleanCoeff <- function(x){
+#   x[x == "Mye_Cas9"] <- "Effect Mye"
+#   x[x == "GenotypeCas9"] <- "Effect Und"
+#   x[x == "GenotypeCas9:PopulationMye"] <- "Interaction"
+#   x
+# }
 
-
+# summary of replicates, by library and system
+ann[System == "DM" & grepl("^CFSE", Population), System := "DM.CFSE"]
+ann[System == "DM" & grepl("^CD34", Population), System := "DM.CD34"]
 (ann_replicates <- ann[,.N, by=c("Library", "System", "Genotype", "Population")][N>=2][order(N)])
 (ann_replicates <- ann_replicates[,.N, by=c("Library", "System")][N>=2])
 
@@ -35,24 +37,30 @@ cleanCoeff <- function(x){
 # Prep Annotation file ----------------------------------------------------
 ai <- 2
 for(ai in 1:nrow(ann_replicates)){
+  message(ai)
   sysx <- ann_replicates[ai]$System
   libx <- ann_replicates[ai]$Library
   
-  BASELINE <- "Und"
-  BASELINE <- NA
-  
   lAnn <- ann[Library == libx & System == sysx]
+  
+  baselines.vec <- c("Und", "LSK", "CD34neg")
+  BASELINE <- intersect(lAnn$Population, baselines.vec)
+  if(length(BASELINE) == 0) BASELINE <- NA
+  print(BASELINE)
+  
   lAnn$Genotype <- factor(lAnn$Genotype, levels=c("WT", unique(lAnn[Genotype != "WT"]$Genotype)))
   if(!is.na(BASELINE)){
     lAnn$Population <- factor(lAnn$Population, levels=c(BASELINE, unique(lAnn[Population != BASELINE]$Population)))
   } else {
     lAnn$Population <- factor(lAnn$Population)
   }
+  BASELINE <- levels(lAnn$Population)[1]
   
   wtx <- "WT" %in% lAnn$Genotype
 
   analysis.type <- "guides"
   for(analysis.type in c("guides", "controls")){
+    print(analysis.type)
     analysisx <- paste0(sysx,"_",libx, "_", analysis.type)
     outStats <- dirout(paste0(baseDir, "/analysis_",analysisx, "/"))
     
@@ -110,19 +118,69 @@ for(ai in 1:nrow(ann_replicates)){
       res <- rbind(res, data.table(topTable(fit, coef = coefx, number = nrow(lMT)),
                                    coef=coefx, analysis=analysisx, keep.rownames = TRUE))
     }
-  
-    # Contrast fit ------------------------------------------------------------
+
+    
+    # Add additional comparisons and clean names ------------------------------------------------------------
+    not.baseline <- setdiff(levels(lAnn$Population), BASELINE)
+    
+    # setup contrasts
+    coef.all <- colnames(coef(fit))
+    coef.used <- c(grep("\\:", coef.all, value=TRUE), "Cas9")
+    contr.use <- data.frame(row.names = c(coef.used, setdiff(coef.all, coef.used)))
     if(wtx){
-      coef.all <- colnames(coef(fit))
-      coef.used <- c(grep("\\:", coef.all, value=TRUE), "Cas9")
-      contr.use <- data.frame(row.names = c(coef.used, setdiff(coef.all, coef.used)))
-      for(popx in levels(lAnn$Population)[2:length(levels(lAnn$Population))]){
+      
+      # Clean coefficients
+      res[coef == "Cas9", coef := paste0("Cas9_",BASELINE)]
+      res[grepl("\\:", coef), coef := paste0(gsub("Cas9:", "", coef), "vs", BASELINE)]
+      
+      
+      # Define contrasts (Cas9 vs WT in each population)
+      for(popx in not.baseline){
         des.vec <- rep(0, length(coef.all))
         des.vec[row.names(contr.use) == "Cas9"] <- 1
         des.vec[row.names(contr.use) == paste0("Cas9:", popx)] <- 1
         contr.use[[paste0("Cas9_", popx)]] <- des.vec
       }
       
+      # Define contrasts (compare Cas9 effects between populations)
+      if(length(not.baseline) > 1){
+        for(i1 in 1:(length(not.baseline)-1)){
+          for(i2 in (i1+1):length(not.baseline)){
+            pop1 <- not.baseline[i1]
+            pop2 <- not.baseline[i2]
+            des.vec <- rep(0, nrow(contr.use))
+            des.vec[which(row.names(contr.use) == paste0("Cas9:", pop1))] <- 1
+            des.vec[which(row.names(contr.use) == paste0("Cas9:", pop2))] <- -1
+            contr.use[[paste0(pop1, "vs", pop2)]] <- des.vec
+          }
+        }
+      }
+    } else {
+      for(bsx in not.baseline){
+        res[coef == bsx, coef := paste0(bsx, "vs",BASELINE)]
+      }
+      
+      if(length(not.baseline) > 1){
+        for(i1 in 1:(length(not.baseline)-1)){
+          for(i2 in (i1+1):length(not.baseline)){
+            pop1 <- not.baseline[i1]
+            pop2 <- not.baseline[i2]
+            des.vec <- rep(0, nrow(contr.use))
+            des.vec[which(row.names(contr.use) == pop1)] <- 1
+            des.vec[which(row.names(contr.use) == pop2)] <- -1
+            contr.use[[paste0(pop1, "vs", pop2)]] <- des.vec
+          }
+        }
+      }
+    }
+    
+    if(ncol(contr.use) > 0){
+      # Plot contrasts
+      cleanDev(); pdf(outStats("Design_Contrasts.pdf"), w=8, h=6)
+      pheatmap(contr.use, cluster_cols = F)
+      dev.off()
+      
+      # Fit contrasts
       fit2 <- contrasts.fit(fit, contrasts = contr.use[coef.all,,drop=F])
       fit2 <- eBayes(fit2)
       for(coefx in colnames(contr.use)){
@@ -139,13 +197,15 @@ for(ai in 1:nrow(ann_replicates)){
     res[,significant_TF := significant == "significant"]
     table(res[padj < 0.05 & abs(logFC) > 1]$coef)
     
+    print(unique(res$coef))
+    
     write.tsv(res, outStats("AllResults.tsv"))
   }
 }
 
 ff <- list.files(out(""), recursive = TRUE, pattern="AllResults.tsv", full.names = TRUE)
 res <- do.call(rbind, lapply(ff, fread))
-unique(res$analysis)
+table(res$coef, res$analysis)
 
 # Diagnostic plots -------------------------------------------------------
 # p-value histogram
@@ -164,7 +224,7 @@ ggplot(res[significant_TF == TRUE][coef != "(Intercept)"], aes(x=coef)) +
   xRot() + 
   scale_y_log10() 
 ggsave(out("Number.pdf"), w=12,h=12)
-  
+
 # Vulcano plot
 ggplot(res[coef != "(Intercept)"], aes(x=logFC, y=-log10(P.Value))) +
   geom_hex() +
@@ -187,7 +247,7 @@ ggsave(out("VulcanoPlots.pdf"), w=30,h=30)
 ax <- unique(res$analysis)[2]
 for(ax in unique(res[!grepl("_controls", analysis)]$analysis)){
   message(ax)
-  resx <- res[analysis == ax]
+  resx <- res[analysis == ax][grepl("vs", coef) | grepl("^Cas9_", coef)]
   
   data.br <- fread(out("analysis_", ax, "/", "Data_DateRemoved.csv"))
   rns <- data.br$rn
@@ -204,7 +264,7 @@ for(ax in unique(res[!grepl("_controls", analysis)]$analysis)){
                     aes(x=coef, y=rn, fill=logFC, size=-log10(padj), color=padj < 0.05)) + 
       geom_point(shape=21) +
       scale_color_manual(values=c("TRUE"="black", "FALSE"="white")) +
-      scale_fill_gradient2(low="blue", high="red") +
+      scale_fill_gradient2(low="red", high="blue") +
       facet_grid(gene~.,scales = "free", space = "free") +
       theme_bw(12))
   ggsave(out("Results_", ax, "_Coefficients.pdf"), w=4*wiAdj,h=hx, plot=p_coef)
@@ -218,7 +278,7 @@ for(ax in unique(res[!grepl("_controls", analysis)]$analysis)){
       theme_bw(12) + 
       geom_tile() + 
       facet_grid(gene~Genotype + Population, scales ="free", space = "free") +
-      scale_fill_gradient2(low="blue", high="red"))
+      scale_fill_gradient2(low="red", high="blue"))
   ggsave(out("Results_", ax, "_HM.pdf"), w=5*wiAdj,h=hx)
   
   
@@ -235,7 +295,7 @@ for(ax in unique(res[!grepl("_controls", analysis)]$analysis)){
                      aes(x=coef, y=rn, fill=logFC, size=-log10(padj), color=padj < 0.05)) + 
       geom_point(shape=21) +
       scale_color_manual(values=c("TRUE"="black", "FALSE"="white")) +
-      scale_fill_gradient2(low="blue", high="red") +
+      scale_fill_gradient2(low="red", high="blue") +
       facet_wrap(~gene,scales = "free_y", ncol=10) +
       theme_bw(12) +
       xRot() +
