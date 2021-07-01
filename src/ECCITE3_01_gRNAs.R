@@ -10,6 +10,7 @@ source("~/code/resources/RFunctions/scRNA_Basics.R")
 ff <- list.files("~/GFS/PROJECTS/TfCf/Data/", pattern="ECCITE3")
 ff <- ff[!grepl("\\.log$", ff)]
 ff <- ff[ff != "ECCITE3_OLD"]
+ff
 
 all.data <- lapply(ff, function(fx){
   print(fx)
