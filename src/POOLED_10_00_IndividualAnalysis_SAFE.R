@@ -2,11 +2,13 @@ source(paste0(Sys.getenv("CODE"), "src/00_init.R"))
 out <- dirout("POOLED_10_IndividualAnalysis/")
 
 require(limma)
+require(ggrepel)
 
 # Load data ---------------------------------------------------------------
-m <- as.matrix(read.csv(PATHS$DATA$matrix))
+m <- as.matrix(read.csv(PATHS$POOLED$DATA$matrix))
 str(m)
-ann <- fread(PATHS$DATA$annotation)
+ann <- fread(PATHS$POOLED$DATA$annotation)
+#ann[,Genotype := gsub("CAS9", "Cas9", Genotype, ignore.case = TRUE)]
 ann[,Date := paste0(Date, "_",Date2)]
 stopifnot(all(ann$sample == colnames(m)))
 
@@ -59,15 +61,15 @@ stopifnot(all(ann$sample == colnames(m)))
 
 # Get raw scores ------------------------------------------
 res <- data.table()
-datex <- "Nov2019_Nov2019"
-libx <- "A"
+datex <- "10022021_Feb2021"
+libx <- "R2.Br"
 for(datex in unique(ann$Date)){
   for(libx in unique(ann[Date == datex]$Library)){
     
     xAnn <- ann[Date == datex & Library == libx]
-    xMT <- m[,xAnn$sample]
+    xMT <- m[,xAnn$sample,drop=F]
     #table(apply(!is.na(m[grepl("NonTargetingControl", row.names(m)),xAnn$sample]), 1, sum))
-    xMT <- xMT[apply(!is.na(xMT), 1, sum) > ncol(xMT) * 0.8,]
+    xMT <- xMT[apply(!is.na(xMT), 1, sum) > ncol(xMT) * 0.8,, drop=F]
     xMT <- voom(xMT, plot=FALSE)$E
     
     gtx <- "WT"
@@ -77,6 +79,7 @@ for(datex in unique(ann$Date)){
       #stopifnot(c("Cas9", "WT") %in% pAnn$Genotype)
       
       popx <- sort(unique(gAnn$Population))
+      if(length(popx) < 2) next
       
       for(p1 in 1:(length(popx)-1)){
         for(p2 in (p1 + 1):(length(popx))){
@@ -133,6 +136,7 @@ stats <- data.table()
 ax <- res$Analysis[1]
 for(ax in unique(res$Analysis)){
   wtDT <- res[Genotype == "WT" & Analysis == ax]
+  if(nrow(wtDT) ==0) next
   x <- wtDT$Score
   # x <- x[x > quantile(x, probs = c(0.01))]
   # x <- x[x < quantile(x, probs = c(0.99))]
@@ -153,13 +157,15 @@ for(ax in unique(stats$Analysis)){
   x <- stats[Analysis == ax]
   stat.rnorm <- rbind(stat.rnorm, data.table(x, Score=rnorm(10000, mean=x$mean, sd=x$sd)))
 }
+
+
 ggplot(res, aes(x=Score)) + 
   geom_density(data=stat.rnorm, fill="#b2df8a", color=NA) +
   scale_color_manual(values=COLOR.Genotypes) +
   geom_density(aes(color=Genotype)) +
-  facet_wrap(~Library + Date + Population1 + Population2, scales = "free", ncol = 6) + 
+  facet_wrap(~Library + Date + Population1 + Population2, scales = "free", ncol = 10) + 
   theme_bw(12)
-ggsave(out("PopulationScores_Density_BgNormal.pdf"), w=20,h=20)
+ggsave(out("PopulationScores_Density_BgNormal.pdf"), w=30,h=30)
 
 
 # Calculate z-scores and p-values ------------------------------------------
@@ -167,6 +173,7 @@ res.stats <- data.table()
 ax <- res$Analysis[1]
 for(ax in unique(res$Analysis)){
   x <- stats[Analysis == ax]
+  if(nrow(x) == 0) next
   stopifnot(nrow(x) == 1)
   ret <- res[Analysis == ax]
   ret[, z := (Score-x$mean)/x$sd]
@@ -184,22 +191,24 @@ write.tsv(res.stats, out("Results_Pvalues.tsv"))
 # Plot Summaries of z-scores and number of hits ------------------------------------------
 
 # Z scores
-ggplot(res.stats[Type == 1], aes(y=z, x=paste(Genotype, GuideType))) + 
-  geom_violin(color=NA, fill="#a6cee3") + geom_boxplot(coef=Inf, fill=NA) +
-  facet_wrap(~Library + Date + Population1 + Population2, scales = "free", ncol = 6) +
+ggplot(res.stats[Type == 1], aes(y=z, x=paste(Genotype, GuideType), fill=paste(Genotype, GuideType))) + 
+  geom_violin(color=NA) + geom_boxplot(coef=Inf, fill=NA) +
+  facet_wrap(~Library + Date + Population1 + Population2, scales = "free", ncol = 10) +
   theme_bw(12) +
   ylab("z scores") + 
-  xRot()
-ggsave(out("PopulationScores_Z_Boxplots_all.pdf"), w=20,h=20)
+  scale_fill_manual(values=c("Cas9 Targeted"="#ff7f00", "WT Targeted"="#a6cee3", "Cas9 CTRL"="#a6cee3", "WT CTRL"="#a6cee3")) +
+  xRot() +
+  guides(fill=FALSE)
+ggsave(out("PopulationScores_Z_Boxplots_all.pdf"), w=30,h=30)
 
 ggplot(res.stats[Genotype == "Cas9" & GuideType == "Targeted"], 
        aes(y=z, x=paste(Population2, Date))) + 
-  geom_violin(color=NA, fill="#a6cee3") + geom_boxplot(coef=Inf, fill=NA) +
-  facet_grid(Library~Population1, scales = "free_x", space = "free_x") +
+  geom_violin(color=NA, fill="#ff7f00") + geom_boxplot(coef=Inf, fill=NA) +
+  facet_grid(. ~ Library + Population1, scales = "free", space = "free") +
   theme_bw(12) +
   ylab("z scores") + 
   xRot()
-ggsave(out("PopulationScores_Z_Boxplots_Cas9_Targeted.pdf"), w=12,h=8)
+ggsave(out("PopulationScores_Z_Boxplots_Cas9_Targeted.pdf"), w=15,h=8)
 
 # Number of hits
 pDT <- res.stats[Genotype == "Cas9" & GuideType == "Targeted"]
@@ -213,11 +222,11 @@ pDT[,percent := sig/total * 100]
 ggplot(pDT, aes(y=percent, x=paste(Population2, Date), fill=direction)) + 
   geom_bar(stat="identity") + 
   scale_fill_manual(values=c(up="#e31a1c", down="#1f78b4")) + 
-  facet_grid(Library~Population1, scales = "free_x", space = "free_x") +
+  facet_grid(. ~ Library+Population1, scales = "free_x", space = "free_x") +
   theme_bw(12) +
   ylab("Significant guides (% of tested guides)") + 
   xRot()
-ggsave(out("PopulationScores_N_Significant_Cas9_Targeted.pdf"), w=12,h=8)
+ggsave(out("PopulationScores_N_Significant_Cas9_Targeted.pdf"), w=15,h=8)
 
 
 
@@ -268,3 +277,131 @@ ggplot(pDT, aes(x=paste(Population, Date),y=Guide, fill=NormCounts2)) +
   theme_bw(12) +
   xRot()
 ggsave(out("Example_", genex, ".pdf"), w=length(unique(pDT$sample)) * 0.2 + 2,h=length(unique(pDT$Guide)) * 0.2 + 3)
+
+
+
+
+# Summarize MDS -----------------------------------------------------------
+res.stats <- fread(out("Results_Pvalues.tsv"))
+mdsDT <- res.stats[GuideType == "Targeted" & Genotype == "Cas9"]
+mdsDT.hits <- copy(mdsDT)
+
+# Prepare matrix
+mdsDT[,Comparison := gsub("^.+? ", "", Analysis)]
+mdsDT <- mdsDT[,.(mean(z, na.rm=TRUE)), by=c("Gene", "Comparison")]
+mdsMT <- toMT(dt=mdsDT, row="Gene", col="Comparison", val="V1")
+mdsMT <- mdsMT[apply(!is.na(mdsMT), 1, sum)  == ncol(mdsMT),]
+
+# Define hit genes
+mdsDT.hits[, keep := sum(padj < 0.05) >= 2 & (all(sign(Score[padj < 0.05]) > 0) | all(sign(Score[padj < 0.05]) < 0)), by=c("Gene", "Analysis")]
+hit.genes <- unique(mdsDT.hits[keep==TRUE & Gene %in% row.names(mdsMT)]$Gene)
+
+for(typex in c("all", "hits")){
+  mt <- mdsMT
+  if(typex == "hits") mt <- mt[hit.genes,]
+  
+  # Correlation of guides
+  cMT <- corS(t(mt))
+  diag(cMT) <- NA
+  dd <- as.dist(2-cMT)
+  xx <- nrow(cMT)/7
+  cleanDev(); pdf(out("Correlation_",typex,"_Guides_HM.pdf"), w=xx + 2, h=xx+1)
+  pheatmap(cMT, clustering_distance_rows = dd, clustering_distance_cols = dd, breaks=seq(-1,1, 0.01), color=COLORS.HM.FUNC(200))
+  dev.off()
+  # MDS
+  mds <- data.table(cmdscale(dd, k=2), keep.rownames = TRUE)
+  ggplot(mds, aes(x=V1, y=V2, label=rn)) + 
+    geom_point(color="lightblue") + 
+    geom_point(data=mds[rn %in% hit.genes], color="red") + 
+    geom_text_repel() +
+    theme_bw(12)
+  ggsave(out("Correlation_",typex,"_MDS.pdf"), w=8,h=8)
+  
+  # Correlation of comparisons
+  cMT <- corS(mdsMT)
+  diag(cMT) <- NA
+  dd <- as.dist(2-cMT)
+  cleanDev(); pdf(out("Correlation_",typex,"_Comparisons_HM.pdf"), w=6, h=6)
+  pheatmap(cMT, clustering_distance_rows = dd, clustering_distance_cols = dd, breaks=seq(-1,1, 0.01), color=COLORS.HM.FUNC(200))
+  dev.off()
+}
+
+
+
+
+
+
+
+
+# Plot individual values -------------------------------------------------------------------------
+rMT <- m
+tpmMT <- t(t(rMT) / colSums(rMT, na.rm=TRUE)*1e6)
+stopifnot(all(is.na(rMT) == is.na(tpmMT)))
+stopifnot(all(tpmMT[,1] == rMT[,1]/sum(rMT[,1],na.rm=T)*1e6, na.rm = TRUE))
+cDT <- copy(ann)
+cDT[,id := paste(Population, Library, Date, Library2, System, Date2)]
+cDT <- dcast.data.table(cDT, id ~ Genotype, value.var = "sample")
+cDT <- cDT[!is.na(WT)]
+normMT <- sapply(cDT$id, function(i){
+  tpmMT[,cDT[id == i]$Cas9] / tpmMT[,cDT[id == i]$WT]
+})
+normMT[normMT == Inf] <- 8
+
+cDT2 <- data.table(id=cDT$id, do.call(rbind, strsplit(cDT$id, " ")))
+cDT2[V1 == "LSK", V1 := V5]
+agMT <- sapply(with(cDT2, split(id, V1)), function(ids){
+  rowMeans(normMT[,ids], na.rm=TRUE)
+})
+agMT[is.nan(agMT)] <- NA
+agMT <- t(sapply(split(row.names(agMT), gsub("_.+$", "", row.names(agMT))), function(guides){
+  colMeans(agMT[guides,,drop=F], na.rm=TRUE)
+}))
+agMT[is.nan(agMT)] <- NA
+
+agDT <- melt(data.table(agMT, keep.rownames = TRUE), id.vars = "rn")[!is.na(value)]
+agDT[,log2FC := log2(value)]
+write.tsv(agDT, out("Aggregated.tsv"))
+ggplot(agDT[rn %in% hit.genes], aes(x=variable, y=rn, color=log2FC)) +
+  geom_point() +
+  theme_bw(12) + 
+  xRot() +
+  scale_color_gradient2()
+ggsave(out("Aggregated_log2TPM_vsWT.pdf"), w=4,h=15)
+
+
+
+# Hopefully Cool plot ---------------------------------------------------------------
+agDT <- fread(out("Aggregated.tsv"))
+compDT <- unique(res.stats[,c("Population1", "Population2", "Comparison"), with=F])
+compDT[Comparison %in% c("GMP.LSK", "MEP.LSK","UND.MEP", "MYE.GMP"), Comparison.Group := "Main branch"]
+compDT[is.na(Comparison.Group), Comparison.Group := Comparison]
+compDT2 <- unique(melt(compDT[,-"Comparison",with=F], id.vars = "Comparison.Group")[,-"variable"])
+mainBranchOrdering <- c("Und", "MEP", "LSKd7", "GMP", "Mye")
+agDT$Population <- factor(agDT$variable, levels=c(mainBranchOrdering, setdiff(agDT$variable, mainBranchOrdering)))
+agDT <- merge(agDT, compDT2, by.y="value", by.x="variable", allow.cartesian=TRUE)
+
+unique(agDT$Comparison.Group)
+cleanComparisons <- function(x){
+  orderX <- c("Main branch", "CKIT.LSK", "GMP.MEP", "UND.MYE", "GMPcd11.DN")
+  x <- factor(x, levels=orderX)
+}
+ggplot(agDT[rn %in% hit.genes], aes(x=Population, y=rn, color=log2FC)) +
+  geom_point() +
+  theme_bw(12) + 
+  facet_grid(. ~ cleanComparisons(Comparison.Group), scales = "free", space = "free") +
+  xRot() +
+  geom_segment(x=1.2,xend=1.8, y=5,yend=5, color="black") +
+  scale_color_gradient2()
+ggsave(out("Aggregated_log2TPM_vsWT.pdf"), w=4,h=15)
+
+
+
+# Plot network ------------------------------------------------------------
+agx <- agDT[rn == "Spi1"]
+statx <- res.stats[Gene == "Spi1"][Genotype == "Cas9"]
+statx[, keep := sum(padj < 0.05) >= 2 & (all(sign(Score[padj < 0.05]) > 0) | all(sign(Score[padj < 0.05]) < 0)), by=c("Gene", "Analysis")]
+
+unique(agx[,c("variable", "log2FC"), with=F])
+statx[, .(mean(z), sum(keep),n=.N), by=c("Gene", "Comparison")]
+
+c("cKit", "LSK9", "MEP", "LSK7", "GMP", "LSK7", "MEP", "", "", "", "", "")

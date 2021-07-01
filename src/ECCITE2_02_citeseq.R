@@ -7,6 +7,7 @@ require(data.table)
 
 source("~/code/resources/RFunctions/scRNA_Basics.R")
 
+#all.data <- SCRNA.read_10Xh5.610("~/GFS/PROJECTS/TfCf/Data/ECCITE3_low_7d/outs/filtered_feature_bc_matrix.h5")
 all.data <- SCRNA.read_10Xh5.610("~/GFS/PROJECTS/TfCf/Data/ECCITE2/outs/filtered_feature_bc_matrix.h5")
 
 str(all.data)

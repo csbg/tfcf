@@ -30,7 +30,11 @@ gfpMT <- lapply(all.data, function(datax){
   datax$matrix[gDT$id,]
 })
 
+lapply(gMT, function(mt) {table(colSums(mt))})
+lapply(gfpMT, function(mt) {table(colSums(mt))})
 
+gMT <- gMT[!grepl("_CRISPR$", names(gMT))]
+gfpMT <- gfpMT[!grepl("_CRISPR$", names(gMT))]
 
 # Export counts -----------------------------------------------------------
 mat <- gMT[[1]]
