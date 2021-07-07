@@ -111,11 +111,7 @@ for(ai in 1:nrow(ann_replicates)){
     voomRes <- voom(lMT, design = desMat, plot=TRUE)
     dev.off()
     
-    voomRes.batchRemoval <- removeBatchEffect(
-      x=voomRes$E,
-      batch=lAnn$Date
-    )
-    write.tsv(data.table(voomRes.batchRemoval, keep.rownames = TRUE), outStats("Data_DateRemoved.csv"))
+    write.tsv(data.table(voomRes$E, keep.rownames = TRUE), outStats("Data_DateRemoved.csv"))
     
     # Model fit ---------------------------------------------------------------
     fit <- lmFit(voomRes, design=desMat)
@@ -255,7 +251,13 @@ ggsave(out("VulcanoPlots.pdf"), w=30,h=30)
 #     geom_point()
 #   ggsave(outStats("Interaction_Analysis.pdf"), w=5, h=5)
 
-ax <- unique(res$analysis)[2]
+
+
+
+
+
+# PLOT SIGNIFICANT GENES --------------------------------------------------
+(ax <- unique(res$analysis)[1])
 for(ax in unique(res[!grepl("_controls", analysis)]$analysis)){
   message(ax)
   resx <- res[analysis == ax][grepl("vs", coef) | grepl("^Cas9_", coef)]
@@ -267,7 +269,23 @@ for(ax in unique(res[!grepl("_controls", analysis)]$analysis)){
   
   sig.res <- resx[!coef %in% unique(ann$Date)][!coef == "(Intercept)"]
   sig.res[, keep := sum(padj < 0.05) >= 2 & (all(sign(logFC[padj < 0.05]) > 0) | all(sign(logFC[padj < 0.05]) < 0)), by=c("gene", "coef")]
-  if(nrow(sig.res[keep == TRUE]) == 0) next
+  
+  
+  (p_coef2 <- ggplot(resx[!coef %in% unique(ann$Date)][!coef == "(Intercept)"], 
+                     aes(x=coef, y=rn, fill=logFC, size=-log10(padj), color=padj < 0.05)) + 
+      geom_point(shape=21) +
+      scale_color_manual(values=c("TRUE"="black", "FALSE"="white")) +
+      scale_fill_gradient2(low="red", high="blue") +
+      facet_wrap(~gene,scales = "free_y", ncol=10) +
+      theme_bw(12) +
+      xRot() +
+      theme(axis.text.y = element_blank()))
+  ggsave(out("Results_", ax, "_AllGenes_Coefficients.pdf"), w=12,h=10, plot=p_coef2)
+  
+  
+  if(nrow(sig.res[keep == TRUE]) == 0){
+    sig.res[, keep := gene %in% sig.res[,mean(logFC), by=c("gene", "coef")][order(abs(V1), decreasing=TRUE)][,head(.SD, n=10),by="coef"]$gene]
+  }
   
   hx <- length(unique(sig.res[keep==TRUE]$gene)) * 1 + 1
   
@@ -278,7 +296,7 @@ for(ax in unique(res[!grepl("_controls", analysis)]$analysis)){
       scale_fill_gradient2(low="red", high="blue") +
       facet_grid(gene~.,scales = "free", space = "free") +
       theme_bw(12))
-  ggsave(out("Results_", ax, "_Coefficients.pdf"), w=4*wiAdj,h=hx, plot=p_coef)
+  ggsave(out("Results_", ax, "_Coefficients.pdf"), w=4,h=hx, plot=p_coef)
   
   
   annx <- ann[paste0(System, "_", Library) == gsub("_[a-z]+$", "", ax)]
@@ -290,26 +308,59 @@ for(ax in unique(res[!grepl("_controls", analysis)]$analysis)){
       geom_tile() + 
       facet_grid(gene~Genotype + Population, scales ="free", space = "free") +
       scale_fill_gradient2(low="red", high="blue"))
-  ggsave(out("Results_", ax, "_HM.pdf"), w=5*wiAdj,h=hx)
+  ggsave(out("Results_", ax, "_HM.pdf"), w=5,h=hx)
   
   
   p <- gridExtra::grid.arrange(
     p_vals,
     p_coef, 
     nrow=1, ncol=2, widths=c(5,4))
-  ggsave(out("Results_", ax, "_combined.pdf"), h=hx, w=9*wiAdj, plot=p)
+  ggsave(out("Results_", ax, "_combined.pdf"), h=hx, w=9, plot=p)
   
   
   write.tsv(sig.res, out("Results_", ax, "_Model_results.tsv"))
-  
-  (p_coef2 <- ggplot(resx[!coef %in% unique(ann$Date)][!coef == "(Intercept)"], 
-                     aes(x=coef, y=rn, fill=logFC, size=-log10(padj), color=padj < 0.05)) + 
-      geom_point(shape=21) +
-      scale_color_manual(values=c("TRUE"="black", "FALSE"="white")) +
-      scale_fill_gradient2(low="red", high="blue") +
-      facet_wrap(~gene,scales = "free_y", ncol=10) +
-      theme_bw(12) +
-      xRot() +
-      theme(axis.text.y = element_blank()))
-  ggsave(out("Results_", ax, "_AllGenes_Coefficients.pdf"), w=12,h=10*wiAdj, plot=p_coef2)
 }
+
+# 
+# # PLOT TOP GENES ----------------------------------------------------------
+# ax <- unique(res$analysis)[2]
+# for(ax in unique(res[!grepl("_controls", analysis)]$analysis)){
+#   message(ax)
+#   resx <- res[analysis == ax][grepl("vs", coef) | grepl("^Cas9_", coef)]
+#   
+#   data.br <- fread(out("analysis_", ax, "/", "Data_DateRemoved.csv"))
+#   rns <- data.br$rn
+#   data.br <- as.matrix(data.br[, -"rn"])
+#   row.names(data.br) <- rns
+#   
+#   sig.res <- resx[!coef %in% unique(ann$Date)][!coef == "(Intercept)"]
+#   sig.res[, keep := gene %in% sig.res[,mean(logFC), by=c("gene", "coef")][order(abs(V1), decreasing=TRUE)][,head(.SD, n=10),by="coef"]$gene]
+#   #sig.res[, keep := sum(padj < 0.05) >= 2 & (all(sign(logFC[padj < 0.05]) > 0) | all(sign(logFC[padj < 0.05]) < 0)), by=c("gene", "coef")]
+#   if(nrow(sig.res[keep == TRUE]) == 0) next
+#   
+#   hx <- length(unique(sig.res[keep==TRUE]$gene)) * 1 + 1
+#   
+#   (p_coef <- ggplot(sig.res[gene %in% sig.res[keep==TRUE]$gene], 
+#                     aes(x=coef, y=rn, fill=logFC, size=-log10(padj), color=padj < 0.05)) + 
+#       geom_point(shape=21) +
+#       scale_color_manual(values=c("TRUE"="black", "FALSE"="white")) +
+#       scale_fill_gradient2(low="red", high="blue") +
+#       facet_grid(gene~.,scales = "free", space = "free") +
+#       theme_bw(12))
+#   
+#   annx <- ann[paste0(System, "_", Library) == gsub("_[a-z]+$", "", ax)]
+#   pDT <- do.call(rbind, lapply(sig.res$rn, function(guide){data.table(annx, guide=guide, log2cpm=data.br[guide, annx$sample])}))
+#   pDT[,gene := gsub("_.+", "", guide)]
+#   pDT[,zscores := scale(log2cpm), by=c("guide")]
+#   (p_vals <- ggplot(pDT[gene %in% sig.res[keep == TRUE]$gene], aes(x=gsub("^.+-(.+).txt$", "\\1", sample), y=guide, fill=zscores)) + 
+#       theme_bw(12) + 
+#       geom_tile() + 
+#       facet_grid(gene~Genotype + Population, scales ="free", space = "free") +
+#       scale_fill_gradient2(low="red", high="blue"))
+#   
+#   p <- gridExtra::grid.arrange(
+#     p_vals,
+#     p_coef, 
+#     nrow=1, ncol=2, widths=c(5,4))
+#   ggsave(out("Results_", ax, "_combined_Top10.pdf"), h=hx, w=9, plot=p)
+# }
