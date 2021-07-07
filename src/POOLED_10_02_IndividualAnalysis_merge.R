@@ -197,6 +197,7 @@ for(ax in unique(res$Analysis)){
 
 res.stats[, GuideType := ifelse(grepl("NonTargeting", Guide), "CTRL", "Targeted")]
 res.stats[,Gene := gsub("_.+", "", Guide)]
+res.stats[, hit := sum(padj < 0.05) >= 2 & (all(sign(Score[padj < 0.05]) > 0) | all(sign(Score[padj < 0.05]) < 0)), by=c("Gene", "Analysis")]
 write.tsv(res.stats, out("Results_Pvalues.tsv"))
 #res.stats <- fread(out("Results_Pvalues.tsv"))
 
@@ -247,8 +248,7 @@ ggsave(out("PopulationScores_N_Significant_Cas9_Targeted.pdf"), w=6,h=15)
 (libx <- res$Library[1])
 for(libx in unique(res.stats$Library)){
   lDT <- res.stats[Library == libx][Gene != "NonTargetingControlGuideForMouse"]
-  lDT[, keep := sum(padj < 0.05) >= 2 & (all(sign(Score[padj < 0.05]) > 0) | all(sign(Score[padj < 0.05]) < 0)), by=c("Gene", "Analysis")]
-  lDT <- lDT[Gene %in% lDT[keep == TRUE]$Gene]
+  lDT <- lDT[Gene %in% lDT[hit == TRUE]$Gene]
   if(nrow(lDT) == 0) next
   ggplot(lDT, aes(x=cleanComparisons(Comparison), y=Guide, color=Score, size=pmin(5, -log10(padj)))) + 
     geom_point() +
@@ -270,34 +270,50 @@ m.norm <- t(t(m)/colSums(m, na.rm = TRUE)) * 1e-6
 m.norm <- log2(m.norm + 1)
 table(is.na(m.norm))
 
-genex <- "Spi1"
-
-guides <- unique(res.stats[Gene == genex]$Guide)
-gx <- guides[1]
-pDT <- data.table()
-for(gx in guides){
-  ret <- copy(ann)
-  ret$NormCounts <- m.norm[gx, ret$sample]
-  pDT <- rbind(pDT, data.table(ret, Guide=gx))
+genex <- "Kmt2d"
+for(genex in c("Spi1", "Kmt2d")){
+  
+  if(!genex %in% res.stats$Gene){
+    message(genex, " not found")
+    next
+  }
+  
+  guides <- unique(res.stats[Gene == genex]$Guide)
+  gx <- guides[1]
+  pDT <- data.table()
+  for(gx in guides){
+    ret <- copy(ann)
+    ret$NormCounts <- m.norm[gx, ret$sample]
+    pDT <- rbind(pDT, data.table(ret, Guide=gx))
+  }
+  pDT <- pDT[!is.na(NormCounts)]
+  #pDT <- pDT[Genotype == "Cas9"]
+  pDT[, NormCounts2 := scale(NormCounts), by="Guide"]
+  ggplot(pDT, aes(x=sample,y=Guide, fill=NormCounts2)) + 
+    geom_tile() +
+    facet_grid(~ Genotype + Library,scales="free", space = "free") + 
+    scale_fill_gradient2(name="Normalized\ncounts", low="red", high="blue") +
+    theme_bw(12) +
+    xRot()
+  ggsave(out("Example_", genex, ".pdf"), w=length(unique(pDT$sample)) * 0.2 + 2,h=length(unique(pDT$Guide)) * 0.4 +4)
 }
-pDT <- pDT[!is.na(NormCounts)]
-#pDT <- pDT[Genotype == "Cas9"]
-pDT[, NormCounts2 := scale(NormCounts), by="Guide"]
-ggplot(pDT, aes(x=paste(Population, Date),y=Guide, fill=NormCounts2)) + 
-  geom_tile() +
-  facet_grid(Genotype ~ Library,scales="free", space = "free") + 
-  scale_fill_gradient2(name="Normalized\ncounts", low="red", high="blue") +
-  theme_bw(12) +
-  xRot()
-ggsave(out("Example_", genex, ".pdf"), w=length(unique(pDT$sample)) * 0.2 + 2,h=length(unique(pDT$Guide)) * 0.4 + 3)
 
 
 
+# Blacklist of guides that didn't work ------------------------------------
+# res.stats <- fread(out("Results_Pvalues.tsv"))
+# x <- res.stats[GuideType == "Targeted" & Genotype == "Cas9"]
+# x[Gene == "Kmt2d"]
+# x2 <- x[Comparison == "UND.MYE"][Gene == "Kmt2d"][Library == "Br"]
+# gxx <- unique(x2$Guide)
+# res.stats[Guide %in% gxx][GuideType == "Targeted" & Genotype == "Cas9"]
+# corS(t(m2[gxx,]), use="pairwise.complete.obs")
+# length(unique(res.stats$Comparison))
+# res.stats[GuideType == "Targeted" & Genotype == "Cas9"][,.(sum(padj < 0.05), .N), c("Guide", "Gene")][order(Gene)][1:100]
 
 
 # Summarize MDS -----------------------------------------------------------
-res.stats <- fread(out("Results_Pvalues.tsv"))
-mdsDT <- res.stats[GuideType == "Targeted" & Genotype == "Cas9"]
+mdsDT <- fread(out("Results_Pvalues.tsv"))[Library != "A"][GuideType == "Targeted" & Genotype == "Cas9"]
 mdsDT.hits <- copy(mdsDT)
 
 # Prepare matrix
@@ -345,16 +361,13 @@ for(typex in c("all", "hits")){
 
 
 
-
-
-
-
-# Plot individual values -------------------------------------------------------------------------
-rMT <- m
+# Aggregate values -------------------------------------------------------------------------
+stopifnot(all(colnames(m) == ann$sample))
+rMT <- m[,ann[Library != "A"]$sample]
 tpmMT <- t(t(rMT) / colSums(rMT, na.rm=TRUE)*1e6)
 stopifnot(all(is.na(rMT) == is.na(tpmMT)))
 stopifnot(all(tpmMT[,1] == rMT[,1]/sum(rMT[,1],na.rm=T)*1e6, na.rm = TRUE))
-cDT <- copy(ann)
+cDT <- copy(ann[Library != "A"])
 cDT[,id := paste(Population, Library, Date, Library2, System, Date2)]
 cDT <- dcast.data.table(cDT, id ~ Genotype, value.var = "sample")
 cDT <- cDT[!is.na(WT)]
@@ -369,6 +382,7 @@ agMT <- sapply(with(cDT2, split(id, V1)), function(ids){
   rowMeans(normMT[,ids], na.rm=TRUE)
 })
 agMT[is.nan(agMT)] <- NA
+#agMT[grepl("Kmt2d", row.names(agMT)),]
 agMT <- t(sapply(split(row.names(agMT), gsub("_.+$", "", row.names(agMT))), function(guides){
   colMeans(agMT[guides,,drop=F], na.rm=TRUE)
 }))
@@ -388,7 +402,7 @@ write.tsv(agDT, out("Aggregated.tsv"))
 
 # Hopefully Cool plot ---------------------------------------------------------------
 agDT <- fread(out("Aggregated.tsv"))
-compDT <- unique(res.stats[,c("Population1", "Population2", "Comparison"), with=F])
+compDT <- unique(res.stats[Library != "A"][,c("Population1", "Population2", "Comparison"), with=F])
 compDT[Comparison %in% c("GMP.LSK", "MEP.LSK","UND.MEP", "MYE.GMP"), Comparison.Group := "Main branch"]
 compDT[is.na(Comparison.Group), Comparison.Group := Comparison]
 compDT2 <- unique(melt(compDT[,-"Comparison",with=F], id.vars = "Comparison.Group")[,-"variable"])
@@ -404,7 +418,7 @@ cleanComparisons <- function(x){
 
 hit.genes2 <- hit.genes[1:10]
 
-pDT.stats <- res.stats[Gene %in% hit.genes]
+pDT.stats <- res.stats[Gene %in% hit.genes][Library != "A"]
 pDT.stats <- merge(pDT.stats, unique(compDT[,c("Comparison", "Comparison.Group")]), by="Comparison")
 # Filter 1: two significant guides and all significant guides going into the same direction
 pDT.stats[, keep := sum(padj < 0.05) >= 2 & (all(sign(Score[padj < 0.05]) > 0) | all(sign(Score[padj < 0.05]) < 0)), by=c("Gene", "Analysis")]
@@ -466,7 +480,7 @@ for(genex in hit.genes){
   V(g)$label.color <- "black"
   E(g)$color <- mapNumericToColors(E(g)$z, cols = COLORS.graph)
   E(g)$width <- 2+E(g)$perc/100*3
-  E(g)$arrow.width <- 3
+  E(g)$arrow.width <- 2
   E(g)$arrow.size <- 1
   E(g)$label <- paste0("", round(E(g)$z, 1),"\n", "(",E(g)$sig.label, ")")
   E(g)$label.color <- "black"

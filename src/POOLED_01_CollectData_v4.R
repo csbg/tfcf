@@ -72,8 +72,12 @@ dDT[["LibA_Mye_Nov2019.txt"]] <- x
 
 # Extract guides into one matrix ----------------------------------------------------------
 lapply(dDT, function(dt) head(dt$V1))
+lapply(dDT, function(dt) unique(dt[grepl("NonTargetingControlGuideForMouse", V1)]$V1))
+dt <- copy(dDT[[1]])
 dDT2 <-lapply(dDT, function(dt){
-  dt[,V1 := gsub("(\\d+)_(\\d{6})$", "\\1", V1)]
+  dt[grep("^NonTargetingControlGuideForMouse", V1), V1 := gsub("^(NonTargetingControlGuideForMouse_\\d+)_.+$", "\\1", V1)]
+  dt[!grep("^NonTargetingControlGuideForMouse", V1),V1 := gsub("(\\d+)_(\\d{6})$", "\\1", V1)]
+  dt[!grep("^NonTargetingControlGuideForMouse", V1),V1 := gsub("^(.+?)_(.+?)_(\\d+)$", "\\1_\\3", V1)]
   dt[,V1 := gsub("MGLib", "", V1)]
   dt <- dt[!V1 %in% c("unmapped", "unmaped")]
   dt
@@ -101,6 +105,15 @@ ann[,V1 := gsub("CAS9", "Cas9", V1, ignore.case = TRUE)]
 ann[,V1 := gsub("Cas9.+", "Cas9", V1, ignore.case = TRUE)]
 table(ann$V1)
 
+unique(ann[,c("V3", "V5"),with=F])
+ann[,V5 := gsub("Lib", "", V5)]
+
+names2 <- grep("^Lib", colnames(m),invert = FALSE, value=TRUE)
+ann2 <- data.table(sample=names2, do.call(rbind, strsplit(gsub("_", "", gsub("_1 ", " ", gsub(".txt", "", names2))), " ")))
+names(ann2)[3] <- "V5"
+ann2$V1 <- "Library"
+ann <- rbind(ann, ann2, fill=TRUE)
+
 
 # Cleanup -----------------------------------------------------------------
 
@@ -114,11 +127,12 @@ table(ann$V1)
 # lapply(ann, unique)
 
 # REMOVE V2
+ann[grep("v2.t..$", V7)]
 ann <- ann[!grep("v2.t..$", V7)]
 
 # Revert LibA_Mye-Nov2019.txt above?
 
-ann.col = data.frame(row.names=ann$sample, ann[,c("V1", "V2", "V3", "V6"), with=F])
+ann.col = data.frame(row.names=ann$sample, ann[,c("V1", "V2", "V5", "V6"), with=F])
 
 # Check that names are unique (?)
 x <- unique(data.table(apply(!is.na(m), 2, sum), gsub("^.+? ", "", colnames(m))))
@@ -131,14 +145,20 @@ stopifnot(nrow(x[V1 != V3]) == 0)
 m <- m[,ann$sample]
 
 # Correlation and guide overlaps ------------------------------------------
-libs <- split(ann$sample, ann$V3)
+libs <- split(ann$sample, ann$V5)
+lnam <- "BBr"
 for(lnam in names(libs)){
-  cleanDev(); pdf(out("Correlation_",lnam,".pdf"), w=12, h=12)
-  #cMT <- corS(m[,ann[V3 !="B" & !grepl("\\d{4}19", V4)]$sample], use="pairwise.complete.obs")
   m2 <- m[,libs[[lnam]]]
+  
+  cleanDev(); pdf(out("AllData_",lnam,".pdf"), w=12, h=50)
+  pheatmap(m2[apply(!is.na(m2), 1, sum) > 0,], cluster_cols = F, cluster_rows=F, fontsize_row = 5)
+  dev.off()
+  
+  cleanDev(); pdf(out("Correlation_",lnam,".pdf"), w=12, h=12)
+  #cMT <- corS(m[,ann[V5 !="B" & !grepl("\\d{4}19", V4)]$sample], use="pairwise.complete.obs")
   cMT <- corS(m2[!grepl("NonTargetingControl", row.names(m2)),], use="pairwise.complete.obs")
   diag(cMT) <- NA
-  pheatmap(cMT, cluster_rows = T, cluster_cols = T, annotation_col = ann.col,
+  pheatmap(cMT, cluster_rows = F, cluster_cols = F, annotation_col = ann.col,
            breaks=seq(-1,1, 0.01), color=HM.COLORS.FUNC(200)
            )
   dev.off()
@@ -148,7 +168,7 @@ for(lnam in names(libs)){
 
 # 
 # 
-cleanDev(); pdf(out("Jaccard.pdf"), w=16, h=15)
+cleanDev(); pdf(out("Jaccard.pdf"), w=21, h=20)
 pheatmap(jaccard(lapply(data.table(m), function(x) row.names(m)[!is.na(x)])),
          cluster_rows = F, cluster_cols = F, annotation_col = ann.col,
          breaks=seq(-1,1, 0.01), color=HM.COLORS.FUNC(200),
@@ -169,20 +189,18 @@ rn[grepl("^NonTargetingControlGuideForMouse_\\d+$", rn)] <- paste0(rn[grepl("^No
 rn <- gsub("NonTargetingControlGuideForMouse_(\\d+)_(.+?)_\\d+$", "NTC_\\2", rn)
 unique(gsub("^.+?_(.+?)_.+$", "\\1", rn))
 
-grp.cnts <- sapply(split(row.names(m), gsub("^.+?_(.+?)_.+$", "\\1", rn)), function(rows){
-  apply(!is.na(m[rows,]), 2, sum)
-})
-
-
-cleanDev(); pdf(out("GroupCounts.pdf"), w=10, h=25)
-pheatmap(grp.cnts)
-dev.off()
+# grp.cnts <- sapply(split(row.names(m), gsub("^.+?_.+$", "\\1", rn)), function(rows){
+#   apply(!is.na(m[rows,]), 2, sum)
+# })
+# cleanDev(); pdf(out("GroupCounts.pdf"), w=10, h=25)
+# pheatmap(grp.cnts)
+# dev.off()
 
 ann$sample <- make.names(ann$sample)
 colnames(m) <- make.names(colnames(m))
 stopifnot(all(ann$sample %in% colnames(m)))
-ann <- setNames(ann, c("sample", "Genotype", "Population", "Library", "Date", "Library2", "System", "Date2"))
+ann <- setNames(ann, c("sample", "Genotype", "Population", "Library2", "Date", "Library", "System", "Date2"))
 ann[,Date2 := gsub("\\.txt", "", Date2)]
-ann[Date2 == "Feb2021" & Library == "R2.Br", Date := "10022021"]
+ann[Date2 == "Feb2021" & Library == "R2", Date := "10022021"]
 write.table(m[,ann$sample], quote = F, sep = ",", row.names = TRUE, col.names = TRUE, file = out("Matrix.csv"))
 write.tsv(ann, out("Annotation.tsv"))
