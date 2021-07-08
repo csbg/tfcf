@@ -57,5 +57,6 @@ cd $HOME/omicstmp/
     --expect-cells=10000 &> CITESEQ2.log
 
 mkdir -p ~/GFS/PROJECTS/TfCf/Data/CITESEQ2/
-#cp -R CITESEQ2/outs ~/GFS/PROJECTS/TfCf/Data/CITESEQ2/
-
+mv CITESEQ2/outs ~/GFS/PROJECTS/TfCf/Data/CITESEQ2/
+rm -rf CITESEQ2*
+rm -rf newGenome**
