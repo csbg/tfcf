@@ -14,5 +14,10 @@ unzip -p CFMS.Skinnider.2021.NatureMethods.zip Interactomes/Human/CF-MS-interact
 wget -O PCP.SILAM.Skinnider.2021.Cell.xlsx https://ars.els-cdn.com/content/image/1-s2.0-S0092867421007042-mmc2.xlsx
 
 wget -O depmap.CRISPR.csv --no-check-certificate https://ndownloader.figshare.com/files/27902226
+wget -O depmap.ann.csv --no-check-certificate https://ndownloader.figshare.com/files/27902376
 
 wget -O hippie.txt http://cbdm-01.zdv.uni-mainz.de/~mschaefer/hippie/hippie_v2_1.txt
+
+wget -O CorumCore.txt.zip --no-check-certificate https://mips.helmholtz-muenchen.de/corum/download/coreComplexes.txt.zip
+
+wget -O CorumAll.txt.zip --no-check-certificate https://mips.helmholtz-muenchen.de/corum/download/allComplexes.txt.zip
