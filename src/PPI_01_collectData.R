@@ -44,7 +44,6 @@ if(!file.exists(uniprot.file)){
 
 # HIPPIE ------------------------------------------------------------------
 hippie <- fread(inDir("hippie.txt"))
-names(hippie.id.map) <- make.names(names(hippie.id.map))
 hippie <- merge(hippie, uniprot.id.map, by.x="V1", by.y="ID")
 hippie <- merge(hippie, uniprot.id.map, by.x="V3", by.y="ID")
 hippie <- setNames(hippie[,c("Gene.x", "Gene.y", "V5"), with=F], c("A","B","Score"))
@@ -79,7 +78,7 @@ pcp.list <- lapply(names(pcp.list), function(nam) data.table(pcp.list[[nam]], db
 corumCore <- fread(cmd = paste0('unzip -cq ', inDir("CorumCore.txt.zip")), check.names = T)
 corumAll <- fread(cmd = paste0('unzip -cq ', inDir("CorumAll.txt.zip")), check.names = T)
 interactions.from.corum <- function(x){
-  x[,subunits.simple := gsub(" ", ";", gsub(",", ";", subunits.Gene.name.syn.))]
+  x[,subunits.simple := gsub(" ", ";", gsub(",", ";", subunits.Gene.name.))]
   gg <- unique(do.call(c, strsplit(x$subunits.simple, ";")))
   adjm <- matrix(0, length(gg), length(gg))
   row.names(adjm) <- gg
@@ -153,10 +152,10 @@ for(pi in 1:nrow(pairs)){
 }
 res <- res[!is.na(dataset)]
 
-p.ppi <- ggplot(res, aes(y=pair, x=dataset, color=Score)) +
+p.ppi <- ggplot(res, aes(y=pair, x=paste0(dataset, " (", organism, ") "), color=Score)) +
   geom_point() +
   theme_bw(12) + 
-  facet_grid(. ~ dataset, switch = "x", space = "free", scales = "free") +
+  facet_grid(. ~ db, switch = "x", space = "free", scales = "free") +
   scale_color_gradient(low="blue", high="red", limits=c(0,1))
 ggsave(out("PPI.result.pdf"), w=6,  h=15, plot=p.ppi + xRot())
 
@@ -176,12 +175,6 @@ depmap.groups <- depmap.groups[sapply(depmap.groups, length) > 20]
 depmap.groups <- depmap.groups[names(depmap.groups) != "unknown"]
 
 # Calculate specific correlations
-
-dm.res <- get.dm.cor(depmap.clean, pairs, "All")
-for(xnam in names(depmap.groups)){
-  dm.res <- rbind(dm.res, get.dm.cor(depmap.clean[depmap.groups[[xnam]],], pairs, xnam))
-}
-
 get.dm.cor <- function(dm, pairs, name){
   gg <- unique(c(pairs$A, pairs$B))
   cMT <- cor(dm[,hm[Mouse %in% gg & Human %in% colnames(dm)]$Human], use="pairwise.complete.obs")
@@ -190,6 +183,11 @@ get.dm.cor <- function(dm, pairs, name){
   cDT <- merge(cDT, hm, by.x="variable", by.y="Human", suffixes=c("_A", "_B"))
   pairs[,pair := paste(A, B)]
   return(data.table(merge(cDT, pairs, by.x=c("Mouse_A", "Mouse_B"), by.y=c("A","B")), db="DepMap", dataset=name, organism="Human"))
+}
+
+dm.res <- get.dm.cor(depmap.clean, pairs, "All")
+for(xnam in names(depmap.groups)){
+  dm.res <- rbind(dm.res, get.dm.cor(depmap.clean[depmap.groups[[xnam]],], pairs, xnam))
 }
 
 p.dm <- ggplot(dm.res[pair %in% res$pair], aes(y=pair, x=dataset, color=value)) +

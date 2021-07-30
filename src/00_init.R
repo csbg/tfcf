@@ -46,6 +46,15 @@ COMPARISONS <- list(
   CD34pos.neg=c("CD34pos", "CD34neg"),
   CFSEhigh.low=c("CFSEhigh", "CFSElow")
 )
+
+COMPARISONS.USE <- c(
+  "CKIT.LSK",
+  "GMP.LSK",
+  "MEP.LSK",
+  "GMP.MEP",
+  "UND.MYE",
+  "GMPcd11.DN"
+)
 cleanComparisons <- function(x, order=TRUE){
   x <- gsub("\\.", " vs ", x)
   if(order) x <- factor(x, levels = intersect(gsub("\\.", " vs ", names(COMPARISONS)), unique(x)))

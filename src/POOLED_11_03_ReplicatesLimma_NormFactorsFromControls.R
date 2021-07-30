@@ -1,5 +1,5 @@
 source(paste0(Sys.getenv("CODE"), "src/00_init.R"))
-baseDir <- "POOLED_11_02_Replicates/"
+baseDir <- "POOLED_11_03_Replicates_NormFactorsFromControls/"
 out <- dirout(baseDir)
 
 require(limma)
@@ -69,8 +69,8 @@ for(ai in 1:nrow(ann_replicates)){
   
   wtx <- "WT" %in% lAnn$Genotype
 
-  analysis.type <- "guides"
-  for(analysis.type in c("guides", "controls")){
+  analysis.type <- "x"
+  for(analysis.type in c("x")){
     print(analysis.type)
     analysisx <- paste0(sysx,"_",libx, "_", analysis.type)
     outStats <- dirout(paste0(baseDir, "/analysis_",analysisx, "/"))
@@ -84,9 +84,7 @@ for(ai in 1:nrow(ann_replicates)){
     #lMT[grep("Brd9", row.names(lMT)),]
     
     # Control analysis -----------------------------------------------------------
-    control.guides <- grepl("NonTargetingControl", row.names(lMT))
-    lMT <- if(analysis.type == "controls") lMT else lMT[!control.guides,]
-    wiAdj <- if(analysis.type == "controls") 2 else 1
+    wiAdj <- 1
     
     
     # Design matrix -----------------------------------------------------------
@@ -104,10 +102,14 @@ for(ai in 1:nrow(ann_replicates)){
     pheatmap(desMat, cluster_cols = F)
     dev.off()
     
-    
+
     # Normalize data ----------------------------------------------------------
-    stop("Calculate size factors from non-targeting?!")
+    normfacs.controls <- calcNormFactors(DGEList(lMT[grepl("NonTargetingControl", row.names(lMT)),]))
     lMT <- calcNormFactors(DGEList(lMT))
+    stopifnot(all(colnames(lMT) == colnames(normfacs.controls)))
+    stopifnot(all(row.names(lMT$samples) == row.names(normfacs.controls$samples)))
+    lMT$samples$norm.factors <- normfacs.controls$samples$norm.factors
+
     cleanDev(); pdf(outStats("Voom_", "_Before.pdf"), w=6,h=6)
     voomRes <- voom(lMT, design = desMat, plot=TRUE)
     dev.off()
@@ -135,6 +137,7 @@ for(ai in 1:nrow(ann_replicates)){
     coef.all <- colnames(coef(fit))
     coef.used <- c(grep("\\:", coef.all, value=TRUE), "Cas9")
     contr.use <- data.frame(row.names = c(coef.used, setdiff(coef.all, coef.used)))
+
     if(wtx){
       
       # Clean coefficients
@@ -215,6 +218,8 @@ ff <- list.files(out(""), recursive = TRUE, pattern="AllResults.tsv", full.names
 res <- do.call(rbind, lapply(ff, fread))
 table(res$coef, res$analysis)
 
+res[gene == "NonTargetingControlGuideForMouse", analysis := gsub("_x", "_controls", analysis)]
+
 # Diagnostic plots -------------------------------------------------------
 # p-value histogram
 ggplot(res, aes(x=P.Value, fill=binExp)) +
@@ -290,26 +295,26 @@ for(ax in unique(res[!grepl("_controls", analysis)]$analysis)){
   
   hx <- length(unique(sig.res[keep==TRUE]$gene)) * 1 + 1
   
-  (p_coef <- ggplot(sig.res[gene %in% sig.res[keep==TRUE]$gene], 
+  p_coef <- ggplot(sig.res[gene %in% sig.res[keep==TRUE]$gene], 
                     aes(x=coef, y=rn, fill=logFC, size=-log10(padj), color=padj < 0.05)) + 
       geom_point(shape=21) +
       scale_color_manual(values=c("TRUE"="black", "FALSE"="white")) +
       scale_fill_gradient2(low="red", high="blue") +
-      facet_grid(gene~.,scales = "free", space = "free") +
-      theme_bw(12))
-  ggsave(out("Results_", ax, "_Coefficients.pdf"), w=4,h=hx, plot=p_coef)
+      facet_grid(gene~"y" + "x",scales = "free", space = "free") +
+      theme_bw(12)
+  ggsave(out("Results_", ax, "_Coefficients.pdf"), w=4,h=hx, plot=p_coef + xRot())
   
   
   annx <- ann[paste0(System, "_", Library) == gsub("_[a-z]+$", "", ax)]
   pDT <- do.call(rbind, lapply(sig.res$rn, function(guide){data.table(annx, guide=guide, log2cpm=data.br[guide, annx$sample])}))
   pDT[,gene := gsub("_.+", "", guide)]
   pDT[,zscores := scale(log2cpm), by=c("guide")]
-  (p_vals <- ggplot(pDT[gene %in% sig.res[keep == TRUE]$gene], aes(x=gsub("^.+-(.+).txt$", "\\1", sample), y=guide, fill=zscores)) + 
+  p_vals <- ggplot(pDT[gene %in% sig.res[keep == TRUE]$gene], aes(x=gsub("^.+-(.+).txt$", "\\1", sample), y=guide, fill=zscores)) + 
       theme_bw(12) + 
       geom_tile() + 
       facet_grid(gene~Genotype + Population, scales ="free", space = "free") +
-      scale_fill_gradient2(low="red", high="blue"))
-  ggsave(out("Results_", ax, "_HM.pdf"), w=5,h=hx)
+      scale_fill_gradient2(low="red", high="blue")
+  ggsave(out("Results_", ax, "_HM.pdf"), w=5,h=hx, plot=p_vals + xRot())
   
   
   p <- gridExtra::grid.arrange(
@@ -321,47 +326,3 @@ for(ax in unique(res[!grepl("_controls", analysis)]$analysis)){
   
   write.tsv(sig.res, out("Results_", ax, "_Model_results.tsv"))
 }
-
-# 
-# # PLOT TOP GENES ----------------------------------------------------------
-# ax <- unique(res$analysis)[2]
-# for(ax in unique(res[!grepl("_controls", analysis)]$analysis)){
-#   message(ax)
-#   resx <- res[analysis == ax][grepl("vs", coef) | grepl("^Cas9_", coef)]
-#   
-#   data.br <- fread(out("analysis_", ax, "/", "Data_DateRemoved.csv"))
-#   rns <- data.br$rn
-#   data.br <- as.matrix(data.br[, -"rn"])
-#   row.names(data.br) <- rns
-#   
-#   sig.res <- resx[!coef %in% unique(ann$Date)][!coef == "(Intercept)"]
-#   sig.res[, keep := gene %in% sig.res[,mean(logFC), by=c("gene", "coef")][order(abs(V1), decreasing=TRUE)][,head(.SD, n=10),by="coef"]$gene]
-#   #sig.res[, keep := sum(padj < 0.05) >= 2 & (all(sign(logFC[padj < 0.05]) > 0) | all(sign(logFC[padj < 0.05]) < 0)), by=c("gene", "coef")]
-#   if(nrow(sig.res[keep == TRUE]) == 0) next
-#   
-#   hx <- length(unique(sig.res[keep==TRUE]$gene)) * 1 + 1
-#   
-#   (p_coef <- ggplot(sig.res[gene %in% sig.res[keep==TRUE]$gene], 
-#                     aes(x=coef, y=rn, fill=logFC, size=-log10(padj), color=padj < 0.05)) + 
-#       geom_point(shape=21) +
-#       scale_color_manual(values=c("TRUE"="black", "FALSE"="white")) +
-#       scale_fill_gradient2(low="red", high="blue") +
-#       facet_grid(gene~.,scales = "free", space = "free") +
-#       theme_bw(12))
-#   
-#   annx <- ann[paste0(System, "_", Library) == gsub("_[a-z]+$", "", ax)]
-#   pDT <- do.call(rbind, lapply(sig.res$rn, function(guide){data.table(annx, guide=guide, log2cpm=data.br[guide, annx$sample])}))
-#   pDT[,gene := gsub("_.+", "", guide)]
-#   pDT[,zscores := scale(log2cpm), by=c("guide")]
-#   (p_vals <- ggplot(pDT[gene %in% sig.res[keep == TRUE]$gene], aes(x=gsub("^.+-(.+).txt$", "\\1", sample), y=guide, fill=zscores)) + 
-#       theme_bw(12) + 
-#       geom_tile() + 
-#       facet_grid(gene~Genotype + Population, scales ="free", space = "free") +
-#       scale_fill_gradient2(low="red", high="blue"))
-#   
-#   p <- gridExtra::grid.arrange(
-#     p_vals,
-#     p_coef, 
-#     nrow=1, ncol=2, widths=c(5,4))
-#   ggsave(out("Results_", ax, "_combined_Top10.pdf"), h=hx, w=9, plot=p)
-# }

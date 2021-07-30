@@ -109,10 +109,13 @@ write.tsv(res.stats, out("Results_Pvalues.tsv"))
 
 # Plot specific genes and guides ------------------------------------------
 (libx <- res.stats$Group[1])
+#libx <- "Cas9_B"
 for(libx in unique(res.stats$Group)){
   lDT <- res.stats[Group == libx]
   lDT <- lDT[Gene %in% lDT[hit == TRUE]$Gene]
   if(nrow(lDT) == 0) next
+  lDT[,log2Ratio := pmin(log2Ratio, 5)]
+  lDT[,log2Ratio := pmax(log2Ratio, -5)]
   ggplot(lDT, aes(x=cleanComparisons(Comparison), y=Guide, color=log2Ratio, size=pmin(5, -log10(padj)))) + 
     geom_point() +
     geom_point(data=lDT[padj < 0.05], color="black", shape=1) +
@@ -122,5 +125,26 @@ for(libx in unique(res.stats$Group)){
     theme_bw(12) +
     xlab("") +
     xRot()
-  ggsave(out("PopulationScores_Results_",libx,".pdf"), w=length(unique(lDT$Analysis)) * 0.3 + 4, h=length(unique(lDT$Guide))*0.2 + 4, limitsize = FALSE)
+  ggsave(out("PopulationScores_Libraries_",libx,".pdf"), w=length(unique(lDT$Analysis)) * 0.3 + 4, h=length(unique(lDT$Guide))*0.2 + 4, limitsize = FALSE)
+}
+
+
+cx <- unique(res.stats$Comparison)[1]
+for(cx in unique(res.stats$Comparison)){
+  lDT <- res.stats[Comparison == cx][!grepl("^WT", Group)]
+  lDT <- lDT[Gene %in% lDT[hit == TRUE]$Gene]
+  if(nrow(lDT) == 0) next
+  lDT[,log2Ratio := pmin(log2Ratio, 5)]
+  lDT[,log2Ratio := pmax(log2Ratio, -5)]
+  lDT[,GuideNr := rank(Guide, ties.method = "random"), by=c("Gene", "Group")]
+  ggplot(lDT, aes(x=factor(GuideNr), y=Gene, color=log2Ratio, size=pmin(5, -log10(padj)))) + 
+    geom_point() +
+    geom_point(data=lDT[padj < 0.05], color="black", shape=1) +
+    scale_color_gradient2(name="log2FC", low="red", high="blue") +
+    scale_size_continuous(name="padj (cap = 5)") + 
+    facet_grid(. ~ Group,  space = "free", scales = "free") + 
+    theme_bw(12) +
+    xlab("Guide") +
+    ggtitle(cx)
+  ggsave(out("PopulationScores_Comparisons_",cx,".pdf"), w=length(unique(lDT$Group)) * 0.5 + 4, h=length(unique(lDT$Gene))*0.2 + 4, limitsize = FALSE)
 }
