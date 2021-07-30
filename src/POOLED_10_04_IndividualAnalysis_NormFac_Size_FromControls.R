@@ -1,5 +1,5 @@
 source(paste0(Sys.getenv("CODE"), "src/00_init.R"))
-out <- dirout("POOLED_10_03_IndividualAnalysis_NormFactors_Controls/")
+out <- dirout("POOLED_10_04_IndividualAnalysis_NormFactors_size_Controls/")
 
 require(limma)
 require(igraph)
@@ -46,7 +46,7 @@ for(libx in unique(ann$Library)){
   xMT <- calcNormFactors(DGEList(xMT))
   stopifnot(all(colnames(xMT) == colnames(normfacs.controls)))
   stopifnot(all(row.names(xMT$samples) == row.names(normfacs.controls$samples)))
-  xMT$samples$norm.factors <- normfacs.controls$samples$norm.factors
+  xMT$samples <- normfacs.controls$samples
   xMT <- voom(xMT, plot=FALSE)$E
   
   gtx <- "WT"
@@ -222,7 +222,7 @@ for(libx in unique(res.stats$Library)){
     theme_bw(12) +
     xlab("") +
     xRot()
-  ggsave(out("PopulationScores_Results_",libx,".pdf"), w=length(unique(lDT$Analysis)) * 0.3 + 4, h=length(unique(lDT$Guide))*0.2 + 4)
+  ggsave(out("PopulationScores_Results_",libx,".pdf"), w=length(unique(lDT$Analysis)) * 0.3 + 4, h=length(unique(lDT$Guide))*0.2 + 4, limitsize = FALSE)
 }
 
 
