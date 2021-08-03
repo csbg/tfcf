@@ -26,8 +26,7 @@ source $CODEBASE/tfcf/setup.sh
 
 
 # ANALYZE WITHOUT GUIDES
-mkdir -p $HOME/omicstmp/nf
-cd $HOME/omicstmp/nf
+cd $HOME/omicstmp
 
 grep -v "CRISPR Guide Capture" $CODEBASE/tfcf/metadata/ECCITE2_Library.csv > $CODEBASE/tfcf/metadata/ECCITE2_Library_onlyRNA.csv
 
@@ -42,4 +41,4 @@ id="ECCITE2_onlyRNA"
     --expect-cells=10000 &> $id.log
 
 mkdir -p ~/GFS/PROJECTS/TfCf/Data/$id/
-cp -R ECCITE1/outs ~/GFS/PROJECTS/TfCf/Data/$id/
+cp -R $id/outs ~/GFS/PROJECTS/TfCf/Data/$id/
