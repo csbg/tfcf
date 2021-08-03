@@ -122,6 +122,15 @@ PATHS$ECCITE1$DATA <- list(
 )
 sapply(PATHS$ECCITE1$DATA, file.exists)
 
+PATHS$ECCITE2 <- list()
+PATHS$ECCITE2$DATA <- list(
+  matrix=paste(Sys.getenv("DATA"), "ECCITE2", "outs", "filtered_feature_bc_matrix.h5", sep="/"),
+  umap=paste(Sys.getenv("DATA"), "ECCITE2", "outs", "analysis", "umap", "2_components", "projection.csv", sep="/"),
+  clusters=paste(Sys.getenv("DATA"), "ECCITE2", "outs", "analysis", "clustering", "graphclust", "clusters.csv", sep="/"),
+  de=paste(Sys.getenv("DATA"), "ECCITE2", "outs", "analysis", "diffexp", "graphclust", "differential_expression.csv", sep="/")
+)
+sapply(PATHS$ECCITE2$DATA, file.exists)
+
 
 # COLORS ------------------------------------------------------------------
 COLOR.Genotypes = c(WT="#33a02c", Cas9="#6a3d9a")
