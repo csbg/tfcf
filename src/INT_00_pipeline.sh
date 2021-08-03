@@ -1,5 +1,5 @@
 
-cd $HOME/omicstmp/nf/
+cd $HOME/omicstmp/
 
 
 

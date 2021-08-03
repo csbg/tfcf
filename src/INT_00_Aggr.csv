@@ -1,0 +1,5 @@
+sample_id,molecule_h5
+ECCITE1,/usr/local/AGFORTELNY//PROJECTS/TfCf/Data//ECCITE1_RNA_cellranger_601/outs/molecule_info.h5
+CITESEQ1,/usr/local/AGFORTELNY//PROJECTS/TfCf/Data//CITESEQ1_RNAonly/outs/molecule_info.h5
+CITESEQ2,/usr/local/AGFORTELNY//PROJECTS/TfCf/Data//CITESEQ2/outs/molecule_info.h5
+ECCITE2,/usr/local/AGFORTELNY//PROJECTS/TfCf/Data//ECCITE2/outs/molecule_info.h5
