@@ -1,7 +1,8 @@
 source(paste0(Sys.getenv("CODE"), "src/00_init.R"))
 
 require(GenomicRanges)
-
+require(Rsamtools)
+require(GenomicAlignments)
 
 # Settings ----------------------------------------------------------------
 out <- dirout("CHIP_01_Overlaps/")
@@ -78,10 +79,11 @@ quantile(width(peaks.consensus))
 
 max.length <- 1000
 
+# Adjust peak width to max 1000 bp
 peaksDT.all <- as.data.table(peaks.consensus)
+peaksDT.all <- peaksDT.all[(grepl("^chr\\d+$", seqnames) | seqnames %in% c("chrY", "chrX"))]
 peaksDT <- peaksDT.all[width > max.length]
 peaksDT$seqnames <- as.character(peaksDT$seqnames)
-peaksDT <- peaksDT[(grepl("^chr\\d+$", seqnames) | seqnames %in% c("chrY", "chrX"))]
 peaksDT[,n.regions := ceiling(width / max.length)]
 peaksDT[,new.width := round(width / n.regions)]
 
@@ -90,10 +92,13 @@ start.positions <- sapply(1:nrow(peaksDT), function(i) peaksDT[i]$start + (start
 end.positions <-   sapply(1:nrow(peaksDT), function(i) peaksDT[i]$start + (start.is[[i]]+0) * peaksDT[i]$new.width)
 chr <- sapply(1:nrow(peaksDT), function(i) rep(peaksDT[i]$seqnames, times=peaksDT[i]$n.regions))
 
-peaks.consensus <- as(rbind(
+peaks.consensus.DT <- rbind(
   data.table(CHR=do.call(c, chr), START=do.call(c, start.positions), END=do.call(c, end.positions)),
   setNames(peaksDT.all[width <= max.length][,c("seqnames", "start", "end")], c("CHR", "START", "END"))
-  ), "GRanges")
+  )
+  
+write.tsv(peaks.consensus.DT, out("Consensus.peaks.tsv"))
+peaks.consensus <- as(peaks.consensus.DT, "GRanges")
 
 
 ggplot(data.table(width(peaks.consensus)), aes(x=V1)) + stat_ecdf() + 
@@ -102,12 +107,48 @@ ggsave(out("Peak_widths.pdf"),w=5, h=5)
 
 
 
-
 # Get overlap HM -------------------------------------------------------------
 olMT <- sapply(peaks, function(peak) countOverlaps(peaks.consensus, peak))
 row.names(olMT) <-  grToVec(peaks.consensus)
 write.table(olMT, quote = F, row.names = TRUE, sep=",", file = out("OverlapMT.csv"))
 
+
+
+# Quantify reads in peaks in each sample (including BG?) ----------------------------------
+ff <- list.files(paste(Sys.getenv("RAWDATA"), "Raw_ChIP", sep="/"), full.names = TRUE, pattern=".bam$")
+names(ff) <- gsub("\\.sort.+$", "", basename(ff))
+stopifnot(all(names(peaks) %in% names(ff)))
+
+require(doMC);registerDoMC(cores=4)
+res.peaks <- foreach(i = ff) %dopar% {
+  bam <- Rsamtools::BamFile(
+    i,
+    index = paste0(i, ".bai"),
+    yieldSize = 2000000L,
+    asMates = FALSE
+  )
+  tryCatch({
+    bam.count <- Rsamtools::countBam(bam)
+  }, error=function(e){
+    return("Failed to count bam file")
+  })
+  tryCatch({
+    return(GenomicAlignments::summarizeOverlaps(
+      reads=bam,
+      features=peaks.consensus, 
+      ignore.strand=TRUE,
+      singleEnd=TRUE,
+      mode="Union",
+      param=Rsamtools::ScanBamParam(flag=Rsamtools::scanBamFlag(isDuplicate=FALSE, isSecondaryAlignment=FALSE))))
+  }, error=function(e){
+    return(i)
+  })
+}
+names(res.peaks) <- names(ff)
+
+countMT <- do.call(cbind, lapply(res.peaks[!sapply(res.peaks, is.integer)], assay))
+colnames(countMT) <- gsub(".filtered.bam$", "", colnames(countMT))
+stop("Write export function here")
 
 
 # Correlation -------------------------------------------------------------

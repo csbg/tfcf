@@ -101,6 +101,66 @@ corum.list <- list(
 )
 
 
+# DEPMAP ------------------------------------------------------------------
+depmap <- read.table(inDir("depmap.CRISPR.csv"), row.names = 1, sep=",", header = TRUE)
+str(depmap)
+stopifnot(all(sapply(depmap, is.numeric)))
+depmap <- as.matrix(depmap)
+depmap.ann <- fread(inDir("depmap.ann.csv"))
+depmap <- depmap[row.names(depmap) %in% depmap.ann$DepMap_ID,]
+depmap.ann <- depmap.ann[DepMap_ID %in% row.names(depmap)]
+depmap.clean <- depmap
+colnames(depmap.clean) <- gsub("\\..+", "", colnames(depmap.clean))
+m <- as.matrix(read.csv(PATHS$POOLED$DATA$matrix))
+depmap.genes <- hm[Mouse%in% unique(gsub("_\\d+", "", row.names(m))) & Human %in% colnames(depmap.clean)]$Human
+depmap.clean <- depmap.clean[,depmap.genes]
+str(depmap.clean)
+
+m <- depmap.clean
+get.depmap.cor <- function(m, name){
+  cMT <- cor(m, use="pairwise.complete.obs")
+  cMT[upper.tri(cMT, diag = TRUE)] <- NA
+  cDT <- melt(data.table(cMT, keep.rownames = TRUE), id.vars="rn")[!is.na(value)]
+  names(cDT) <- c("A", "B", "Score")
+  return(data.table(cDT, db="DepMap", dataset=name, organism="Human"))
+}
+
+
+depmap.list <- list(All = get.depmap.cor(m = depmap.clean, name = "All"))
+for(tx in unique(depmap.ann[,.N, by="lineage"][N>20]$lineage)){
+  depmap.list[[tx]] <- get.depmap.cor(m = depmap.clean, name = tx)
+}
+# 
+# depmap.groups <- with(depmap.ann, split(DepMap_ID, lineage))
+# depmap.groups <- depmap.groups[sapply(depmap.groups, length) > 20]
+# depmap.groups <- depmap.groups[names(depmap.groups) != "unknown"]
+
+# # Calculate specific correlations
+# get.dm.cor <- function(dm, pairs, name){
+#   gg <- unique(c(pairs$A, pairs$B))
+#   cMT <- cor(dm[,hm[Mouse %in% gg & Human %in% colnames(dm)]$Human], use="pairwise.complete.obs")
+#   cDT <- melt(data.table(cMT, keep.rownames = TRUE), id.vars="rn")
+#   cDT <- merge(cDT, hm, by.x="rn", by.y="Human")
+#   cDT <- merge(cDT, hm, by.x="variable", by.y="Human", suffixes=c("_A", "_B"))
+#   pairs[,pair := paste(A, B)]
+#   return(data.table(merge(cDT, pairs, by.x=c("Mouse_A", "Mouse_B"), by.y=c("A","B")), db="DepMap", dataset=name, organism="Human"))
+# }
+# 
+# dm.res <- get.dm.cor(depmap.clean, pairs, "All")
+# for(xnam in names(depmap.groups)){
+#   dm.res <- rbind(dm.res, get.dm.cor(depmap.clean[depmap.groups[[xnam]],], pairs, xnam))
+# }
+# 
+# p.dm <- ggplot(dm.res[pair %in% res$pair], aes(y=pair, x=dataset, color=value)) +
+#   geom_point() +
+#   theme_bw(12) + 
+#   facet_grid(. ~ db, switch = "x", space = "free", scales = "free") +
+#   #xRot() +
+#   scale_color_gradient2(low="blue", mid="white", high="red", limits=c(-1,1))
+# ggsave(out("DepMap.result.pdf"), w=6,  h=15, plot=p.dm+xRot())
+
+
+
 # COMBINE -------------------------------------------------------------------------
 all.interactions <- data.table()
 all.interactions <- rbind(all.interactions, hippie)
@@ -108,6 +168,7 @@ all.interactions <- rbind(all.interactions, humap2)
 all.interactions <- rbind(all.interactions, cfms)
 all.interactions <- rbind(all.interactions, do.call(rbind, pcp.list))
 all.interactions <- rbind(all.interactions, do.call(rbind, corum.list))
+all.interactions <- rbind(all.interactions, do.call(rbind, depmap.list))
 all.interactions <- rbind(all.interactions, hippie)
 all.interactions.orig <- copy(all.interactions)
 
@@ -159,44 +220,6 @@ p.ppi <- ggplot(res, aes(y=pair, x=paste0(dataset, " (", organism, ") "), color=
   scale_color_gradient(low="blue", high="red", limits=c(0,1))
 ggsave(out("PPI.result.pdf"), w=6,  h=15, plot=p.ppi + xRot())
 
-# ADD DEPMAP ------------------------------------------------------------------
-depmap <- read.table(inDir("depmap.CRISPR.csv"), row.names = 1, sep=",", header = TRUE)
-str(depmap)
-stopifnot(all(sapply(depmap, is.numeric)))
-depmap <- as.matrix(depmap)
-depmap.ann <- fread(inDir("depmap.ann.csv"))
-depmap <- depmap[row.names(depmap) %in% depmap.ann$DepMap_ID,]
-depmap.ann <- depmap.ann[DepMap_ID %in% row.names(depmap)]
-depmap.clean <- depmap
-colnames(depmap.clean) <- gsub("\\..+", "", colnames(depmap.clean))
-
-depmap.groups <- with(depmap.ann, split(DepMap_ID, lineage))
-depmap.groups <- depmap.groups[sapply(depmap.groups, length) > 20]
-depmap.groups <- depmap.groups[names(depmap.groups) != "unknown"]
-
-# Calculate specific correlations
-get.dm.cor <- function(dm, pairs, name){
-  gg <- unique(c(pairs$A, pairs$B))
-  cMT <- cor(dm[,hm[Mouse %in% gg & Human %in% colnames(dm)]$Human], use="pairwise.complete.obs")
-  cDT <- melt(data.table(cMT, keep.rownames = TRUE), id.vars="rn")
-  cDT <- merge(cDT, hm, by.x="rn", by.y="Human")
-  cDT <- merge(cDT, hm, by.x="variable", by.y="Human", suffixes=c("_A", "_B"))
-  pairs[,pair := paste(A, B)]
-  return(data.table(merge(cDT, pairs, by.x=c("Mouse_A", "Mouse_B"), by.y=c("A","B")), db="DepMap", dataset=name, organism="Human"))
-}
-
-dm.res <- get.dm.cor(depmap.clean, pairs, "All")
-for(xnam in names(depmap.groups)){
-  dm.res <- rbind(dm.res, get.dm.cor(depmap.clean[depmap.groups[[xnam]],], pairs, xnam))
-}
-
-p.dm <- ggplot(dm.res[pair %in% res$pair], aes(y=pair, x=dataset, color=value)) +
-  geom_point() +
-  theme_bw(12) + 
-  facet_grid(. ~ db, switch = "x", space = "free", scales = "free") +
-  #xRot() +
-  scale_color_gradient2(low="blue", mid="white", high="red", limits=c(-1,1))
-ggsave(out("DepMap.result.pdf"), w=6,  h=15, plot=p.dm+xRot())
 
 
 p <- gridExtra::grid.arrange(
