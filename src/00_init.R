@@ -102,6 +102,15 @@ PATHS$CITESEQ2$DATA <- list(
 )
 sapply(PATHS$CITESEQ2$DATA, file.exists)
 
+PATHS$CITESEQ2_CLEAN <- list()
+PATHS$CITESEQ2_CLEAN$DATA <- list(
+  matrix=paste(Sys.getenv("DATA"), "CITESEQ2_CLEAN", "outs", "filtered_feature_bc_matrix.h5", sep="/"),
+  umap=paste(Sys.getenv("DATA"), "CITESEQ2_CLEAN", "outs", "analysis", "umap", "2_components", "projection.csv", sep="/"),
+  clusters=paste(Sys.getenv("DATA"), "CITESEQ2_CLEAN", "outs", "analysis", "clustering", "graphclust", "clusters.csv", sep="/"),
+  de=paste(Sys.getenv("DATA"), "CITESEQ2_CLEAN", "outs", "analysis", "diffexp", "graphclust", "differential_expression.csv", sep="/")
+)
+sapply(PATHS$CITESEQ2_CLEAN$DATA, file.exists)
+
 # PATHS$ECCITE1 <- list()
 # PATHS$ECCITE1$DATA <- list(
 #   matrix=paste(Sys.getenv("DATA"), "ECCITE1_RNA_cellranger", "outs", "filtered_feature_bc_matrix.h5", sep="/"),
