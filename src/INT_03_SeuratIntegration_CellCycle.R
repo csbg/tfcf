@@ -16,6 +16,8 @@ names(guides) <- gsub("^(.)", "\\U\\1", names(guides), perl = T)
 guides$dataset <- "ECCITE1"
 #clusters <- merge(clusters, guides, by=c("Barcode", "dataset"), all=TRUE)
 
+
+
 # Read data  and Seurat integration --------------------------------------------
 seurat.file <- out("SeuratObject.RData")
 if(!file.exists(seurat.file)){
@@ -99,6 +101,28 @@ if(!file.exists(seurat.file)){
 sobj <- SCRNA.UndietSeurat(sobj)
 
 
+
+# Cluster markers ---------------------------------------------------------
+file.markers <- out("ClusterMarkers.tsv")
+if(!file.exists(file.markers)){
+  sobj <- ScaleData(sobj, vars.to.regress = c("S.Score", "G2M.Score"), verbose = FALSE)
+  cl.markers <- FindAllMarkers(sobj, assay = "RNA", only.pos = TRUE, min.cells.feature=10, min.pct = 0.2)
+  cl.markers <- data.table(cl.markers, keep.rownames = TRUE)
+  write.table(cl.markers, out("ClusterMarkers.tsv"))
+  
+  pDT <- cl.markers[gene %in% cl.markers[p_val_adj < 0.05][order(avg_log2FC, decreasing = TRUE)][,head(.SD, n=10), by="cluster"]$gene]
+  pDT <- hierarch.ordering(pDT, toOrder = "gene", orderBy = "cluster", value.var = "avg_log2FC")
+  #pDT <- hierarch.ordering(pDT, toOrder = "cluster", orderBy = "gene", value.var = "avg_log2FC")
+  ggplot(pDT, aes(y=gene, x=factor(cluster), color=avg_log2FC, size=-log10(p_val_adj + 1e-5))) + 
+    geom_point() +
+    scale_color_gradient2(low="blue", high="red") +
+    theme_bw(12)
+  ggsave(out("ClusterMarkers.pdf"), w=12, h=20)
+}
+
+
+
+
 # Collect metadata --------------------------------------------------------------
 ann <- data.table(sobj[["umap"]]@cell.embeddings, keep.rownames = TRUE)
 ann <- merge(ann, data.table(sobj@meta.data, keep.rownames = TRUE), by="rn")
@@ -147,8 +171,6 @@ for(dsx in unique(ann$dataset)){
 }
 
 write.tsv(ann, out("Metadata_1_Original.tsv"))
-
-
 
 
 # SETUP ENDS HERE ---------------------------------------------------------
@@ -209,43 +231,6 @@ write.tsv(ann, out("Metadata_2_Cleaned.tsv"))
 # Now keep working with cleaned dataset -----------------------------------
 ann <- ann[cluster.qual.keep == TRUE]
 
-
-# PLOT GUIDES ------------------------------------------------
-ggplot(ann[!is.na(Guide)], aes(x=UMAP.1, y=UMAP.2)) + 
-  geom_hex() +
-  scale_fill_gradient(low="lightgrey", high="blue") +
-  #geom_point(data=, aes(color=Guide)) +
-  facet_wrap(~ gsub("_.+", "", Guide)) +
-  theme_bw(12)
-ggsave(out("UMAP_Guides.pdf"), w=7, h=5)
-
-# GUIDE ENRICHMENT
-res <- data.table()
-pDT <- ann[!is.na(Guide)][!grepl(" ", Guide)]
-for(gx in unique(pDT[Guide != "NTC"]$Guide)){
-  for(cx in unique(pDT$cluster)){
-    mx <- as.matrix(with(ann[Guide %in% c(gx, "NTC")], table(cluster == cx, Guide == gx)))
-    if(dim(mx) == c(2,2)){
-      fish <- fisher.test(mx)
-      res <- rbind(res, data.table(Cluster=cx, Guide=gx, p=fish$p.value, OR=fish$estimate))
-    }
-  }
-}
-res[,padj := p.adjust(p, method="BH")]
-res[padj < 0.05]
-res[, log2OR := log2(pmin(5, OR + min(res[OR != 0]$OR)))]
-res <- hierarch.ordering(res, toOrder = "Guide", orderBy = "Cluster", value.var = "log2OR")
-res <- hierarch.ordering(res, toOrder = "Cluster", orderBy = "Guide", value.var = "log2OR")
-ggplot(res, aes(
-  x=Cluster,
-  y=Guide, 
-  color=log2OR, 
-  size=pmin(-log10(padj), 5))) + 
-  geom_point(shape=16) +
-  scale_color_gradient2(name="log2OR", low="blue", high="red") +
-  scale_size_continuous(name="padj") + 
-  theme_bw(12)
-ggsave(out("Guides_Fisher.pdf"), w=5, h=4)
 
 
 # ANTIBODIES --------------------------------------------------------------
@@ -336,11 +321,55 @@ markers.all <- res
 write.tsv(markers.all, out("Mixscape_Guides.tsv"))
 
 ann.orig <- fread(out("Metadata_2_Cleaned.tsv"))
-ann.orig <- merge(ann.orig, data.table(eccite@meta.data, keep.rownames = TRUE)[,c("rn", "mixscape_class", "mixscape_class_p_ko", "mixscape_class.global"),with=F], by="rn", all.x=TRUE)
-write.tsv(ann.orig, out("Metadata_3_Mixscape.tsv"))
+ann <- merge(ann.orig, data.table(eccite@meta.data, keep.rownames = TRUE)[,c("rn", "mixscape_class", "mixscape_class_p_ko", "mixscape_class.global"),with=F], by="rn", all.x=TRUE)
+write.tsv(ann, out("Metadata_3_Mixscape.tsv"))
 
 eccite.diet <- SCRNA.DietSeurat(sobj = eccite)
 save(eccite.diet, file=out("Mixscape_sobj.RData"))
+
+
+
+
+# PLOT GUIDES ------------------------------------------------
+ann <- fread(out("Metadata_3_Mixscape.tsv"))
+ggplot(ann[mixscape_class.global != "NP"], aes(x=UMAP.1, y=UMAP.2)) + 
+  geom_hex() +
+  scale_fill_gradient(low="lightgrey", high="blue") +
+  #geom_point(data=, aes(color=mixscape_class)) +
+  facet_wrap(~ gsub("_.+", "", mixscape_class)) +
+  theme_bw(12)
+ggsave(out("UMAP_Guides.pdf"), w=7, h=5)
+
+# GUIDE ENRICHMENT
+res <- data.table()
+pDT <- ann[!is.na(mixscape_class)][mixscape_class.global != "NP"]
+for(gx in unique(pDT[mixscape_class != "NTC"]$mixscape_class)){
+  for(cx in unique(pDT$cluster)){
+    message(gx, "-", cx)
+    mx <- as.matrix(with(ann[mixscape_class %in% c(gx, "NTC")], table(cluster == cx, mixscape_class == gx)))
+    print(mx)
+    if(dim(mx) == c(2,2)){
+      fish <- fisher.test(mx)
+      res <- rbind(res, data.table(Cluster=cx, mixscape_class=gx, p=fish$p.value, OR=fish$estimate))
+    }
+  }
+}
+res[,padj := p.adjust(p, method="BH")]
+res[padj < 0.05]
+res[, log2OR := log2(pmin(5, OR + min(res[OR != 0]$OR)))]
+res <- hierarch.ordering(res, toOrder = "mixscape_class", orderBy = "Cluster", value.var = "log2OR")
+res <- hierarch.ordering(res, toOrder = "Cluster", orderBy = "mixscape_class", value.var = "log2OR")
+ggplot(res, aes(
+  x=Cluster,
+  y=mixscape_class, 
+  color=log2OR, 
+  size=pmin(-log10(padj), 5))) + 
+  geom_point(shape=16) +
+  scale_color_gradient2(name="log2OR", low="blue", high="red") +
+  scale_size_continuous(name="padj") + 
+  theme_bw(12)
+ggsave(out("Guides_Fisher.pdf"), w=5, h=4)
+
 
 
 # Create Dotplot of Mixscape results ----------------------------------------------------------
@@ -402,6 +431,7 @@ dev.off()
 
 
 # Mixscape - Second DE approach, by cluster ---------------------------------------------
+stop("Would be nice to get the below consistent with the above (test same genes)")
 gx <- "Pu.1 KO"
 Idents(eccite) <- "mixscape_class"
 res <- data.table()

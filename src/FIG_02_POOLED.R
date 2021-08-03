@@ -91,24 +91,35 @@ ggsave(out("Vulcano.pdf"), w=15,h=2)
 
 
 # Comparison of two main populations --------------------------------------
-cx <- c("CKIT.LSK", "GMP.MEP")
+cx <- c("GMP.MEP", "CKIT.LSK")
 pDT.full <- RESULTS.wt[Comparison %in% cx][Genotype == "Cas9"]
+pDT.sig <- pDT.full[hit == TRUE][,paste(sort(unique(cleanComparisons(Comparison))), collapse = ","), by="Gene"]
+pDT.sig[grepl(",", V1),V1 := "Both"]
 pDT.long <- pDT.full[,.(mean(z)), by=c("Gene", "Comparison", "Genotype")]
 pDT <- dcast.data.table(pDT.long, Gene + Genotype ~ Comparison, value.var = "V1")
+pDT <- merge(pDT, pDT.sig, by="Gene", all.x=TRUE)
+pDT[, sig := V1]
+pDT[is.na(sig), sig := "None"]
+pDT$sig <- factor(pDT$sig, levels=c("Both", cleanComparisons(cx, order = FALSE), "None"))
 
-ggplot(pDT, aes_string(x=cx[1], y=cx[2])) + 
-  geom_hline(yintercept = 0, color="lightgrey") +
-  geom_vline(xintercept = 0, color="lightgrey") +
+xx <- 4
+
+ggplot(pDT, aes_string(x=cx[1], y=cx[2], color="sig")) + 
+  #geom_rect(xmin=-xx, ymin=-xx, ymax=xx, xmax=xx, color=NA, fill="#eeeeee60") +
+  geom_hline(yintercept = 0, color="lightgrey", alpha=0.5) +
+  geom_vline(xintercept = 0, color="lightgrey", alpha=0.5) +
   # geom_hex() + 
   # scale_fill_gradient(low="lightgrey", high="lightblue") + 
   # geom_point(data=pDT[Gene %in% pDT.full[hit==TRUE]$Gene], shape=1) +
-  geom_text_repel(data=pDT[Gene %in% intersect(pDT.full[hit==TRUE]$Gene, pDT.long[abs(V1) > 4]$Gene)], aes(label=Gene)) +
-  geom_point(alpha=0.5, color="grey") +
+  geom_text_repel(data=pDT[Gene %in% intersect(pDT.full[hit==TRUE]$Gene, pDT.long[abs(V1) > xx]$Gene)], aes(label=Gene)) +
+  geom_point(alpha=0.5) +
+  scale_color_manual(name="Significant in", values=c("#e31a1c", "#1f78b4", "#6a3d9a", "grey")) +
   #facet_grid(. ~ Genotype) +
   theme_bw() +
+  #theme(panel.grid=element_blank()) +
   xlab(cleanComparisons(cx[1])) + 
-  ylab(cleanComparisons(cx[2])) + 
-ggsave(out("Comparison_Scatter.pdf"), w=4.5,h=4.5)
+  ylab(cleanComparisons(cx[2]))
+ggsave(out("Comparison_Scatter.pdf"), w=5.5,h=4.5)
 
 
 
@@ -136,9 +147,9 @@ for(genex in unique(RESULTS.wt[hit == TRUE]$Gene)){
   statx <- merge(statx, el, by.x="Comparison", by.y="rn")
   statx[Comparison == "CKIT.LSK", V1 := "LSKd7"]
   statx[Comparison == "CKIT.LSK", V2 := "LSKd7"]
-  statx[Comparison == "GMPcd11.DN", V2 := "MEP"]
-  statx[Comparison == "GMPcd11.DN", V1 := "Und"]
-  statx  <- statx[Comparison != "UND.MEP"]
+  # statx[Comparison == "GMPcd11.DN", V2 := "MEP"]
+  # statx[Comparison == "GMPcd11.DN", V1 := "Und"]
+  # statx  <- statx[Comparison != "UND.MEP"]
   
   g <- graph.edgelist(as.matrix(statx[,c("V2", "V1")]))
   #V(g)$log2FC <- agx[match(V(g)$name, variable),]$log2FC
@@ -166,8 +177,8 @@ for(genex in unique(RESULTS.wt[hit == TRUE]$Gene)){
   layout <- list(
     # "cKit" = c(3,3),
     # "LSKd9" = c(3,2),
-    # "GMP.CD11bGr1" = c(3,1),
-    # "GMP.DN" = c(3,0),
+    "GMP.CD11bGr1" = c(3,1),
+    "GMP.DN" = c(3,0),
     "LSKd7" = c(0,3),
     "GMP" = c(-1,1.5),
     "MEP" = c(1,1.5),
@@ -209,3 +220,7 @@ ggplot(statx, aes(x=Gene)) +
   theme_bw(12) + 
   xRot()
 ggsave(out("GraphHM.pdf"),w=17, h=10)
+
+
+
+# TODO --> example of how p-values were calculation
