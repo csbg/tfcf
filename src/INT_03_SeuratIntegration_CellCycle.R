@@ -110,10 +110,10 @@ ann$seurat.clusters <- NULL
 ann$integrated.snn.res.0.5 <- NULL
 ann$orig.ident <- NULL
 ann$old.ident <- NULL
-ann.orig <- copy(ann)
 
 
 # Add extra meta data (antibodies, guides) --------------------------------
+ann.orig <- copy(ann)
 cutoff <- 5
 dsx <- names(additional.info)[1]
 for(dsx in names(additional.info)){
@@ -135,7 +135,6 @@ ann[, Guide := CRISPR.Guide.Capture]
 ann[, Guide := gsub("_.+$", "", Guide)]
 ann[grepl(",", Guide), Guide := NA]
 
-write.tsv(ann, out("Metadata.tsv"))
 
 for(dsx in unique(ann$dataset)){
   if(grepl("CITESEQ", dsx)){
@@ -146,6 +145,8 @@ for(dsx in unique(ann$dataset)){
     stopifnot(nrow(ann[dataset == dsx & !is.na(Antibody.Capture)]) == 0)
   }
 }
+
+write.tsv(ann, out("Metadata_1_Original.tsv"))
 
 
 
@@ -165,24 +166,6 @@ ggplot(ann, aes(x=UMAP.1, y=UMAP.2)) +
   theme_bw(12)
 ggsave(out("UMAP_CellCycle.pdf"), w=6, h=5)
 
-# 
-# # PLOT ORIGINAL CLUSTERS ------------------------------------------------
-# ggplot(ann, aes(x=UMAP.1, y=UMAP.2)) + 
-#   geom_point(aes(color=factor(Cluster))) +
-#   facet_grid(. ~ dataset) +
-#   theme_bw(12) +
-#   geom_label(data=ann[,.(UMAP.1=median(UMAP.1), UMAP.2=median(UMAP.2)), by=c("Cluster", "dataset")], aes(label=Cluster))
-# ggsave(out("UMAP_Clusters_points.pdf"), w=11, h=5)
-# 
-# ggplot(ann, aes(x=UMAP.1, y=UMAP.2)) + 
-#   geom_hex() +
-#   scale_fill_gradient(low="lightgrey", high="blue") +
-#   facet_grid(. ~ dataset) +
-#   theme_bw(12) +
-#   geom_label(data=ann[,.(UMAP.1=median(UMAP.1), UMAP.2=median(UMAP.2)), by=c("Cluster", "dataset")], aes(label=Cluster))
-# ggsave(out("UMAP_Clusters.pdf"), w=11, h=5)
-
-
 # PLOT INTEGRATED CLUSTERS ------------------------------------------------
 ggplot(ann, aes(x=UMAP.1, y=UMAP.2)) + 
   geom_point(aes(color=factor(cluster))) +
@@ -198,6 +181,33 @@ ggplot(ann, aes(x=UMAP.1, y=UMAP.2)) +
   theme_bw(12) +
   geom_label(data=ann[,.(UMAP.1=median(UMAP.1), UMAP.2=median(UMAP.2)), by=c("cluster", "dataset")], aes(label=cluster))
 ggsave(out("UMAP_cluster.pdf"), w=11, h=10)
+
+
+
+
+# Remove bad cells --------------------------------------------------------
+for(qcm in c("percent.mt", "nFeature.RNA", "nCount.RNA")){
+  print(qcm)
+  ann$measure <- ann[[qcm]]
+  p <- ggplot(ann, aes(y=measure + 0.1, x=factor(cluster))) + 
+    geom_violin(color=NA, fill="lightblue") + 
+    geom_boxplot(fill=NA, coef=Inf) +
+    scale_y_log10() +
+    theme_bw(12) +
+    ylab(qcm)
+    ggtitle(qcm)
+  ggsave(out("QC_", qcm, ".pdf"), w=5,h=4, plot=p)
+}
+
+ann[,cluster.qual.keep :=TRUE]
+ann[cluster %in% ann[,median(percent.mt), by="cluster"][V1 < 1]$cluster, cluster.qual.keep := FALSE]
+write.tsv(ann, out("Metadata_2_Cleaned.tsv"))
+
+
+
+
+# Now keep working with cleaned dataset -----------------------------------
+ann <- ann[cluster.qual.keep == TRUE]
 
 
 # PLOT GUIDES ------------------------------------------------
@@ -290,13 +300,9 @@ ggsave(out("Antibodies_Percentile.pdf"), w=5, h=4)
 
 # MIXSCAPE -----------------------------------------------------
 sobj2 <- sobj
-x <- unique(gsub(".+_(\\d+)$", "\\1", data.table(sobj2@meta.data, keep.rownames = T)[dataset == "ECCITE1"]$rn))
-stopifnot(length(x) == 1)
-g2 <- guides[!grepl(" ", Guide)][Guide != "None"]
-sobj2@meta.data$guide <- g2[match(row.names(sobj2@meta.data), paste0(g2$Barcode, "_", x))]$Guide
+sobj2@meta.data$guide <- ann[match(row.names(sobj2@meta.data), rn)]$Guide
 with(data.table(sobj2@meta.data), table(guide, dataset))
 with(g2, table(Guide))
-stopifnot(all(data.table(sobj2@meta.data, keep.rownames = TRUE)[guide == "NTC"][order(rn)]$rn == paste0(g2[Guide == "NTC"][order(Barcode)]$Barcode, "_",x)))
 sobj2 <- sobj2[,!is.na(sobj2@meta.data$guide)]
 with(data.table(sobj2@meta.data), table(guide, dataset))
 eccite <- CalcPerturbSig(
@@ -326,11 +332,18 @@ for(guidex in unique(grep(" KO$", eccite@meta.data$mixscape_class, value = TRUE)
     assay = "RNA",only.pos = FALSE, test.use="negbinom")
   res <- rbind(res, data.table(markers, guide=guidex, keep.rownames = TRUE))
 }
-
 markers.all <- res
+write.tsv(markers.all, out("Mixscape_Guides.tsv"))
+
+ann.orig <- fread(out("Metadata_2_Cleaned.tsv"))
+ann.orig <- merge(ann.orig, data.table(eccite@meta.data, keep.rownames = TRUE)[,c("rn", "mixscape_class", "mixscape_class_p_ko", "mixscape_class.global"),with=F], by="rn", all.x=TRUE)
+write.tsv(ann.orig, out("Metadata_3_Mixscape.tsv"))
+
+eccite.diet <- SCRNA.DietSeurat(sobj = eccite)
+save(eccite.diet, file=out("Mixscape_sobj.RData"))
 
 
-# Create Dotplot ----------------------------------------------------------
+# Create Dotplot of Mixscape results ----------------------------------------------------------
 gg <- unique(c(
   res[order(avg_log2FC, decreasing = TRUE)][,head(.SD,n=5), by="guide"]$rn,
   res[order(avg_log2FC, decreasing = FALSE)][,head(.SD,n=5), by="guide"]$rn))
@@ -357,62 +370,79 @@ dotplotDT[, scaleExp := scale(scaleExp, center = FALSE), by="rn"]
 markers.all.plot <- markers.all
 markers.all.plot[, percentage := pct.1 * 100]
 markers.all.plot[, variable := guide]
-ggplot(dotplotDT[rn %in% gg], aes(x=variable, y=rn, size=percentage, color=scaleExp)) + 
+pDT <- dotplotDT[rn %in% gg]
+pDT <- hierarch.ordering(pDT, toOrder = "variable", orderBy = "rn", value.var = "scaleExp")
+pDT <- hierarch.ordering(pDT, toOrder = "rn", orderBy = "variable", value.var = "scaleExp")
+ggplot(pDT, aes(x=variable, y=rn, size=percentage, color=scaleExp)) + 
   geom_point() + 
   geom_point(data=markers.all.plot[rn %in% gg & p_val_adj < 0.05], shape=1, color="black") + 
   scale_color_gradient2(low='blue', high = "red") +
   scale_size_continuous(limits=c(0, 100)) +
   theme_bw() +
   xRot()
-ggsave(out("Mixscape_Guides.pdf"), w=8,h=8)
-
-
-
-ggplot(markers.all[rn %in% gg], aes(x=guide, y=rn, size=percentage, color=scaleExp)) + 
-  geom_point() + 
-  scale_color_gradient2(low='blue', high = "red") +
-  scale_size_continuous(limits=c(0, 100)) +
-  theme_bw() +
-  xRot()
+ggsave(out("Mixscape_Guides.pdf"), w=10,h=12)
 
 DoHeatmap(size = 3,
   eccite, features = gg, group.by = "mix_cluster", assay = "RNA", slot="data",
   cells=data.table(eccite@meta.data, keep.rownames = TRUE)[guide %in% c("NTC", "Pu.1")]$rn)
 ggsave(out("Mixscape_HM.jpeg"), w=20,h=6, dpi = 100)
 
-# ggplot(dotplotDT[rn %in% gg], aes(x=factor(as.numeric(cluster)), y=rn, size=percentage, color=scaleExp)) + 
-#   geom_point() + 
-#   scale_color_gradient2(low='blue', high = "red") +
-#   scale_size_continuous(limits=c(0, 100)) +
-#   theme_bw() +
-#   facet_grid(. ~ guide) + 
-#   xRot()
-# 
-# 
-# matrix <- as.matrix(colMeans(exp  > 0))*100
-
 DotPlot(eccite, features = gg, assay="RNA") + xRot() + coord_flip()
-ggsave(out("Mixscape_Guides_Seurat.pdf"), w=8,h=8)
+ggsave(out("Mixscape_Guides_Seurat.pdf"), w=10,h=12)
+
+markers.all.MT <- toMT(markers.all, row = "rn", col = "guide", val = "avg_log2FC")
+cMT <- corS(markers.all.MT, use="pairwise.complete.obs")
+diag(cMT) <- NA
+dd <- as.dist(1-cMT)
+cleanDev(); pdf(out("Mixscape_corHM.pdf"),w=4.5,h=4)
+pheatmap(cMT,
+         clustering_distance_rows = dd, clustering_distance_cols = dd,
+         breaks=seq(-1,1, 0.01), color=COLORS.HM.FUNC(200))
+dev.off()
 
 
-
-
-# Second approach, by cluster ---------------------------------------------
+# Mixscape - Second DE approach, by cluster ---------------------------------------------
+gx <- "Pu.1 KO"
 Idents(eccite) <- "mixscape_class"
-cons.markers <- FindConservedMarkers(min.cells.group=0,
-  object = eccite, ident.1="Pu.1 KO", ident.2 = "NTC", 
-  assay = "RNA", grouping.var = "seurat_clusters")
-
-x <- data.table(cons.markers, keep.rownames = TRUE)
 res <- data.table()
-i <- 0
-for(i in unique(eccite@meta.data$seurat_clusters)){
-  ret <- data.table(x[,c("rn", grep(paste0("^", i), colnames(x), value=TRUE)),with=F], cluster=i)
-  colnames(ret) <- gsub("^\\d+_", "", colnames(ret))
-  res <- rbind(res, ret, fill=TRUE)
+for(gx in unique(eccite$mixscape_class)){
+  if(gx == "NTC") next
+  cons.markers <- FindConservedMarkers(min.cells.group=0,
+                                       object = eccite, ident.1=gx, ident.2 = "NTC", 
+                                       assay = "RNA", grouping.var = "seurat_clusters")
+  
+  x <- data.table(cons.markers, keep.rownames = TRUE)
+ 
+  i <- 0
+  for(i in unique(as.character(eccite@meta.data$seurat_clusters))){
+    ret <- data.table(crispr=gx, x[,c("rn", grep(paste0("^", i, "_"), colnames(x), value=TRUE)),with=F], cluster=i)
+    colnames(ret) <- gsub("^\\d+_", "", colnames(ret))
+    res <- rbind(res, ret, fill=TRUE)
+  }
 }
 
-ggplot(res, aes(x=factor(as.numeric(cluster)), y=rn, color=avg_log2FC, size=pmin(5, -log10(p_val_adj)))) + 
-  geom_point() + scale_color_gradient2(low="blue", high="red") +
-  theme_bw(12)
-ggsave(out("Mixscape_byCluster.pdf"), w=8,h=8)
+res <- res[!is.na(avg_log2FC)]
+write.tsv(res, out("Mixscape_byCluster.tsv"))
+
+markers.broad <- fread(out("Mixscape_Guides.tsv"))
+markers.byClu <- fread(out("Mixscape_byCluster_Guides.tsv"))
+
+markers.broad[,crispr := guide]
+markers.broad <- markers.broad[,-c("guide", "percentage", "variable"), with=F]
+
+markers.comb <- rbind(markers.broad, markers.byClu, fill=TRUE)
+markers.comb[, cluster := as.character(cluster)]
+markers.comb[is.na(cluster), cluster := "Broad"]
+markers.comb$cluster <- factor(markers.comb$cluster, levels=c("Broad", as.character(0:max(markers.byClu$cluster))))
+
+for(gx in unique(markers.comb$crispr)){
+  pDT <- markers.comb[crispr == gx]
+  pDT <- pDT[rn %in% pDT[order(abs(avg_log2FC), decreasing = TRUE)][,head(.SD, n=5),by=c("cluster")]$rn]
+  ggplot(pDT, aes(x=cluster, y=rn, color=avg_log2FC, size=pmin(5, -log10(p_val_adj)))) + 
+    geom_point() + scale_color_gradient2(low="blue", high="red") +
+    theme_bw(12) +
+    ggtitle(gx)
+  ggsave(out("Mixscape_byCluster_",gx,".pdf"), w=8,h=8)
+}
+
+
