@@ -41,4 +41,4 @@ id="ECCITE2_onlyRNA"
     --expect-cells=10000 &> $id.log
 
 mkdir -p ~/GFS/PROJECTS/TfCf/Data/$id/
-cp -R $id/outs ~/GFS/PROJECTS/TfCf/Data/$id/
+mv $id/outs ~/GFS/PROJECTS/TfCf/Data/$id/

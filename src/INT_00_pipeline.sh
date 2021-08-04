@@ -6,8 +6,8 @@ cd $HOME/omicstmp/
 echo "sample_id,molecule_h5" > INT_00_Aggr.csv
 echo "ECCITE1,$DATA/ECCITE1_RNA_cellranger_601/outs/molecule_info.h5"  >> INT_00_Aggr.csv
 echo "CITESEQ1,$DATA/CITESEQ1_RNAonly/outs/molecule_info.h5" >> INT_00_Aggr.csv
-echo "CITESEQ2,$DATA/CITESEQ2_standardGenome/outs/molecule_info.h5" >> INT_00_Aggr.csv
-echo "ECCITE2,$DATA/ECCITE2/outs/molecule_info.h5" >> INT_00_Aggr.csv
+echo "CITESEQ2,$DATA/CITESEQ2_onlyRNA/outs/molecule_info.h5" >> INT_00_Aggr.csv
+echo "ECCITE2,$DATA/ECCITE2_onlyRNA/outs/molecule_info.h5" >> INT_00_Aggr.csv
 cat INT_00_Aggr.csv
 
 id=INT_00_Aggr

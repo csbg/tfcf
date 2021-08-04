@@ -283,50 +283,44 @@ ggsave(out("Antibodies_Percentile.pdf"), w=5, h=4)
 
 
 
-# MIXSCAPE -----------------------------------------------------
-sobj2 <- sobj
-sobj2@meta.data$guide <- ann[match(row.names(sobj2@meta.data), rn)]$Guide
-with(data.table(sobj2@meta.data), table(guide, dataset))
-with(g2, table(Guide))
-sobj2 <- sobj2[,!is.na(sobj2@meta.data$guide)]
-with(data.table(sobj2@meta.data), table(guide, dataset))
-eccite <- CalcPerturbSig(
-  object = sobj2, assay = "RNA", slot = "data", 
-  gd.class ="guide",nt.cell.class = "NTC",
-  reduction = "pca",ndims = 20,num.neighbors = 20,
-  new.assay.name = "PRTB")
-eccite <- ScaleData(object = eccite, assay = "PRTB", do.scale = F, do.center = T)
-eccite <- RunMixscape(
-  object = eccite,assay = "PRTB",slot = "scale.data",
-  labels = "guide",nt.class.name = "NTC",
-  min.de.genes = 5,
-  iter.num = 10,
-  de.assay = "RNA",
-  verbose = TRUE,
-  prtb.type = "KO")
-
-table(eccite$mixscape_class.global, eccite$guide)
-prop.table(table(eccite$mixscape_class.global, eccite$guide),2)
-
-Idents(eccite) <- "mixscape_class"
-res <- data.table()
-for(guidex in unique(grep(" KO$", eccite@meta.data$mixscape_class, value = TRUE))){
-  print(guidex)
-  markers <- FindMarkers(
-    eccite, ident.1 = guidex, ident.2 = "NTC", logfc.threshold = log(2),
-    assay = "RNA",only.pos = FALSE, test.use="negbinom")
-  res <- rbind(res, data.table(markers, guide=guidex, keep.rownames = TRUE))
+# MIXSCAPE Analysis -----------------------------------------------------
+eccite.file <- out("Mixscape_sobj.RData")
+if(!file.exists(eccite.file)){
+  sobj2 <- sobj
+  sobj2@meta.data$guide <- ann[match(row.names(sobj2@meta.data), rn)]$Guide
+  with(data.table(sobj2@meta.data), table(guide, dataset))
+  with(g2, table(Guide))
+  sobj2 <- sobj2[,!is.na(sobj2@meta.data$guide)]
+  with(data.table(sobj2@meta.data), table(guide, dataset))
+  eccite <- CalcPerturbSig(
+    object = sobj2, assay = "RNA", slot = "data", 
+    gd.class ="guide",nt.cell.class = "NTC",
+    reduction = "pca",ndims = 20,num.neighbors = 20,
+    new.assay.name = "PRTB")
+  eccite <- ScaleData(object = eccite, assay = "PRTB", do.scale = F, do.center = T)
+  eccite <- RunMixscape(
+    object = eccite,assay = "PRTB",slot = "scale.data",
+    labels = "guide",nt.class.name = "NTC",
+    min.de.genes = 5,
+    iter.num = 10,
+    de.assay = "RNA",
+    verbose = TRUE,
+    prtb.type = "KO")
+  
+  table(eccite$mixscape_class.global, eccite$guide)
+  prop.table(table(eccite$mixscape_class.global, eccite$guide),2)
+  
+  eccite.diet <- SCRNA.DietSeurat(sobj = eccite)
+  save(eccite.diet, file=eccite.file)
+} else {
+  print("Loading Mixscape results")
+  load(eccite.file)
 }
-markers.all <- res
-write.tsv(markers.all, out("Mixscape_Guides.tsv"))
+eccite <- SCRNA.UndietSeurat(eccite.diet)
 
 ann.orig <- fread(out("Metadata_2_Cleaned.tsv"))
 ann <- merge(ann.orig, data.table(eccite@meta.data, keep.rownames = TRUE)[,c("rn", "mixscape_class", "mixscape_class_p_ko", "mixscape_class.global"),with=F], by="rn", all.x=TRUE)
 write.tsv(ann, out("Metadata_3_Mixscape.tsv"))
-
-eccite.diet <- SCRNA.DietSeurat(sobj = eccite)
-save(eccite.diet, file=out("Mixscape_sobj.RData"))
-
 
 
 
@@ -369,6 +363,108 @@ ggplot(res, aes(
   scale_size_continuous(name="padj") + 
   theme_bw(12)
 ggsave(out("Guides_Fisher.pdf"), w=5, h=4)
+
+
+
+
+
+# Perform DE based on Mixscape --------------------------------------------
+
+# # Global approach fast analysis --------------------------------------------
+# Idents(eccite) <- "mixscape_class"
+# res <- data.table()
+# for(guidex in unique(grep(" KO$", eccite@meta.data$mixscape_class, value = TRUE))){
+#   print(guidex)
+#   markers <- FindMarkers(
+#     eccite, ident.1 = guidex, ident.2 = "NTC", logfc.threshold = log(2),
+#     assay = "RNA",only.pos = FALSE, test.use="roc")
+#   res <- rbind(res, data.table(markers, guide=guidex, keep.rownames = TRUE))
+# }
+# markers.global.fast <- res
+# write.tsv(markers.global.fast, out("CRISPR.DE.global.fast.tsv"))
+# 
+# # Cluster-specific approach fast analysis --------------------------------------------
+# gx <- "Pu.1 KO"
+# Idents(eccite) <- "mixscape_class"
+# res <- data.table()
+# for(gx in unique(grep(" KO$", eccite@meta.data$mixscape_class, value = TRUE))){
+#   if(gx == "NTC") next
+#   cons.markers <- FindConservedMarkers(min.cells.group=0,
+#                                        object = eccite, ident.1=gx, ident.2 = "NTC", 
+#                                        assay = "RNA", grouping.var = "seurat_clusters",
+#                                        test.use="roc")
+#   
+#   x <- data.table(cons.markers, keep.rownames = TRUE)
+#   
+#   i <- 0
+#   for(i in unique(as.character(eccite@meta.data$seurat_clusters))){
+#     ret <- data.table(crispr=gx, x[,c("rn", grep(paste0("^", i, "_"), colnames(x), value=TRUE)),with=F], cluster=i)
+#     colnames(ret) <- gsub("^\\d+_", "", colnames(ret))
+#     res <- rbind(res, ret, fill=TRUE)
+#   }
+# }
+# markers.cluster.fast <- res[!is.na(avg_log2FC)]
+# write.tsv(markers.cluster.fast, out("CRISPR.DE.cluster.fast.tsv"))
+# 
+# 
+# # Collect genes that appear across analysis -------------------------------
+# markers.global.fast[,length(unique(rn)), by=c("guide")]
+# markers.cluster.fast[,length(unique(rn)), by=c("crispr")]
+# 
+# genes.to.test <- unique(markers.global.fast$rn, markers.cluster.fast$rn, )
+
+# Global approach negbinom analysis --------------------------------------------
+Idents(eccite) <- "mixscape_class"
+res <- data.table()
+for(guidex in unique(grep(" KO$", eccite@meta.data$mixscape_class, value = TRUE))){
+  print(guidex)
+  markers <- FindMarkers(
+    eccite, ident.1 = guidex, ident.2 = "NTC", 
+    #min.cells.group = 0,min.cells.feature = 0,
+    #logfc.threshold = 0, min.pct = 0, features = genes.to.test,
+    assay = "RNA",only.pos = FALSE, test.use="negbinom")
+  res <- rbind(res, data.table(markers, guide=guidex, keep.rownames = TRUE))
+}
+markers.broad.negbinom <- res
+write.tsv(markers.broad.negbinom, out("CRISPR.DE.global.negbinom.tsv"))
+
+# Confirm with global calculation of log fold changes ------------------------------------
+
+
+# Get log fold changes in each cluster ------------------------------------
+
+
+# Cluster-specific approach negbinom analysis --------------------------------------------
+gx <- "Pu.1 KO"
+Idents(eccite) <- "mixscape_class"
+res <- data.table()
+for(gx in unique(grep(" KO$", eccite@meta.data$mixscape_class, value = TRUE))){
+  if(gx == "NTC") next
+  cons.markers <- FindConservedMarkers(min.cells.group=0,
+                                       object = eccite, ident.1=gx, ident.2 = "NTC", 
+                                       assay = "RNA", grouping.var = "seurat_clusters",
+                                       test.use="roc")
+  
+  x <- data.table(cons.markers, keep.rownames = TRUE)
+  
+  i <- 0
+  for(i in unique(as.character(eccite@meta.data$seurat_clusters))){
+    ret <- data.table(crispr=gx, x[,c("rn", grep(paste0("^", i, "_"), colnames(x), value=TRUE)),with=F], cluster=i)
+    colnames(ret) <- gsub("^\\d+_", "", colnames(ret))
+    res <- rbind(res, ret, fill=TRUE)
+  }
+}
+
+
+write.tsv(markers.all, out("Mixscape_Guides.tsv"))
+
+
+
+
+
+
+
+
 
 
 
@@ -432,26 +528,7 @@ dev.off()
 
 # Mixscape - Second DE approach, by cluster ---------------------------------------------
 stop("Would be nice to get the below consistent with the above (test same genes)")
-gx <- "Pu.1 KO"
-Idents(eccite) <- "mixscape_class"
-res <- data.table()
-for(gx in unique(eccite$mixscape_class)){
-  if(gx == "NTC") next
-  cons.markers <- FindConservedMarkers(min.cells.group=0,
-                                       object = eccite, ident.1=gx, ident.2 = "NTC", 
-                                       assay = "RNA", grouping.var = "seurat_clusters")
-  
-  x <- data.table(cons.markers, keep.rownames = TRUE)
- 
-  i <- 0
-  for(i in unique(as.character(eccite@meta.data$seurat_clusters))){
-    ret <- data.table(crispr=gx, x[,c("rn", grep(paste0("^", i, "_"), colnames(x), value=TRUE)),with=F], cluster=i)
-    colnames(ret) <- gsub("^\\d+_", "", colnames(ret))
-    res <- rbind(res, ret, fill=TRUE)
-  }
-}
 
-res <- res[!is.na(avg_log2FC)]
 write.tsv(res, out("Mixscape_byCluster.tsv"))
 
 markers.broad <- fread(out("Mixscape_Guides.tsv"))
