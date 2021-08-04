@@ -8,6 +8,11 @@ inDir <- dirout_load("PPI_00_getData/")
 
 list.files(inDir(""))
 
+
+# Genes of interest -------------------------------------------------------
+m <- as.matrix(read.csv(PATHS$POOLED$DATA$matrix))
+(GENES.OF.INTEREST <- unique(gsub("_\\d+$", "", row.names(m))))
+
 # HUMAN - MOUSE mapping ---------------------------------------------------
 # Run on July 27, 2021
 # Dataset
@@ -53,9 +58,29 @@ hippie <- data.table(hippie, db="HIPPIE", dataset="HIPPIE", organism="Human")
 
 # HUMAP2 ------------------------------------------------------------------
 humap2 <- fread(inDir("hu.MAP2.Drew.2021.MolSysBio"))
-humap2 <- humap2[V3 > 0.5]
-message("MISSING SOME INFORMATION HERE - UNIPROT ACCESSIONS")
-#humap2[grepl("\\|", V1) | ]
+quantile(humap2$V3)
+humap2 <- humap2[V3 > 0.01]
+
+# Clean up protein ids
+humap2.clean <- humap2[!grepl("^sp", V2) & !grepl("^sp", V1)]
+humap2.corr <- humap2[grepl("^sp", V2) | grepl("^sp", V1)]
+i <- 1
+for(i in 1:nrow(humap2.corr)){
+  if(grepl("^sp", humap2.corr[i]$V2)){
+    acc <- gsub("^sp\\|(.+)\\|(.+)?", "\\1", humap2.corr[i]$V2)
+    name <- uniprot.id.map[ACC == acc]$Gene
+    if(length(name) == 0) name <- NA
+    humap2.corr[i, V2 := name]
+  }
+  if(grepl("^sp", humap2.corr[i]$V1)){
+    acc <- gsub("^sp\\|(.+)\\|(.+)?", "\\1", humap2.corr[i]$V1)
+    name <- uniprot.id.map[ACC == acc]$Gene
+    if(length(name) == 0) name <- NA
+    humap2.corr[i, V1 := name]
+  }
+}
+stopifnot(nrow(humap2.corr) + nrow(humap2.clean) == nrow(humap2))
+humap2 <- rbind(humap2.clean, humap2.corr[!is.na(V1) & !is.na(V2) & V1 != "" & V2 != ""])
 humap2 <- setNames(unique(humap2), c("A","B","Score"))
 humap2 <- data.table(humap2, db="hu.Map2", dataset="hu.Map2", organism="Human")
 
@@ -111,8 +136,7 @@ depmap <- depmap[row.names(depmap) %in% depmap.ann$DepMap_ID,]
 depmap.ann <- depmap.ann[DepMap_ID %in% row.names(depmap)]
 depmap.clean <- depmap
 colnames(depmap.clean) <- gsub("\\..+", "", colnames(depmap.clean))
-m <- as.matrix(read.csv(PATHS$POOLED$DATA$matrix))
-depmap.genes <- hm[Mouse%in% unique(gsub("_\\d+", "", row.names(m))) & Human %in% colnames(depmap.clean)]$Human
+depmap.genes <- hm[Mouse%in% GENES.OF.INTEREST & Human %in% colnames(depmap.clean)]$Human
 depmap.clean <- depmap.clean[,depmap.genes]
 str(depmap.clean)
 
@@ -128,8 +152,11 @@ get.depmap.cor <- function(m, name){
 
 depmap.list <- list(All = get.depmap.cor(m = depmap.clean, name = "All"))
 for(tx in unique(depmap.ann[,.N, by="lineage"][N>20]$lineage)){
-  depmap.list[[tx]] <- get.depmap.cor(m = depmap.clean, name = tx)
+  depmap.list[[tx]] <- get.depmap.cor(m = depmap.clean[depmap.ann[lineage == tx]$DepMap_ID,], name = tx)
 }
+# lapply(depmap.list, function(dt) dt[A == "ACTL6A" & B == "AHCTF1"])
+
+
 # 
 # depmap.groups <- with(depmap.ann, split(DepMap_ID, lineage))
 # depmap.groups <- depmap.groups[sapply(depmap.groups, length) > 20]
@@ -184,49 +211,35 @@ stopifnot(nrow(all.interactions) == nrow(all.interactions.orig))
 all.interactions <- merge(all.interactions, hm, by.x="B", by.y="Human", all.x=TRUE, suffixes = c("_A", "_B"))
 stopifnot(nrow(all.interactions) == nrow(all.interactions.orig))
 
+all.interactions[,.N, by=c("dataset", "db", "organism")]
+
 # Finalize names
 all.interactions[organism == "Mouse", Mouse_A := A]
 all.interactions[organism == "Mouse", Mouse_B := B]
 all.interactions[organism == "Human", Human_A := A]
 all.interactions[organism == "Human", Human_B := B]
-#write.tsv(all.interactions, out("PPI.tsv"))
+all.interactions$A <- NULL
+all.interactions$B <- NULL
+save(all.interactions, file=out("All.Interactions.RData"))
 
 
-# Identify interesting pairs ----------------------------------------------
-mds <- fread(dirout_load("POOLED_10_IndividualAnalysis")("Correlation_","hits","_MDS.tsv"))
-mds.dist <- as.matrix(mds[,2:3])
-row.names(mds.dist) <- mds$rn
-mds.dist <- as.matrix(dist(mds.dist))
-diag(mds.dist) <- max(mds.dist)
-ii <- unique(data.table(t(apply(which(mds.dist <= sort(mds.dist[upper.tri(mds.dist)], decreasing = FALSE)[200], arr.ind = TRUE), 1, sort))))
-pairs <- data.table(A=mds$rn[ii$V1], B=mds$rn[ii$V2])
-gg <- unique(c(pairs$A, pairs$B))
-
-all.interactions.small <- all.interactions[Mouse_A %in% gg & Mouse_B %in% gg]
-
-# Plots pairs -------------------------------------------------------------
+interactions <- all.interactions[Mouse_A %in% GENES.OF.INTEREST & Mouse_B %in% GENES.OF.INTEREST]
+interactions[,A := Mouse_A]
+interactions[,B := Mouse_B]
+interactions$Human_A <- NULL
+interactions$Human_B <- NULL
+interactions$Mouse_A <- NULL
+interactions$Mouse_B <- NULL
+interactions <- interactions[A != B]
+pm <- as.matrix(interactions[,c("A", "B"),with=F])
+pms <- t(apply(pm, 1, sort))
+pm <- apply(pms, 1, paste, collapse= " - ")
+interactions$pair <- pm
 res <- data.table()
-for(pi in 1:nrow(pairs)){
-  pa=pairs[pi]$A
-  pb=pairs[pi]$B
-  res <- rbind(res, data.table(all.interactions.small[(Mouse_A == pa & Mouse_B == pb) | (Mouse_A == pb & Mouse_B == pa)], pair=paste(pa, pb)))
+for(dbx in unique(interactions$db)){
+  res <- rbind(res, unique(interactions[db == dbx]))
 }
-res <- res[!is.na(dataset)]
-
-p.ppi <- ggplot(res, aes(y=pair, x=paste0(dataset, " (", organism, ") "), color=Score)) +
-  geom_point() +
-  theme_bw(12) + 
-  facet_grid(. ~ db, switch = "x", space = "free", scales = "free") +
-  scale_color_gradient(low="blue", high="red", limits=c(0,1))
-ggsave(out("PPI.result.pdf"), w=6,  h=15, plot=p.ppi + xRot())
-
-
-
-p <- gridExtra::grid.arrange(
-  p.ppi,
-  p.dm, 
-  nrow=1, ncol=2, widths=c(3,4))
-ggsave(out("Results_combined.pdf"), h=10, w=9, plot=p)
-
+interactions <- res
+save(interactions, file=out("GOI.Interactions.RData"))
 
 
