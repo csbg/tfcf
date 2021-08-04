@@ -1,3 +1,5 @@
+source $CODEBASE/tfcf/setup.sh
+
 
 cd $HOME/omicstmp/
 
