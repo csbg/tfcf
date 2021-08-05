@@ -1,5 +1,7 @@
-source(paste0(Sys.getenv("CODE"), "src/00_init.R"))
-out <- dirout("INT_03_SeuratIntegration_CellCycle/")
+
+stop("Compare guides to NTC from the SAME DATASET")
+#source(paste0(Sys.getenv("CODE"), "src/00_init.R"))
+#out <- dirout("INT_03_SeuratIntegration_CellCycle/")
 
 require(Seurat)
 
@@ -9,6 +11,9 @@ require(Seurat)
 # clusters.e1 <- fread(PATHS$ECCITE1$DATA$clusters)
 # clusters.e1$dataset <- "ECCITE1"
 # clusters <- rbind(clusters.c1, clusters.e1)
+
+AGG.CSV <- fread(paste(Sys.getenv("DATA"), "INT_00_Aggr", "outs", "aggregation.csv", sep="/"))
+AGG.CSV$i <- 1:nrow(AGG.CSV)
 
 # Read guides merge with clusters
 guides <- fread(PATHS$ECCITE1$DATA$guides)
@@ -321,6 +326,17 @@ eccite <- SCRNA.UndietSeurat(eccite.diet)
 ann.orig <- fread(out("Metadata_2_Cleaned.tsv"))
 ann <- merge(ann.orig, data.table(eccite@meta.data, keep.rownames = TRUE)[,c("rn", "mixscape_class", "mixscape_class_p_ko", "mixscape_class.global"),with=F], by="rn", all.x=TRUE)
 write.tsv(ann, out("Metadata_3_Mixscape.tsv"))
+
+
+
+# Export results for cellranger -------------------------------------------
+ann.exp <- fread(out("Metadata_3_Mixscape.tsv"))
+ann.exp <- merge(ann.exp, AGG.CSV[,c("sample_id", "i"),with=F], by.x="dataset", by.y="sample_id", all.x=TRUE)
+stopifnot(!any(is.na(ann.exp$i)))
+ann.exp[,Barcode := paste0(gsub("-.+$", "", Barcode), "-", i)]
+write.table(ann.exp[cluster.qual.keep == TRUE][,c("Barcode", "UMAP.1", "UMAP.2"),with=F], file=out("Cellranger_UMAP.csv"), sep=",", col.names = c("Barcode", "UMAP-1", "UMAP-2"), quote=F, row.names = F)
+write.table(ann.exp[cluster.qual.keep == TRUE][,c("Barcode", "mixscape_class"),with=F], file=out("Cellranger_MIXSCAPE.csv"), sep=",", col.names = c("Barcode", "MIXSCAPE"), quote=F, row.names = F)
+
 
 
 
