@@ -1,7 +1,7 @@
 
-stop("Compare guides to NTC from the SAME DATASET")
-#source(paste0(Sys.getenv("CODE"), "src/00_init.R"))
-#out <- dirout("INT_03_SeuratIntegration_CellCycle/")
+# stop("Compare guides to NTC from the SAME DATASET")
+source(paste0(Sys.getenv("CODE"), "src/00_init.R"))
+out <- dirout("INT_03_SeuratIntegration_CellCycle/")
 
 require(Seurat)
 
@@ -113,7 +113,7 @@ if(!file.exists(file.markers)){
   sobj <- ScaleData(sobj, vars.to.regress = c("S.Score", "G2M.Score"), verbose = FALSE)
   cl.markers <- FindAllMarkers(sobj, assay = "RNA", only.pos = TRUE, min.cells.feature=10, min.pct = 0.2)
   cl.markers <- data.table(cl.markers, keep.rownames = TRUE)
-  write.table(cl.markers, out("ClusterMarkers.tsv"))
+  write.table(cl.markers, file.markers)
   
   pDT <- cl.markers[gene %in% cl.markers[p_val_adj < 0.05][order(avg_log2FC, decreasing = TRUE)][,head(.SD, n=10), by="cluster"]$gene]
   pDT <- hierarch.ordering(pDT, toOrder = "gene", orderBy = "cluster", value.var = "avg_log2FC")
@@ -336,6 +336,7 @@ stopifnot(!any(is.na(ann.exp$i)))
 ann.exp[,Barcode := paste0(gsub("-.+$", "", Barcode), "-", i)]
 write.table(ann.exp[cluster.qual.keep == TRUE][,c("Barcode", "UMAP.1", "UMAP.2"),with=F], file=out("Cellranger_UMAP.csv"), sep=",", col.names = c("Barcode", "UMAP-1", "UMAP-2"), quote=F, row.names = F)
 write.table(ann.exp[cluster.qual.keep == TRUE][,c("Barcode", "mixscape_class"),with=F], file=out("Cellranger_MIXSCAPE.csv"), sep=",", col.names = c("Barcode", "MIXSCAPE"), quote=F, row.names = F)
+write.table(ann.exp[cluster.qual.keep == TRUE][,c("Barcode", "cluster"),with=F], file=out("Cellranger_Clusters.csv"), sep=",", col.names = c("Barcode", "Clusters_Seurat"), quote=F, row.names = F)
 
 
 
