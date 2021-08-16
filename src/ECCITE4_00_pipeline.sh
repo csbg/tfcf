@@ -4,38 +4,38 @@ source $CODEBASE/tfcf/setup.sh
 
 ### CREATE GENOME
 
-# cd $HOME/omicstmp
-#
-# mkdir newGenome/
-# oldGenomePath="$GFS/RESOURCES/Genomes/refdata-gex-mm10-2020-A/"
-#
-# cp $oldGenomePath/fasta/genome.fa newGenome/genome.fa
-# cp $oldGenomePath/genes/genes.gtf newGenome/genes.gtf
-#
-# x="GFP"
-# for x in GFP BFP; do
-#     pathFA=$CODEBASE/tfcf/metadata/${x}.fa
-#
-#     numberBases=$(cat $pathFA | grep -v "^>" | tr -d "\n" | wc -c)
-#     gtf="$x\tunknown\texon\t1\t${numberBases}\t.\t+\t.\tgene_id xxx${x}xxx; transcript_id xxx${x}xxx; gene_name xxx${x}xxx; gene_biotype xxxprotein_codingxxx;"
-#     gtf=$(echo $gtf | sed 's/xxx/"/g')
-#
-#     echo -e $gtf > ${x}.gtf
-#
-#     cat ${x}.gtf >> newGenome/genes.gtf
-#     fold -w 60 $pathFA >> newGenome/genome.fa
-#
-#     echo -e "" >> newGenome/genome.fa
-#
-#     rm ${x}.gtf
-# done
-#
-#
-# grep ">" newGenome/genome.fa
-# tail -5 newGenome/genes.gtf
-# tail -200 newGenome/genome.fa
-#
-# ~/code/cellranger-6.0.1/cellranger mkref --genome=newGenomeExtended --fasta=newGenome/genome.fa --genes=newGenome/genes.gtf
+cd $HOME/omicstmp
+
+mkdir newGenome/
+oldGenomePath="$GFS/RESOURCES/Genomes/refdata-gex-mm10-2020-A/"
+
+cp $oldGenomePath/fasta/genome.fa newGenome/genome.fa
+cp $oldGenomePath/genes/genes.gtf newGenome/genes.gtf
+
+x="GFP"
+for x in GFP BFP; do
+    pathFA=$CODEBASE/tfcf/metadata/${x}.fa
+
+    numberBases=$(cat $pathFA | grep -v "^>" | tr -d "\n" | wc -c)
+    gtf="$x\tunknown\texon\t1\t${numberBases}\t.\t+\t.\tgene_id xxx${x}xxx; transcript_id xxx${x}xxx; gene_name xxx${x}xxx; gene_biotype xxxprotein_codingxxx;"
+    gtf=$(echo $gtf | sed 's/xxx/"/g')
+
+    echo -e $gtf > ${x}.gtf
+
+    cat ${x}.gtf >> newGenome/genes.gtf
+    fold -w 60 $pathFA >> newGenome/genome.fa
+
+    echo -e "" >> newGenome/genome.fa
+
+    rm ${x}.gtf
+done
+
+
+grep ">" newGenome/genome.fa
+tail -5 newGenome/genes.gtf
+tail -200 newGenome/genome.fa
+
+~/code/cellranger-6.0.1/cellranger mkref --genome=newGenomeExtended --fasta=newGenome/genome.fa --genes=newGenome/genes.gtf
 
 
 
@@ -67,3 +67,21 @@ for id in ECCITE4_Cas9 ECCITE4_WT; do
     
     mv ${id}* $GFS/PROJECTS/TfCf/Data/
 done
+
+
+
+######### AGGREGATE DATA
+source $CODEBASE/tfcf/setup.sh
+cd $HOME/omicstmp/
+
+id=ECCITE4_INT
+
+echo "sample_id,molecule_h5" > $id.csv
+echo "Cas9,$DATA/ECCITE4_Cas9/outs/molecule_info.h5"  >> $id.csv
+echo "WT,$DATA/ECCITE4_WT/outs/molecule_info.h5" >> $id.csv
+cat $id.csv
+
+$HOME/code/cellranger-6.0.1/cellranger aggr --id=$id --csv=$id.csv --normalize=none &> $id.log
+
+mkdir -p ~/GFS/PROJECTS/TfCf/Data/$id/
+mv $id/outs ~/GFS/PROJECTS/TfCf/Data/$id/
