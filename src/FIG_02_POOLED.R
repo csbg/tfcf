@@ -66,9 +66,12 @@ pDT.stats[,percSig := V2/n*100]
 pDT.stats <- pDT.stats[Gene %in% pDT.stats[percSig > 50]$Gene]
 pDT.stats <- pDT.stats[Comparison %in% COMPARISONS.USE]
 
-mx <- toMT(pDT.stats, row = "Gene", col = "Comparison", val = "V1")
-mx[is.na(mx)] <- 0
-pDT.stats$Cluster <- cutree(hclust(dist(mx)), k = 7)[pDT.stats$Gene]
+# mx <- toMT(pDT.stats, row = "Gene", col = "Comparison", val = "V1")
+# mx[is.na(mx)] <- 0
+# pDT.stats$Cluster <- cutree(hclust(dist(mx)), k = 7)[pDT.stats$Gene]
+stop("Use this to display colors in the axis")
+# https://stackoverflow.com/questions/49735290/ggplot2-color-individual-words-in-title-to-match-colors-of-groups
+# ggtext package!!!
 
 ggplot(pDT.stats, aes(y=cleanComparisons(Comparison), x=Gene)) +
   theme_bw(12) + 
