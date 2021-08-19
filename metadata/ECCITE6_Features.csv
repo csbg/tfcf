@@ -1,0 +1,2 @@
+id,name,read,pattern,sequence,feature_type,target_gene_id,target_gene_name
+NTC_0005,NTC_0005,R2,(BC)GTTTAAGAGCTAAGCTGGAA,GACTCCGGGTACTAAATGTC,CRISPR Guide Capture,Non-Targeting,Non-Targeting
