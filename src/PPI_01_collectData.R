@@ -3,6 +3,7 @@ baseDir <- "PPI_01_CollectData/"
 out <- dirout(baseDir)
 
 require(readxl)
+require(igraph)
 
 inDir <- dirout_load("PPI_00_getData/")
 
@@ -47,6 +48,44 @@ if(!file.exists(uniprot.file)){
 }
 
 
+
+# Walktrap function -------------------------------------------------------
+walktrap.probabilities <- function(g, steps=5){
+  adj <- get.adjacency(g)
+  diag(adj) <- 0
+  degree <- rowSums(adj)
+  degree[degree == 0] <- 1
+  prob <- adj/degree
+  stopifnot(all(round(rowSums(prob),4)[rowSums(adj) > 0]==1))
+  stopifnot(all(round(rowSums(prob),4)[rowSums(adj) == 0]==0))
+  #table(Matrix::rowSums(prob))
+  probs <- list()
+  probs[[1]] <- prob
+  for(i in 2:steps){
+    print(paste("Step", i))
+    probs[[i]] <- probs[[i-1]] %*% prob
+  }
+  for(i in 1:steps){
+    print(paste("Checking", i))
+    stopifnot(all(round(rowSums(probs[[i]]),4)[rowSums(adj) > 0]==1))
+    stopifnot(all(round(rowSums(probs[[i]]),4)[rowSums(adj) == 0]==0))
+  }
+  probs
+}
+# Making sure this works
+# https://towardsdatascience.com/similarity-of-documents-with-random-walks-98f94fd2c76c
+# https://arxiv.org/pdf/physics/0512106.pdf
+g <- graph.edgelist(as.matrix(data.table(A=paste0("D", c(1,1,2,3,3)), B=paste0("T", c(1,2,1,1,2)))), directed = FALSE)
+plot(g)
+adj <- get.adjacency(g)
+diag(adj) <- 0
+degree <- rowSums(adj)
+degree[degree == 0] <- 1
+prob <- adj/degree
+t(prob)
+prob %*% prob
+
+
 # HIPPIE ------------------------------------------------------------------
 hippie <- fread(inDir("hippie.txt"))
 hippie <- merge(hippie, uniprot.id.map, by.x="V1", by.y="ID")
@@ -54,6 +93,56 @@ hippie <- merge(hippie, uniprot.id.map, by.x="V3", by.y="ID")
 hippie <- setNames(hippie[,c("Gene.x", "Gene.y", "V5"), with=F], c("A","B","Score"))
 hippie <- unique(hippie)
 hippie <- data.table(hippie, db="HIPPIE", dataset="HIPPIE", organism="Human")
+
+
+# HIPPIE DISTANCE ---------------------------------------------------------
+g <- graph.edgelist(as.matrix(hippie[Score > 0.7][,c("A","B"),with=F]), directed = FALSE)
+g <- simplify(g)
+goi <- intersect(hm[Mouse %in% GENES.OF.INTEREST]$Human, V(g)$name)
+
+# distances (not very helpful)
+dd <- distances(g, goi, goi)
+table(dd)
+
+# calculate walktrap probabilities
+steps=8
+probs <- walktrap.probabilities(g, steps = steps)
+
+# Look at differences
+i <- 1
+j <- 2
+for(i in 1:(steps-1)){
+  for(j in (i+1):steps){
+    message(i, " vs ", j)
+    print(sum(abs(probs[[i]][goi,] - probs[[j]][goi,])))
+  }
+}
+
+# Get similarity
+sim <- cor(t(as.matrix(probs[[4]][goi,])))
+diag(sim) <- NA
+cleanDev(); pdf(out("HIPPIE_DISTANCES.pdf"), w=30,h=30)
+pheatmap(sim, fontsize_row = 5)
+dev.off()
+
+# similarity into a table
+sum(sim > 0.7, na.rm = TRUE)
+adj2 <- sim
+adj2[adj2 < 0.7] <- 0
+adj2[is.na(adj2)] <- 0
+sum(adj2 > 0.7, na.rm = TRUE)
+g <- graph.adjacency(adj2, weighted = "max")
+hippie_distance <- data.table(get.edgelist(g), E(g)$max)
+for(i in 1:10){
+  stopifnot(sim[hippie_distance[i]$V1, hippie_distance[i]$V2] == hippie_distance[i]$V3)
+}
+hippie_distance <- data.table(setNames(hippie_distance, c("A","B", "Score")), db="HIPPIE", dataset="HIPPIE_Distances", organism="Human")
+# hippie[A == "KLF9" & B == "JDP2"]
+# hippie[A == "JDP2" & B == "KLF9"]
+# hippie[A %in% goi & B %in% goi]
+# hippie_distance[grepl("SMARC", A) & grepl("SMARC", B)]
+# hippie[grepl("SMARC", A) & grepl("SMARC", B)]
+
 
 
 # HUMAP2 ------------------------------------------------------------------
@@ -83,6 +172,51 @@ stopifnot(nrow(humap2.corr) + nrow(humap2.clean) == nrow(humap2))
 humap2 <- rbind(humap2.clean, humap2.corr[!is.na(V1) & !is.na(V2) & V1 != "" & V2 != ""])
 humap2 <- setNames(unique(humap2), c("A","B","Score"))
 humap2 <- data.table(humap2, db="hu.Map2", dataset="hu.Map2", organism="Human")
+
+
+# Hu.Map DISTANCE ---------------------------------------------------------
+g <- graph.edgelist(as.matrix(humap2[Score > 0.7][,c("A","B"),with=F]), directed = FALSE)
+g <- simplify(g)
+goi <- intersect(hm[Mouse %in% GENES.OF.INTEREST]$Human, V(g)$name)
+
+# distances (not very helpful)
+dd <- distances(g, goi, goi)
+table(dd)
+
+# calculate walktrap probabilities
+steps=8
+probs <- walktrap.probabilities(g, steps = steps)
+
+# Look at differences
+i <- 1
+j <- 2
+for(i in 1:(steps-1)){
+  for(j in (i+1):steps){
+    message(i, " vs ", j)
+    print(sum(abs(probs[[i]][goi,] - probs[[j]][goi,])))
+  }
+}
+
+# Get similarity
+sim <- cor(t(as.matrix(probs[[4]][goi,])))
+diag(sim) <- NA
+cleanDev(); pdf(out("HUMAP2_DISTANCES.pdf"), w=30,h=30)
+pheatmap(sim, fontsize_row = 5)
+dev.off()
+
+# similarity into a table
+sum(sim > 0.7, na.rm = TRUE)
+adj2 <- sim
+adj2[adj2 < 0.7] <- 0
+adj2[is.na(adj2)] <- 0
+sum(adj2 > 0.7, na.rm = TRUE)
+g <- graph.adjacency(adj2, weighted = "max")
+humap2_distance <- data.table(get.edgelist(g), E(g)$max)
+for(i in 1:10){
+  stopifnot(sim[humap2_distance[i]$V1, humap2_distance[i]$V2] == humap2_distance[i]$V3)
+}
+humap2_distance <- data.table(setNames(humap2_distance, c("A","B", "Score")), db="hu.Map2", dataset="hu.Map2_Distances", organism="Human")
+
 
 
 # CFMS --------------------------------------------------------------------
@@ -124,6 +258,31 @@ corum.list <- list(
   data.table(interactions.from.corum(corumAll[Organism == "Human"]), db="Corum", dataset="All", organism="Human"),
   data.table(interactions.from.corum(corumAll[Organism == "Mouse"]), db="Corum", dataset="All", organism="Mouse")
 )
+
+
+
+# Manual Complex annotation -----------------------------------------------
+compexes.David <- fread(dirout_load("EXT_01_GetAnnotationsDavid")("ManualComplexes.tsv"))
+
+x <- compexes.David
+interactions.from.david <- function(x){
+  gg <- unique(x$Gene)
+  adjm <- matrix(0, length(gg), length(gg))
+  row.names(adjm) <- gg
+  colnames(adjm) <- gg
+  cx <- x$Complex[1]
+  for(cx in unique(x$Complex)){
+    gs <- x[Complex == cx]$Gene
+    adjm[gs, gs] <- 1
+  }
+  res <- unique(melt(data.table(data.frame(adjm),keep.rownames = TRUE), id.vars ="rn")[value == 1])
+  res <- setNames(res, c("A","B", "Score"))
+  return(res)
+}
+complexes.manual.list <- list(
+  data.table(interactions.from.david(compexes.David), db="Manual", dataset="Manual", organism="Mouse")
+)
+
 
 
 # DEPMAP ------------------------------------------------------------------
@@ -191,10 +350,13 @@ for(tx in unique(depmap.ann[,.N, by="lineage"][N>20]$lineage)){
 # COMBINE -------------------------------------------------------------------------
 all.interactions <- data.table()
 all.interactions <- rbind(all.interactions, hippie)
+all.interactions <- rbind(all.interactions, hippie_distance)
 all.interactions <- rbind(all.interactions, humap2)
+all.interactions <- rbind(all.interactions, humap2_distance)
 all.interactions <- rbind(all.interactions, cfms)
 all.interactions <- rbind(all.interactions, do.call(rbind, pcp.list))
 all.interactions <- rbind(all.interactions, do.call(rbind, corum.list))
+all.interactions <- rbind(all.interactions, do.call(rbind, complexes.manual.list))
 all.interactions <- rbind(all.interactions, do.call(rbind, depmap.list))
 all.interactions <- rbind(all.interactions, hippie)
 all.interactions.orig <- copy(all.interactions)

@@ -1,12 +1,20 @@
 source(paste0(Sys.getenv("CODE"), "src/00_init.R"))
-out <- dirout("PPI_02_FirstPlots")
+out <- dirout("PPI_10_Plots")
 
+
+
+# Read interaction data ---------------------------------------------------
 (load(dirout_load("PPI_01_CollectData")("GOI.Interactions.RData")))
-
-
 interactions[db == "DepMap", dataset := gsub("^(.)", "\\U\\1", gsub("_", " ", dataset), perl=TRUE)]
 interactions[,.N, by=c("db", "dataset", "organism")]
 
+
+
+# List of TF-CF pairs -----------------------------------------------------
+tfcf <- fread(dirout_load("EXT_01_GetAnnotationsDavid/")("Manual.TFCF.mapping.tsv"))
+tfs <- tfcf[Category == "TF"]$GENE
+cfs <- tfcf[Category == "CF"]$GENE
+tfcf.pairs <- unique(interactions[,c("A","B", "pair")])[(A %in% tfs & B %in% cfs) | (A %in% cfs & B %in% tfs)]$pair
 
 
 # DepMap analysis ---------------------------------------------------------
@@ -36,11 +44,13 @@ ggsave(out("DepMap_Vulcano.pdf"), w=5,h=4)
 
 # Define groups of pairs --------------------------------------------------
 pair.groups <- list(
-  Complex.extension = unique(interactions[!db %in% c("Corum", "DepMap")][!pair %in% unique(interactions[db %in% c("Corum")]$pair)][Score > 0.7]$pair),
-  Complex.known = unique(interactions[db %in% c("Corum")]$pair),
+  TFCF.pair = tfcf.pairs,
+  Complex.known = unique(interactions[db %in% c("Corum", "Manual")]$pair),
+  Complex.extension = unique(interactions[!db %in% c("Corum", "DepMap", "Manual")][!pair %in% unique(interactions[db %in% c("Corum", "Manual")]$pair)][Score > 0.7]$pair),
   Depmap.global = dpm.res[padj < 0.05]$pair,
   Depmap.blood = names(which(dpm.blood.z > qnorm(p = 0.99)))
 )
+stopifnot(length(intersect(pair.groups$Complex.extension, pair.groups$Complex.known))==0)
 pair.groups2 <- pair.groups
 names(pair.groups2) <- gsub("\\.", "\n", names(pair.groups2))
 cleanDev(); pdf(out("Venn.pdf"),w=5,h=5)
@@ -49,16 +59,25 @@ dev.off()
 
 
 
-# # Plots pairs -------------------------------------------------------------
-pair.groups
+# Plots pairs -------------------------------------------------------------
 pDT <- do.call(rbind, list(
-  interactions[pair %in% pair.groups$complex.extension & pair %in% c(pair.groups$depmap.global, pair.groups$depmap.blood)],
-  interactions[pair %in% pair.groups$depmap.blood & pair %in% c(pair.groups$complex.known)]
+  interactions[pair %in% pair.groups$Complex.extension & pair %in% c(pair.groups$Depmap.global, pair.groups$Depmap.blood)],
+  interactions[pair %in% pair.groups$Depmap.blood & pair %in% c(pair.groups$Complex.known)]
 ))
+# pDT <- rbind(
+#   pDT[pair %in% pair.groups$TFCF.pair],
+#   pDT[!pair %in% pair.groups$TFCF.pair]
+# )
+pDT <- pDT[pair %in% sample(pDT$pair, 50)]
 length(unique(pDT$pair))
 
+height <- length(unique(pDT$pair)) * 0.2 + 2
+
 pDT.ppi <- pDT[db != "DepMap"][dataset != "Core"]
-pDT.ppi[,db2 := ifelse(db == "Corum", "Complex", "Other")]
+pDT.ppi[db %in% c("Corum", "Manual"), db2 := "Complex"]
+pDT.ppi[grepl("_distances", dataset, ignore.case = TRUE), db2 := "Indirect PPI"]
+pDT.ppi[grepl("_distances", dataset, ignore.case = TRUE), dataset := gsub("_distances", "", dataset, ignore.case = TRUE)]
+pDT.ppi[is.na(db2), db2 := "Direct PPI"]
 pDT.ppi$pair <- factor(pDT.ppi$pair, levels=unique(pDT$pair))
 p.ppi <- ggplot(pDT.ppi, aes(y=pair, x=paste0(dataset, " (", organism, ") "), color=Score, size=Score)) +
   geom_point() +
@@ -68,7 +87,7 @@ p.ppi <- ggplot(pDT.ppi, aes(y=pair, x=paste0(dataset, " (", organism, ") "), co
   scale_color_gradient(low="white", high="#6a3d9a", limits=c(0,1)) +
   scale_y_discrete(drop=FALSE) +
   ylab("")
-ggsave(out("Plot.PPI.pdf"), w=6,  h=15, plot=p.ppi + xRot())
+ggsave(out("Plot.PPI.pdf"), w=6,  h=height, plot=p.ppi + xRot())
 
 pDT.dpm <- pDT[db == "DepMap"]
 pDT.dpm$pair <- factor(pDT.dpm$pair, levels=unique(pDT$pair))
@@ -80,14 +99,14 @@ p.dpm <- ggplot(pDT.dpm, aes(y=pair, x=paste0(dataset, " (", organism, ") "), co
   theme_bw(12) +
   facet_grid(. ~ db, switch = "x", space = "free", scales = "free") +
   ylab("")
-ggsave(out("Plot.DepMap.pdf"), w=6,  h=15, plot=p.dpm + xRot())
-
+ggsave(out("Plot.DepMap.pdf"), w=6,  h=height, plot=p.dpm + xRot())
 
 pDT.group <- data.table(pair=pDT$pair, sapply(pair.groups, function(pg) pDT$pair %in% pg) + 0)
 pDT.group <- melt(pDT.group, id.vars = "pair")
 pDT.group[,db := "Group"]
 pDT.group$pair <- factor(pDT.group$pair, levels=unique(pDT$pair))
-p.group <- ggplot(pDT.group, aes(y=pair, x=gsub("\\.", " ", variable), fill=paste0("x", value))) +
+pDT.group$variable <- factor(gsub("\\.", " ", pDT.group$variable), levels=gsub("\\.", " ", names(pair.groups)))
+p.group <- ggplot(pDT.group, aes(y=pair, x=variable, fill=paste0("x", value))) +
   scale_y_discrete(drop=FALSE) +
   geom_tile() +
   scale_fill_manual(values=c(x1="#33a02c", x0="white")) +
@@ -95,7 +114,7 @@ p.group <- ggplot(pDT.group, aes(y=pair, x=gsub("\\.", " ", variable), fill=past
   facet_grid(. ~ db, switch = "x", space = "free", scales = "free") +
   guides(color=FALSE, fill=FALSE) +
   ylab("")
-ggsave(out("Plot.Group.pdf"), w=3,  h=15, plot=p.group + xRot())
+ggsave(out("Plot.Group.pdf"), w=3,  h=height, plot=p.group + xRot())
 
 p <- gridExtra::grid.arrange(
   p.group + 
@@ -118,5 +137,5 @@ p <- gridExtra::grid.arrange(
       axis.ticks.y = element_blank()
       ) + guides(color=FALSE, fill=FALSE, size=FALSE),
   nrow=1, ncol=3, widths=c(1.5, 1,3))
-ggsave(out("Plot.combined.pdf"), h=10, w=8, plot=p)
+ggsave(out("Plot.combined.pdf"), h=height-2, w=8, plot=p)
 
