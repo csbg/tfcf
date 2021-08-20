@@ -1,5 +1,8 @@
 ECCITE3	in vivo	3prime	few genes
 ECCITE2	leukemia	3prime	Mostly Gata2
-ECCITE1 leukemia	5prime	multiple genes
+ECCITE1	leukemia	5prime	multiple genes
 CITESEQ1	leukemia		not great signal
-CITESEQ2	leukemia		better signal than CITESEQ1	
+CITESEQ2	leukemia		better signal than CITESEQ1
+ECCITE4	in vitro	3prime	20 guides
+ECCITE5	leukemia	3prime	20 guides
+ECCITE6	in vivo	3prime	one non-targeting guide
