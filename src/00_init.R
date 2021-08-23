@@ -35,24 +35,24 @@ dirout_load <- function(out, ext=""){
 
 # Comparisons -------------------------------------------------------------
 COMPARISONS <- list(
-  CKIT.LSK=c("cKit", "LSKd9"),
+  LSK.CKIT=c("LSKd9", "cKit"),
   GMP.LSK=c("GMP", "LSKd7"),
   MEP.LSK=c("MEP", "LSKd7"),
   GMP.MEP=c("GMP", "MEP"),
   UND.MEP=c("Und", "MEP"),
   MYE.GMP=c("Mye", "GMP"),
-  UND.MYE=c("Und", "Mye"),
+  MYE.UND=c("Mye", "Und"),
   GMPcd11.DN=c("GMP.CD11bGr1", "GMP.DN"),
   CD34pos.neg=c("CD34pos", "CD34neg"),
   CFSEhigh.low=c("CFSEhigh", "CFSElow")
 )
 
 COMPARISONS.USE <- c(
-  "CKIT.LSK",
+  "LSK.CKIT",
   "GMP.LSK",
   "MEP.LSK",
   "GMP.MEP",
-  "UND.MYE",
+  "MYE.UND",
   "GMPcd11.DN"
 )
 cleanComparisons <- function(x, order=TRUE){

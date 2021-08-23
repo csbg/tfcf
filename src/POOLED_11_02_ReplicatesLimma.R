@@ -106,7 +106,6 @@ for(ai in 1:nrow(ann_replicates)){
     
     
     # Normalize data ----------------------------------------------------------
-    stop("Calculate size factors from non-targeting?!")
     lMT <- calcNormFactors(DGEList(lMT))
     cleanDev(); pdf(outStats("Voom_", "_Before.pdf"), w=6,h=6)
     voomRes <- voom(lMT, design = desMat, plot=TRUE)

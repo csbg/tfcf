@@ -22,39 +22,39 @@ RESULTS.wt.mds <- fread(inDir("Correlation_hits_MDS.tsv"))
 # Hopefully Cool plot ---------------------------------------------------------------
 # Add Main branch
 cleanComparisons2 <- function(x){
-  orderX <- c("Main branch", "CKIT.LSK", "GMP.MEP", "UND.MYE", "GMPcd11.DN")
+  orderX <- c("Main branch", "LSK.CKIT", "GMP.MEP", "MYE.UND", "GMPcd11.DN")
   x <- factor(x, levels=orderX)
 }
 
 # Aggregated data within population
-agDT <- copy(RESULTS.wt.agg)
-mainBranchOrdering <- c("Und", "MEP", "LSKd7", "GMP", "Mye")
-agDT$Population <- factor(agDT$variable, levels=c(mainBranchOrdering, setdiff(agDT$variable, mainBranchOrdering)))
-agDT <- merge(agDT, compDT2, by.y="value", by.x="variable", allow.cartesian=TRUE)
-agDT$rn <- factor(agDT$rn, levels=RESULTS.wt.mds$rn[hclust(dist(as.matrix(data.frame(RESULTS.wt.mds[,c("V1", "V2"), with=F]))))$order])
-
-# Comparisons between populations
-compDT <- unique(RESULTS.wt[Library != "A"][,c("Population1", "Population2", "Comparison"), with=F])
-compDT[Comparison %in% c("GMP.LSK", "MEP.LSK","UND.MEP", "MYE.GMP"), Comparison.Group := "Main branch"]
-compDT[is.na(Comparison.Group), Comparison.Group := Comparison]
-pDT.stats <- RESULTS.wt[hit == TRUE][Library != "A"]
-pDT.stats <- merge(pDT.stats, unique(compDT[,c("Comparison", "Comparison.Group")]), by="Comparison")
-# Filter 2:  50 % of guides being significant
-pDT.stats <- pDT.stats[, .(mean(z), length(unique(Guide[padj < 0.05])),n=length(unique(Guide))), by=c("Gene", "Comparison",  "Comparison.Group", "Population1", "Population2")]
-pDT.stats[,percSig := V2/n*100]
-pDT.stats <- pDT.stats[percSig > 50]
-
-# Plot
-ggplot(agDT[rn %in% pDT.stats$Gene], aes(x=Population, y=rn)) +
-  theme_bw(12) + 
-  geom_point(aes(fill=log2FC), shape=21, color="white", size=5) +
-  facet_grid(. ~ cleanComparisons2(Comparison.Group), scales = "free", space = "free") +
-  geom_segment(data=pDT.stats, aes(xend=Population1, x=Population2, y=Gene, yend=Gene, color=V1), arrow=arrow(type="closed", length = unit(0.3, "cm"))) + 
-  scale_fill_gradient2(name=TeX(r'($\\overset{\Delta_{Cas9-WT}}{(dots)}$)')) +
-  #geom_point(aes(fill=log2FC), shape=21, color="white", size=2) +
-  scale_color_gradient2(name=TeX(r'($\\overset{\Delta_{Populations}}{(arrows)}$)')) +
-  xRot()
-ggsave(out("Aggregated_Edges.pdf"), w=8,h=15)
+# agDT <- copy(RESULTS.wt.agg)
+# mainBranchOrdering <- c("Und", "MEP", "LSKd7", "GMP", "Mye")
+# agDT$Population <- factor(agDT$variable, levels=c(mainBranchOrdering, setdiff(agDT$variable, mainBranchOrdering)))
+# agDT <- merge(agDT, compDT2, by.y="value", by.x="variable", allow.cartesian=TRUE)
+# agDT$rn <- factor(agDT$rn, levels=RESULTS.wt.mds$rn[hclust(dist(as.matrix(data.frame(RESULTS.wt.mds[,c("V1", "V2"), with=F]))))$order])
+# 
+# # Comparisons between populations
+# compDT <- unique(RESULTS.wt[Library != "A"][,c("Population1", "Population2", "Comparison"), with=F])
+# compDT[Comparison %in% c("GMP.LSK", "MEP.LSK","UND.MEP", "MYE.GMP"), Comparison.Group := "Main branch"]
+# compDT[is.na(Comparison.Group), Comparison.Group := Comparison]
+# pDT.stats <- RESULTS.wt[hit == TRUE][Library != "A"]
+# pDT.stats <- merge(pDT.stats, unique(compDT[,c("Comparison", "Comparison.Group")]), by="Comparison")
+# # Filter 2:  50 % of guides being significant
+# pDT.stats <- pDT.stats[, .(mean(z), length(unique(Guide[padj < 0.05])),n=length(unique(Guide))), by=c("Gene", "Comparison",  "Comparison.Group", "Population1", "Population2")]
+# pDT.stats[,percSig := V2/n*100]
+# pDT.stats <- pDT.stats[percSig > 50]
+# 
+# # Plot
+# ggplot(agDT[rn %in% pDT.stats$Gene], aes(x=Population, y=rn)) +
+#   theme_bw(12) + 
+#   geom_point(aes(fill=log2FC), shape=21, color="white", size=5) +
+#   facet_grid(. ~ cleanComparisons2(Comparison.Group), scales = "free", space = "free") +
+#   geom_segment(data=pDT.stats, aes(xend=Population1, x=Population2, y=Gene, yend=Gene, color=V1), arrow=arrow(type="closed", length = unit(0.3, "cm"))) + 
+#   scale_fill_gradient2(name=TeX(r'($\\overset{\Delta_{Cas9-WT}}{(dots)}$)')) +
+#   #geom_point(aes(fill=log2FC), shape=21, color="white", size=2) +
+#   scale_color_gradient2(name=TeX(r'($\\overset{\Delta_{Populations}}{(arrows)}$)')) +
+#   xRot()
+# ggsave(out("Aggregated_Edges.pdf"), w=8,h=15)
 
 
 
@@ -94,7 +94,7 @@ ggsave(out("Vulcano.pdf"), w=15,h=2)
 
 
 # Comparison of two main populations --------------------------------------
-cx <- c("GMP.MEP", "CKIT.LSK")
+cx <- c("GMP.MEP", "LSK.CKIT")
 pDT.full <- RESULTS.wt[Comparison %in% cx][Genotype == "Cas9"]
 pDT.sig <- pDT.full[hit == TRUE][,paste(sort(unique(cleanComparisons(Comparison))), collapse = ","), by="Gene"]
 pDT.sig[grepl(",", V1),V1 := "Both"]
@@ -148,8 +148,8 @@ for(genex in unique(RESULTS.wt[hit == TRUE]$Gene)){
   el <- data.table(do.call(rbind, COMPARISONS), keep.rownames = TRUE)
   #statx <- statx[match(row.names(el), Comparison)][!is.na(Gene)]
   statx <- merge(statx, el, by.x="Comparison", by.y="rn")
-  statx[Comparison == "CKIT.LSK", V1 := "LSKd7"]
-  statx[Comparison == "CKIT.LSK", V2 := "LSKd7"]
+  statx[Comparison == "LSK.CKIT", V1 := "LSKd7"]
+  statx[Comparison == "LSK.CKIT", V2 := "LSKd7"]
   # statx[Comparison == "GMPcd11.DN", V2 := "MEP"]
   # statx[Comparison == "GMPcd11.DN", V1 := "Und"]
   # statx  <- statx[Comparison != "UND.MEP"]
@@ -226,4 +226,4 @@ ggsave(out("GraphHM.pdf"),w=17, h=10)
 
 
 
-# TODO --> example of how p-values were calculation
+# TODO --> example of how p-values were calculated
