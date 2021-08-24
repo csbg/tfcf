@@ -4,6 +4,7 @@ out <- dirout("FIG_02_POOLED/")
 require(latex2exp)
 require(ggrepel)
 require(igraph)
+require(ggtext)
 
 # Load data ---------------------------------------------------------------
 m <- as.matrix(read.csv(PATHS$POOLED$DATA$matrix))
@@ -26,36 +27,38 @@ cleanComparisons2 <- function(x){
   x <- factor(x, levels=orderX)
 }
 
-# Aggregated data within population
-# agDT <- copy(RESULTS.wt.agg)
-# mainBranchOrdering <- c("Und", "MEP", "LSKd7", "GMP", "Mye")
-# agDT$Population <- factor(agDT$variable, levels=c(mainBranchOrdering, setdiff(agDT$variable, mainBranchOrdering)))
-# agDT <- merge(agDT, compDT2, by.y="value", by.x="variable", allow.cartesian=TRUE)
-# agDT$rn <- factor(agDT$rn, levels=RESULTS.wt.mds$rn[hclust(dist(as.matrix(data.frame(RESULTS.wt.mds[,c("V1", "V2"), with=F]))))$order])
-# 
-# # Comparisons between populations
-# compDT <- unique(RESULTS.wt[Library != "A"][,c("Population1", "Population2", "Comparison"), with=F])
-# compDT[Comparison %in% c("GMP.LSK", "MEP.LSK","UND.MEP", "MYE.GMP"), Comparison.Group := "Main branch"]
-# compDT[is.na(Comparison.Group), Comparison.Group := Comparison]
-# pDT.stats <- RESULTS.wt[hit == TRUE][Library != "A"]
-# pDT.stats <- merge(pDT.stats, unique(compDT[,c("Comparison", "Comparison.Group")]), by="Comparison")
-# # Filter 2:  50 % of guides being significant
-# pDT.stats <- pDT.stats[, .(mean(z), length(unique(Guide[padj < 0.05])),n=length(unique(Guide))), by=c("Gene", "Comparison",  "Comparison.Group", "Population1", "Population2")]
-# pDT.stats[,percSig := V2/n*100]
-# pDT.stats <- pDT.stats[percSig > 50]
-# 
-# # Plot
-# ggplot(agDT[rn %in% pDT.stats$Gene], aes(x=Population, y=rn)) +
-#   theme_bw(12) + 
-#   geom_point(aes(fill=log2FC), shape=21, color="white", size=5) +
-#   facet_grid(. ~ cleanComparisons2(Comparison.Group), scales = "free", space = "free") +
-#   geom_segment(data=pDT.stats, aes(xend=Population1, x=Population2, y=Gene, yend=Gene, color=V1), arrow=arrow(type="closed", length = unit(0.3, "cm"))) + 
-#   scale_fill_gradient2(name=TeX(r'($\\overset{\Delta_{Cas9-WT}}{(dots)}$)')) +
-#   #geom_point(aes(fill=log2FC), shape=21, color="white", size=2) +
-#   scale_color_gradient2(name=TeX(r'($\\overset{\Delta_{Populations}}{(arrows)}$)')) +
-#   xRot()
-# ggsave(out("Aggregated_Edges.pdf"), w=8,h=15)
+# Comparison groups
+compDT <- unique(RESULTS.wt[Library != "A"][,c("Population1", "Population2", "Comparison"), with=F])
+compDT[Comparison %in% c("GMP.LSK", "MEP.LSK","UND.MEP", "MYE.GMP"), Comparison.Group := "Main branch"]
+compDT[is.na(Comparison.Group), Comparison.Group := Comparison]
+compDT2 <- unique(melt(compDT[,-"Comparison",with=F], id.vars = "Comparison.Group")[,-"variable"])
 
+# Aggregated data within population
+agDT <- copy(RESULTS.wt.agg)
+mainBranchOrdering <- c("Und", "MEP", "LSKd7", "GMP", "Mye")
+agDT$Population <- factor(agDT$variable, levels=c(mainBranchOrdering, setdiff(agDT$variable, mainBranchOrdering)))
+agDT <- merge(agDT, compDT2, by.y="value", by.x="variable", allow.cartesian=TRUE)
+agDT$rn <- factor(agDT$rn, levels=RESULTS.wt.mds$rn[hclust(dist(as.matrix(data.frame(RESULTS.wt.mds[,c("V1", "V2"), with=F]))))$order])
+
+# Comparisons between populations
+pDT.stats <- RESULTS.wt[hit == TRUE][Library != "A"]
+pDT.stats <- merge(pDT.stats, unique(compDT[,c("Comparison", "Comparison.Group")]), by="Comparison")
+# Filter 2:  50 % of guides being significant
+pDT.stats <- pDT.stats[, .(mean(z), length(unique(Guide[padj < 0.05])),n=length(unique(Guide))), by=c("Gene", "Comparison",  "Comparison.Group", "Population1", "Population2")]
+pDT.stats[,percSig := V2/n*100]
+pDT.stats <- pDT.stats[percSig > 50]
+
+# Plot
+ggplot(agDT[rn %in% pDT.stats$Gene], aes(x=Population, y=rn)) +
+  theme_bw(12) +
+  geom_point(aes(fill=log2FC), shape=21, color="white", size=5) +
+  facet_grid(. ~ cleanComparisons2(Comparison.Group), scales = "free", space = "free") +
+  geom_segment(data=pDT.stats, aes(xend=Population1, x=Population2, y=Gene, yend=Gene, color=V1), arrow=arrow(type="closed", length = unit(0.3, "cm"))) +
+  scale_fill_gradient2(name=TeX(r'($\\overset{\Delta_{Cas9-WT}}{(dots)}$)')) +
+  #geom_point(aes(fill=log2FC), shape=21, color="white", size=2) +
+  scale_color_gradient2(name=TeX(r'($\\overset{\Delta_{Populations}}{(arrows)}$)')) +
+  xRot()
+ggsave(out("Aggregated_Edges.pdf"), w=8,h=15)
 
 
 
@@ -66,22 +69,19 @@ pDT.stats[,percSig := V2/n*100]
 pDT.stats <- pDT.stats[Gene %in% pDT.stats[percSig > 50]$Gene]
 pDT.stats <- pDT.stats[Comparison %in% COMPARISONS.USE]
 
-# mx <- toMT(pDT.stats, row = "Gene", col = "Comparison", val = "V1")
-# mx[is.na(mx)] <- 0
-# pDT.stats$Cluster <- cutree(hclust(dist(mx)), k = 7)[pDT.stats$Gene]
-stop("Use this to display colors in the axis")
-# https://stackoverflow.com/questions/49735290/ggplot2-color-individual-words-in-title-to-match-colors-of-groups
-# ggtext package!!!
+mx <- toMT(pDT.stats, row = "Gene", col = "Comparison", val = "V1")
+mx[is.na(mx)] <- 0
+pDT.stats$Cluster <- cutree(hclust(dist(mx)), k = 7)[pDT.stats$Gene]
 
-ggplot(pDT.stats, aes(y=cleanComparisons(Comparison), x=Gene)) +
+ggplot(pDT.stats, aes(y=cleanComparisons(Comparison, ggtext = TRUE), x=Gene)) +
   theme_bw(12) + 
   geom_point(aes(color=V1), size=4) +
-  scale_color_gradient2(name=TeX(r'($\\overset{\Delta_{Cas9-WT}}$)')) +
+  scale_color_gradient2(name=TeX(r'($\\overset{\Delta_{Cas9-WT}}$)')) + #, low="#e31a1c", high="#1f78b4") +
   facet_grid(. ~ Cluster, scales = "free", space = "free") +
   xRot() + 
-  ylab("")
+  ylab("") +
+  theme(axis.text.y = element_markdown())
 ggsave(out("SimpleHM.pdf"), w=15,h=2.5)
-
 
 
 # Vulcano plots -----------------------------------------------------------
@@ -107,6 +107,11 @@ pDT$sig <- factor(pDT$sig, levels=c("Both", cleanComparisons(cx, order = FALSE),
 
 xx <- 4
 
+formatArrows <- function(x){
+  paste0(gsub("^(.+?)\\.(.+)$", "\\1", x),"  ", r'($\leftarrow$)',"  .  ",r'($\rightarrow$)',"  ", gsub("^(.+?)\\.(.+)$", "\\2", x))
+}
+
+dlim <- max(abs(c(pDT[[cx[1]]], pDT[[cx[2]]])))
 ggplot(pDT, aes_string(x=cx[1], y=cx[2], color="sig")) + 
   #geom_rect(xmin=-xx, ymin=-xx, ymax=xx, xmax=xx, color=NA, fill="#eeeeee60") +
   geom_hline(yintercept = 0, color="lightgrey", alpha=0.5) +
@@ -119,10 +124,12 @@ ggplot(pDT, aes_string(x=cx[1], y=cx[2], color="sig")) +
   scale_color_manual(name="Significant in", values=c("#e31a1c", "#1f78b4", "#6a3d9a", "grey")) +
   #facet_grid(. ~ Genotype) +
   theme_bw() +
-  #theme(panel.grid=element_blank()) +
-  xlab(cleanComparisons(cx[1])) + 
-  ylab(cleanComparisons(cx[2]))
+  xlab(TeX(formatArrows(cx[1]))) +
+  ylab(TeX(formatArrows(cx[2]))) +
+  ylim(-dlim, dlim) + xlim(-dlim,dlim)
 ggsave(out("Comparison_Scatter.pdf"), w=5.5,h=4.5)
+
+
 
 
 

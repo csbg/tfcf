@@ -55,9 +55,16 @@ COMPARISONS.USE <- c(
   "MYE.UND",
   "GMPcd11.DN"
 )
-cleanComparisons <- function(x, order=TRUE){
-  x <- gsub("\\.", " vs ", x)
-  if(order) x <- factor(x, levels = intersect(gsub("\\.", " vs ", names(COMPARISONS)), unique(x)))
+cleanComparisons <- function(x, order=TRUE, ggtext=FALSE){
+  transformPretty <- function(i, gg=ggtext){
+    if(gg){
+      gsub("^(.+)\\.(.+)$", "<strong style='color:#832424;'>\\1</strong> vs <strong style='color:#3A3A98;'>\\2</strong>", i)
+    } else {
+      gsub("\\.", " vs ", i)
+    }
+  }
+  x <- transformPretty(x)
+  if(order) x <- factor(x, levels = intersect(transformPretty(names(COMPARISONS)), unique(x)))
   x
 }
 
