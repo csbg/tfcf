@@ -1,35 +1,58 @@
 basedir=$HOME/GFS/PROJECTS/TfCf/
 
-cd Data/Raw_data_CITESEQ1
 
-python crukci_to_illumina.py
+# cd Data/Raw_data_CITESEQ1
+# python crukci_to_illumina.py
+#
+#
+# # ANALYZE WITH ANTIBODIES
+# cd $HOME/omicstmp/
+# mkdir nf
+# cd nf
+#
+# ~/code/cellranger-6.0.1/cellranger count --id=CITESEQ1 \
+# 	--no-bam \
+#     --libraries=$CODEBASE/tfcf/metadata/CITESEQ1_Library.csv \
+#     --transcriptome=$HOME/GFS/RESOURCES/Genomes/refdata-gex-mm10-2020-A/ \
+#     --feature-ref=$CODEBASE/tfcf/metadata/CITESEQ1_Features.csv \
+#     --localcores=24 \
+#     --localmem=64 \
+#     --expect-cells=10000 &> CITESEQ1.log
+#
+# mkdir -p ~/GFS/PROJECTS/TfCf/Data/CITESEQ1/
+# cp -R CITESEQ1/outs ~/GFS/PROJECTS/TfCf/Data/CITESEQ1/
+#
+# # ANALYZE WITHOUT ANTIBODIES
+# $CODEBASE/cellranger-6.0.1/cellranger count --id=CITESEQ1_RNAonly \
+#  --no-bam \
+#  --transcriptome=$GFS/RESOURCES/Genomes/refdata-gex-mm10-2020-A/ \
+#  --libraries=$CODEBASE/tfcf/metadata/CITESEQ1_Library_RNAonly.csv \
+#  --localcores=24 \
+#  --localmem=64 \
+#  --expect-cells=10000 &> CITESEQ1_RNAonly.log
 
 
-# ANALYZE WITH ANTIBODIES
+
 cd $HOME/omicstmp/
-mkdir nf
-cd nf
 
-~/code/cellranger-6.0.1/cellranger count --id=CITESEQ1 \
-	--no-bam \
-    --libraries=$CODEBASE/tfcf/metadata/CITESEQ1_Library.csv \
-    --transcriptome=$HOME/GFS/RESOURCES/Genomes/refdata-gex-mm10-2020-A/ \
-    --feature-ref=$CODEBASE/tfcf/metadata/CITESEQ1_Features.csv \
-    --localcores=24 \
-    --localmem=64 \
-    --expect-cells=10000 &> CITESEQ1.log
+# If genome doesn't exist, then create it
+if [ ! -f "$HOME/omicstmp/newGenomeExtended/fasta/genome.fa" ]; then
+    bash $CODE/src/PREP_Genome.sh
+fi
 
-mkdir -p ~/GFS/PROJECTS/TfCf/Data/CITESEQ1/
-cp -R CITESEQ1/outs ~/GFS/PROJECTS/TfCf/Data/CITESEQ1/
 
 # ANALYZE WITHOUT ANTIBODIES
-$CODEBASE/cellranger-6.0.1/cellranger count --id=CITESEQ1_RNAonly \
+id=CITESEQ1_RNAonly_GFPBFP
+$CODEBASE/cellranger-6.0.1/cellranger count --id=$id \
  --no-bam \
- --transcriptome=$GFS/RESOURCES/Genomes/refdata-gex-mm10-2020-A/ \
+ --transcriptome=newGenomeExtended/ \
  --libraries=$CODEBASE/tfcf/metadata/CITESEQ1_Library_RNAonly.csv \
  --localcores=24 \
  --localmem=64 \
- --expect-cells=10000 &> CITESEQ1_RNAonly.log
+ --expect-cells=10000 &> $id.log
+
+mkdir -p ~/GFS/PROJECTS/TfCf/Data/$id
+cp -R $id/outs ~/GFS/PROJECTS/TfCf/Data/$id
 
 
 # gunzip -c SLX-20609.SINTG12.H5JH3DRXY.s_2.r_2.fq.gz | head -20000 | perl -ne 'print unless (0 != ($.-2) % 4)' | rev | cut -c58-84

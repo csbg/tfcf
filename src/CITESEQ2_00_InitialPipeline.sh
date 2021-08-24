@@ -64,20 +64,42 @@ source ~/code/tfcf/setup.sh
 
 
 # ANALYZE WITH normal Genome and no antibodies (for later integration with cellranger aggr)
-id=CITESEQ2_onlyRNA
+# id=CITESEQ2_onlyRNA
+#
+# cd $HOME/omicstmp/
+#
+# grep -v "Antibody Capture" $CODEBASE/tfcf/metadata/CITESEQ2_Library.csv > $CODEBASE/tfcf/metadata/CITESEQ2_Library_onlyRNA.csv
+#
+# ~/code/cellranger-6.0.1/cellranger count --id=$id \
+# 	--no-bam \
+#     --libraries=$CODEBASE/tfcf/metadata/CITESEQ2_Library_onlyRNA.csv \
+#     --transcriptome=$GFS/RESOURCES/Genomes/refdata-gex-mm10-2020-A/ \
+#     --localcores=24 \
+#     --localmem=64 \
+#     --expect-cells=10000 &> $id.log
+#
+# mkdir -p ~/GFS/PROJECTS/TfCf/Data/$id
+# cp -R $id/outs ~/GFS/PROJECTS/TfCf/Data/$id
+
+
 
 cd $HOME/omicstmp/
 
-grep -v "Antibody Capture" $CODEBASE/tfcf/metadata/CITESEQ2_Library.csv > $CODEBASE/tfcf/metadata/CITESEQ2_Library_onlyRNA.csv
+# If genome doesn't exist, then create it
+if [ ! -f "$HOME/omicstmp/newGenomeExtended/fasta/genome.fa" ]; then
+    bash $CODE/src/PREP_Genome.sh
+fi
 
-~/code/cellranger-6.0.1/cellranger count --id=$id \
-	--no-bam \
-    --libraries=$CODEBASE/tfcf/metadata/CITESEQ2_Library_onlyRNA.csv \
-    --transcriptome=$GFS/RESOURCES/Genomes/refdata-gex-mm10-2020-A/ \
-    --localcores=24 \
-    --localmem=64 \
-    --expect-cells=10000 &> $id.log
 
-mkdir -p ~/GFS/PROJECTS/TfCf/Data/$id/
-mv $id/outs ~/GFS/PROJECTS/TfCf/Data/$id/
-# rm -rf ${id}*
+# ANALYZE WITH GFP Genome and no antibodies (for later integration with cellranger aggr)
+id=CITESEQ2_RNAonly_GFPBFP
+$CODEBASE/cellranger-6.0.1/cellranger count --id=$id \
+ --no-bam \
+ --transcriptome=newGenomeExtended/ \
+ --libraries=$CODEBASE/tfcf/metadata/CITESEQ2_Library_onlyRNA.csv \
+ --localcores=24 \
+ --localmem=64 \
+ --expect-cells=10000 &> $id.log
+
+mkdir -p ~/GFS/PROJECTS/TfCf/Data/$id
+cp -R $id/outs ~/GFS/PROJECTS/TfCf/Data/$id

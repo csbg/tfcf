@@ -1,0 +1,2 @@
+GFP	unknown	exon	1	 720	.	+	.	gene_id "GFP"; transcript_id "GFP"; gene_name "GFP"; gene_biotype "protein_coding";
+BFP	unknown	exon	1	 1638	.	+	.	gene_id "BFP"; transcript_id "BFP"; gene_name "BFP"; gene_biotype "protein_coding";
