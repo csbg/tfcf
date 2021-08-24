@@ -8,11 +8,25 @@ require(data.table)
 source("~/code/resources/RFunctions/scRNA_Basics.R")
 
 #all.data <- SCRNA.read_10Xh5.610("~/GFS/PROJECTS/TfCf/Data/ECCITE3_low_7d/outs/filtered_feature_bc_matrix.h5")
-all.data <- SCRNA.read_10Xh5.610("~/GFS/PROJECTS/TfCf/Data/ECCITE2/outs/filtered_feature_bc_matrix.h5")
+all.data <- SCRNA.read_10Xh5.610("~/GFS/PROJECTS/TfCf/Data/ECCITE4_Cas9/outs/filtered_feature_bc_matrix.h5")
 
 str(all.data)
 gDT <- all.data$features[feature_type != "Gene Expression"]
 gMT <- all.data$matrix[gDT$id,]
+
+pDT <- data.table(
+  Barcode = colnames(gMT),
+  max = apply(gMT, 2, max),
+  sum = Matrix::colSums(gMT)
+  )
+
+ggplot(pDT, aes(x=max, y=sum)) + geom_hex() + geom_abline() + geom_abline(slope=2)
+
+ggplot(pDT, aes(x=max/sum)) + stat_ecdf()
+
+ggplot(pDT, aes(x=max/sum, y=log10(sum))) + stat_binhex(aes(fill=log10(..count..)))
+
+pDT[max/sum > 0.7 & sum > 25]
 
 # Export counts -----------------------------------------------------------
 mat <- gMT

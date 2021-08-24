@@ -45,8 +45,8 @@ source $CODEBASE/tfcf/setup.sh
 # # Cellranger analysis (5.0.1) - not used
 # # ~/code/cellranger-5.0.1/cellranger count --id=RNA_cellranger --transcriptome=$HOME/GFS/RESOURCES/Genomes/refdata-gex-mm10-2020-A/ --no-bam --expect-cells=10000 --localcores=1 --fastqs=$HOME/GFS/DATA_David/Raw_data_ECCITE/RNA_illumina/ --localmem=64 &> RNA_cellranger.log
 # # Cellranger analysis (6.0.1) - USED
-# $CODEBASE/cellranger-6.0.1/cellranger count --id=ECCITE1_RNA_cellranger_601 --transcriptome=$GFS/RESOURCES/Genomes/refdata-gex-mm10-2020-A/ --no-bam --expect-cells=10000 --localcores=1 --fastqs=$DATA/Raw_ECCITE1/RNA_illumina/ --localmem=64 &> ECCITE1_RNA_cellranger_601.log
-# # TODO / MISSING copy the correct files to the GFS
+# $CODEBASE/cellranger-6.0.1/cellranger count --id=ECCITE1 --transcriptome=$GFS/RESOURCES/Genomes/refdata-gex-mm10-2020-A/ --no-bam --expect-cells=10000 --localcores=1 --fastqs=$DATA/Raw_ECCITE1/RNA_illumina/ --localmem=64 &> ECCITE1.log
+
 #
 # # CITESEQ - second run using barcodes from the dataset processed with cellranger (not used)
 # # conda activate tfcf
