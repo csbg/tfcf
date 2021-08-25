@@ -2,6 +2,8 @@ source(paste0(Sys.getenv("CODE"), "src/00_init.R"))
 out <- dirout("ECCITE4_04_Integration/")
 
 require(Seurat)
+require(limma)
+require(edgeR)
 
 # Read cellranger analysis results --------------------------------------------
 
@@ -186,6 +188,52 @@ ggplot(ann, aes(x=UMAP.1, y=UMAP.2)) +
 ggsave(out("UMAP_cluster.pdf"), w=11, h=10)
 
 
+
+# Plot marker genes -------------------------------------------------------
+str(bulk.data <- as.matrix(read.table("metadata/INVITRO_BulkExpression.csv", row.names = 1, sep=",", header = TRUE)))
+# datG <- calcNormFactors(DGEList(bulk.data))
+# desMat <- data.frame(row.names = colnames(bulk.data), group=gsub(".\\d$", "", colnames(bulk.data)))
+# desMat$group <- factor(desMat$group, levels=c("LSK", "MEP", "GMP"))
+# desMat <- model.matrix(~group, data = desMat)
+# voomRes <- voom(datG, design = desMat,plot=FALSE)
+# fit <- lmFit(voomRes, design=desMat)
+# fit <- eBayes(fit)
+# res <- data.table()
+# for(coefx in colnames(coef(fit))){res <- rbind(res, data.table(topTable(fit, number = nrow(voomRes), coef=coefx), coef=coefx, keep.rownames = TRUE))}
+# ll <- with(res[coef != "(Intercept)"][adj.P.Val < 0.2], split(rn, paste(coef, ifelse(logFC > 0, "up", "down"))))
+# ll <- gplots::venn(ll, intersections = TRUE)
+# ii <- attr(ll, "intersections")
+# markers <- list(
+#   GMP=ii[["groupGMP up"]],
+#   MEP=ii[["groupMEP up"]],
+#   LSK=ii[["groupGMP down:groupMEP down"]])
+str(bulk.data <- as.matrix(read.table("metadata/INVITRO_BulkExpression.csv", row.names = 1, sep=",", header = TRUE)))
+bulk.data <- sapply(split(colnames(bulk.data), gsub(".\\d$", "", colnames(bulk.data))), function(sx){rowMeans(bulk.data[,sx,drop=F])})
+bulk.data <- bulk.data[apply(bulk.data, 1, max) > median(apply(bulk.data, 1, max)),]
+bulk.data.fc <- sapply(colnames(bulk.data), function(cx){
+  bulk.data[,cx] / apply(bulk.data[,colnames(bulk.data) != cx], 1, max)
+})
+pheatmap(corS(bulk.data))
+markers <- lapply(apply(bulk.data.fc, 2, function(cx) which(cx > 3)), names)
+
+ann.markers <- copy(ann)
+mx <- names(markers)[1]
+for(mx in names(markers)){
+  message(mx)
+  m <- sobj@assays$RNA@data[,ann.markers$rn]
+  m <- m[intersect(markers[[mx]], row.names(m)),]
+  m <- m[apply(m != 0, 1, sum) > ncol(m)/50,]
+  print(dim(m))
+  ann.markers[[paste0("Signature_", mx)]] <- rowMeans(scale(t(m)))
+}
+
+ggplot(melt(ann.markers, id.vars = c("rn", "UMAP.1", "UMAP.2"), measure.vars = grep("Signature_", colnames(ann.markers), value = TRUE)),
+       aes(x=UMAP.1, UMAP.2, z=value)) +
+  stat_summary_hex(fun = mean) +
+  scale_fill_gradient2(low="blue", high="red") +
+  facet_grid(. ~ variable) +
+  theme_bw(12)
+ggsave(out("UMAP_celltype_signatures.pdf"), w=13, h=4)
 
 
 # Remove bad cells --------------------------------------------------------
