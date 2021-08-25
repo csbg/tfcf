@@ -1,5 +1,5 @@
 source(paste0(Sys.getenv("CODE"), "src/00_init.R"))
-out <- dirout("INT_03_02_SeuratIntegration_CellCycle_inVitro/")
+out <- dirout("INT_03_02_SeuratIntegration_CellCycle_Leukemia/")
 
 require(Seurat)
 
