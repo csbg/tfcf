@@ -39,6 +39,3 @@ mv $id/outs ~/GFS/PROJECTS/TfCf/Data/$id/
 #  --barcodes=${name}_barcodes.csv \
 #  --localcores=24 \
 #  --localmem=64 &> $name.log
-#
-# rm -r $name/SC_RNA_REANALYZER_CS/
-# mv ${name}* $DATA/

@@ -9,6 +9,9 @@ require(Seurat)
 # AGG.CSV <- fread(paste(Sys.getenv("DATA"), "INT_00_Aggr", "outs", "aggregation.csv", sep="/"))
 # AGG.CSV$i <- 1:nrow(AGG.CSV)
 
+marker.genes <- fread("metadata/markers.csv")
+
+
 
 # Read data  and Seurat integration --------------------------------------------
 seurat.file <- out("SeuratObject.RData")
@@ -197,6 +200,10 @@ ggplot(ann, aes(x=UMAP.1, y=UMAP.2)) +
 ggsave(out("UMAP_cluster.pdf"), w=11, h=10)
 
 
+# Marker genes ------------------------------------------------------------
+
+DotPlot(sobj, assay="RNA", features=marker.genes$Name) + xRot()
+ggsave(out("Clusters_MarkerGenes.pdf"), w=12, h=4)
 
 
 # Remove bad cells --------------------------------------------------------

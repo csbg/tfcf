@@ -21,8 +21,8 @@ basedir=$HOME/GFS/PROJECTS/TfCf/
 #     --localmem=64 \
 #     --expect-cells=10000 &> ECCITE1.log
 #
-# mkdir -p ~/GFS/PROJECTS/TfCf/Data/ECCITE1/
-# cp -R ECCITE1/outs ~/GFS/PROJECTS/TfCf/Data/ECCITE1/
+# mkdir -p $DATA/$id/
+# mv $id/outs $DATA/$id/
 #
 #
 #
@@ -41,8 +41,8 @@ basedir=$HOME/GFS/PROJECTS/TfCf/
 #     --localmem=64 \
 #     --expect-cells=10000 &> $id.log
 #
-# mkdir -p ~/GFS/PROJECTS/TfCf/Data/$id/
-# mv $id/outs ~/GFS/PROJECTS/TfCf/Data/$id/
+# mkdir -p $DATA/$id/
+# mv $id/outs $DATA/$id/
 
 
 # ANALYZE WITHOUT GUIDES
@@ -63,5 +63,5 @@ id="ECCITE2_onlyRNA_GFPBFP"
     --localmem=64 \
     --expect-cells=10000 &> $id.log
 
-mkdir -p ~/GFS/PROJECTS/TfCf/Data/$id/
-mv $id/outs ~/GFS/PROJECTS/TfCf/Data/$id/
+mkdir -p $DATA/$id/
+mv $id/outs $DATA/$id/

@@ -12,6 +12,8 @@ AGG.CSV <- fread(paste(Sys.getenv("DATA"), "ECCITE4_INT", "outs", "aggregation.c
 AGG.CSV$i <- 1:nrow(AGG.CSV)
 AGG.CSV[,sample_id := paste0("ECCITE4_", sample_id)]
 
+marker.genes <- fread("metadata/markers.csv")
+
 
 # Read data  and Seurat integration --------------------------------------------
 seurat.file <- out("SeuratObject.RData")
@@ -186,6 +188,31 @@ ggplot(ann, aes(x=UMAP.1, y=UMAP.2)) +
   theme_bw(12) +
   geom_label(data=ann[,.(UMAP.1=median(UMAP.1), UMAP.2=median(UMAP.2)), by=c("cluster", "dataset")], aes(label=cluster))
 ggsave(out("UMAP_cluster.pdf"), w=11, h=10)
+
+
+
+# Plot marker genes -------------------------------------------------------
+# res <- data.table()
+# abx <- marker.genes$Name[1]
+# m <- sobj@assays$RNA@data
+# for(abx in marker.genes$Name){
+#   if(!abx %in% row.names(m)) next
+#   pDT <- copy(ann)
+#   pDT$Expression <- m[abx,ann$rn]
+#   pDT$Gene <- abx
+#   res <- rbind(res, pDT)
+# }
+# res[,Expression.norm := scale(Expression), by="Gene"]
+# ggplot(res, aes(x=UMAP.1, y=UMAP.2)) + 
+#   stat_summary_hex(aes(z=Expression.norm),fun=mean) +
+#   scale_fill_gradient(low="grey", high="blue") +
+#   facet_wrap(~Gene) +
+#   theme_bw(12)
+# ggsave(out("UMAP_MarkerGenes.pdf"), w=18+2, h=18+1)
+
+
+DotPlot(sobj, assay="RNA", features=marker.genes$Name) + xRot()
+ggsave(out("Clusters_MarkerGenes.pdf"), w=12, h=4)
 
 
 

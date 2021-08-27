@@ -20,7 +20,7 @@ basedir=$HOME/GFS/PROJECTS/TfCf/
 #     --expect-cells=10000 &> CITESEQ1.log
 #
 # mkdir -p ~/GFS/PROJECTS/TfCf/Data/CITESEQ1/
-# cp -R CITESEQ1/outs ~/GFS/PROJECTS/TfCf/Data/CITESEQ1/
+# mv CITESEQ1/outs ~/GFS/PROJECTS/TfCf/Data/CITESEQ1/
 #
 # # ANALYZE WITHOUT ANTIBODIES
 # $CODEBASE/cellranger-6.0.1/cellranger count --id=CITESEQ1_RNAonly \
@@ -52,7 +52,7 @@ $CODEBASE/cellranger-6.0.1/cellranger count --id=$id \
  --expect-cells=10000 &> $id.log
 
 mkdir -p ~/GFS/PROJECTS/TfCf/Data/$id
-cp -R $id/outs ~/GFS/PROJECTS/TfCf/Data/$id
+mv $id/outs ~/GFS/PROJECTS/TfCf/Data/$id
 
 
 # gunzip -c SLX-20609.SINTG12.H5JH3DRXY.s_2.r_2.fq.gz | head -20000 | perl -ne 'print unless (0 != ($.-2) % 4)' | rev | cut -c58-84

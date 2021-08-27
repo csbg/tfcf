@@ -21,6 +21,7 @@ names(guides) <- gsub("^(.)", "\\U\\1", names(guides), perl = T)
 guides$dataset <- "ECCITE1"
 #clusters <- merge(clusters, guides, by=c("Barcode", "dataset"), all=TRUE)
 
+marker.genes <- fread("metadata/markers.csv")
 
 
 # Read data  and Seurat integration --------------------------------------------
@@ -209,6 +210,12 @@ ggplot(ann, aes(x=UMAP.1, y=UMAP.2)) +
   geom_label(data=ann[,.(UMAP.1=median(UMAP.1), UMAP.2=median(UMAP.2)), by=c("cluster", "dataset")], aes(label=cluster))
 ggsave(out("UMAP_cluster.pdf"), w=11, h=10)
 
+
+
+# Marker genes ------------------------------------------------------------
+
+DotPlot(sobj, assay="RNA", features=marker.genes$Name) + xRot()
+ggsave(out("Clusters_MarkerGenes.pdf"), w=12, h=4)
 
 
 

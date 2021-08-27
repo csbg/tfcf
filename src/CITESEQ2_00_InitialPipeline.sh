@@ -79,7 +79,7 @@ source ~/code/tfcf/setup.sh
 #     --expect-cells=10000 &> $id.log
 #
 # mkdir -p ~/GFS/PROJECTS/TfCf/Data/$id
-# cp -R $id/outs ~/GFS/PROJECTS/TfCf/Data/$id
+# mv $id/outs ~/GFS/PROJECTS/TfCf/Data/$id
 
 
 
@@ -102,4 +102,4 @@ $CODEBASE/cellranger-6.0.1/cellranger count --id=$id \
  --expect-cells=10000 &> $id.log
 
 mkdir -p ~/GFS/PROJECTS/TfCf/Data/$id
-cp -R $id/outs ~/GFS/PROJECTS/TfCf/Data/$id
+mv $id/outs ~/GFS/PROJECTS/TfCf/Data/$id

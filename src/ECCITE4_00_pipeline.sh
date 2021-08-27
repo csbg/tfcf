@@ -33,7 +33,7 @@ for id in ECCITE4_Cas9 ECCITE4_WT; do
 	 --expect-cells=10000 &> ${id}.log
     
 	mkdir -p ~/GFS/PROJECTS/TfCf/Data/$id
-	cp -R $id/outs ~/GFS/PROJECTS/TfCf/Data/$id
+	mv $id/outs ~/GFS/PROJECTS/TfCf/Data/$id
 done
 
 

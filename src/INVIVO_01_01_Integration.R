@@ -15,6 +15,8 @@ ff <- ff[!grepl("_CRISPR", ff)]
 ff <- ff[!grepl("_OLD", ff)]
 ff <- c(ff, "ECCITE6")
 
+marker.genes <- fread("metadata/markers.csv")
+
 # Read data  and Seurat integration --------------------------------------------
 seurat.file <- out("SeuratObject.RData")
 if(!file.exists(seurat.file)){
@@ -121,7 +123,7 @@ ann$old.ident <- NULL
 
 # Add extra meta data (antibodies, guides) --------------------------------
 ann.orig <- copy(ann)
-cutoff <- 5
+cutoff <- 2
 dsx <- names(additional.info)[1]
 for(dsx in names(additional.info)){
   print(dsx)
@@ -130,9 +132,10 @@ for(dsx in names(additional.info)){
     txn <- make.names(tx)
     print(tx)
     x <- additional.info[[dsx]][[tx]]
-    x <- as.matrix(x[,apply(x, 2, max) >= cutoff]) # only keep cells with any guide counted above cutoff
+    if(class(x) != "dgCMatrix") next
+    x <- as.matrix(x[,apply(x, 2, max) >= cutoff,drop=F]) # only keep cells with any guide counted above cutoff
     ii <- apply(x, 2, function(col) which(col >= cutoff)) # for each cell (column) get the rows that are above the cutoff
-    labelsx <- sapply(ii, function(x) paste(sort(names(x)), collapse=","))
+    labelsx <- sapply(ii, function(ix) paste(row.names(x)[ix], collapse = ","))
     labelsx <- setNames(data.table(data.frame(labelsx), keep.rownames = TRUE), c("Barcode", txn))
     prep.ann <- if(txn %in% colnames(ann)) ann[, -txn,with=F] else ann
     ann <- rbind(ann[dataset != dsx], merge(prep.ann[dataset == dsx], labelsx, by="Barcode", all.x=TRUE), fill=TRUE)
@@ -142,22 +145,13 @@ ann[, Guide := CRISPR.Guide.Capture]
 ann[, Guide := gsub("_.+$", "", Guide)]
 ann[grepl(",", Guide), Guide := NA]
 
-
-for(dsx in unique(ann$dataset)){
-  if(grepl("CITESEQ", dsx)){
-    stopifnot(nrow(ann[dataset == dsx & !is.na(CRISPR.Guide.Capture)]) == 0)
-    stopifnot(nrow(ann[dataset == dsx & !is.na(Antibody.Capture)]) != 0)
-  } else {
-    stopifnot(nrow(ann[dataset == dsx & !is.na(CRISPR.Guide.Capture)]) != 0)
-    stopifnot(nrow(ann[dataset == dsx & !is.na(Antibody.Capture)]) == 0)
-  }
-}
-
 write.tsv(ann, out("Metadata_1_Original.tsv"))
+
+with(ann, table(CRISPR.Guide.Capture, dataset))
+
 
 
 # SETUP ENDS HERE ---------------------------------------------------------
-
 
 
 # PLOT DATASET AND CELL CYCLE -------------------------------------------------------------------
@@ -190,6 +184,30 @@ ggsave(out("UMAP_cluster.pdf"), w=11, h=10)
 
 
 
+# Plot marker genes -------------------------------------------------------
+# res <- data.table()
+# abx <- marker.genes$Name[1]
+# m <- sobj@assays$RNA@data
+# for(abx in marker.genes$Name){
+#   if(!abx %in% row.names(m)) next
+#   pDT <- copy(ann)
+#   pDT$Expression <- m[abx,ann$rn]
+#   pDT$Gene <- abx
+#   res <- rbind(res, pDT)
+# }
+# res[,Expression.norm := scale(Expression), by="Gene"]
+# ggplot(res, aes(x=UMAP.1, y=UMAP.2)) + 
+#   stat_summary_hex(aes(z=Expression.norm),fun=mean) +
+#   scale_fill_gradient2(low="blue", mid="white", high="red") +
+#   facet_wrap(~Gene) +
+#   theme_bw(12)
+# ggsave(out("UMAP_MarkerGenes.pdf"), w=18+2, h=18+1)
+
+
+DotPlot(sobj, assay="RNA", features=marker.genes$Name) + xRot()
+ggsave(out("Clusters_MarkerGenes.pdf"), w=12, h=4)
+
+
 # Remove bad cells --------------------------------------------------------
 for(qcm in c("percent.mt", "nFeature.RNA", "nCount.RNA")){
   print(qcm)
@@ -209,61 +227,8 @@ ann[cluster %in% ann[,median(percent.mt), by="cluster"][V1 < 1]$cluster, cluster
 write.tsv(ann, out("Metadata_2_Cleaned.tsv"))
 
 
-
-
 # Now keep working with cleaned dataset -----------------------------------
 ann <- ann[cluster.qual.keep == TRUE]
-
-
-
-# ANTIBODIES --------------------------------------------------------------
-abMT <- additional.info$CITESEQ2$`Antibody Capture`
-abMT <- SCRNA.TPXToLog(SCRNA.RawToTPX(abMT, scale.factor = 1e6))
-ann.c1 <- ann[dataset == "CITESEQ2"]
-
-# Plot signal
-res <- data.table()
-abx <- row.names(abMT)[1]
-for(abx in row.names(abMT)){
-  pDT <- copy(ann.c1)
-  pDT$Signal <- abMT[abx,ann.c1$Barcode]
-  pDT$Antibody <- abx
-  res <- rbind(res, pDT)
-}
-res[,Signal.norm := scale(Signal), by="Antibody"]
-ggplot(res, aes(x=UMAP.1, y=UMAP.2)) + 
-  stat_summary_hex(aes(z=Signal.norm),fun=mean) +
-  scale_fill_gradient2(low="blue", high="red") +
-  facet_wrap(~Antibody) +
-  theme_bw(12)
-ggsave(out("Antibodies_UMAP.pdf"), w=12+2, h=9+1)
-
-cMT <- corS(t(as.matrix(abMT)), use="pairwise.complete.obs")
-diag(cMT) <- NA
-dist <- as.dist(1-cMT)
-cleanDev(); pdf(out("Antibodies_Correlation.pdf"), w=5,h=4)
-pheatmap(cMT,
-         clustering_distance_rows = dist,
-         clustering_distance_cols = dist,
-         breaks=seq(-1,1, 0.01), color=COLORS.HM.FUNC(200),
-)
-dev.off()
-
-probx=0.9
-res[,percentile := quantile(Signal.norm, probs=probx, na.rm=TRUE), by="Antibody"]
-resN <- res[, sum(Signal.norm > percentile), by=c("cluster", "Antibody")]
-resN[,clSize := sum(V1), by="cluster"]
-stopifnot(all(resN[, length(unique(clSize)), by="cluster"]$V1 == 1))
-resN[,percentage := V1/clSize*100]
-resN <- hierarch.ordering(resN, toOrder = "cluster", orderBy = "Antibody", value.var = "percentage")
-resN <- hierarch.ordering(resN, toOrder = "Antibody", orderBy = "cluster", value.var = "percentage")
-resN[is.na(percentage), percentage := 0]
-ggplot(resN, aes(x=cluster, y=Antibody, fill=percentage)) + 
-  geom_tile() + 
-  ggtitle("Percent of cell in cluster\nthat are above 90th percentile of antibody signal") + 
-  scale_fill_gradient(low="white", high="blue")
-ggsave(out("Antibodies_Percentile.pdf"), w=5, h=4)
-
 
 
 # MIXSCAPE Analysis -----------------------------------------------------

@@ -73,9 +73,8 @@ for id in ECCITE3_low_7d ECCITE3_low_14d ECCITE3_high_7d ECCITE3_high_14d; do
 	 --localmem=128 \
 	 --expect-cells=10000 &> ${id}.log
     
-    rm -rf $id/SC_RNA_COUNTER_CS
-    
-    mv ${id}* $GFS/PROJECTS/TfCf/Data/
+	mkdir -p $DATA/$id/
+	mv $id/outs $DATA/$id/
 done
 
 
