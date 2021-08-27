@@ -6,18 +6,20 @@ cd $HOME/omicstmp/
 # AGGREGATE DATA
 
 echo "sample_id,molecule_h5" > INT_00_Aggr.csv
-echo "ECCITE1,$DATA/ECCITE1_RNA_cellranger_601/outs/molecule_info.h5"  >> INT_00_Aggr.csv
-echo "CITESEQ1,$DATA/CITESEQ1_RNAonly/outs/molecule_info.h5" >> INT_00_Aggr.csv
-echo "CITESEQ2,$DATA/CITESEQ2_onlyRNA/outs/molecule_info.h5" >> INT_00_Aggr.csv
-echo "ECCITE2,$DATA/ECCITE2_onlyRNA/outs/molecule_info.h5" >> INT_00_Aggr.csv
+echo "CITESEQ1,$DATA/CITESEQ1_RNAonly_GFPBFP/outs/molecule_info.h5" >> INT_00_Aggr.csv
+echo "CITESEQ2,$DATA/CITESEQ2_RNAonly_GFPBFP/outs/molecule_info.h5" >> INT_00_Aggr.csv
+echo "ECCITE1,$DATA/ECCITE1_RNA_cellranger_601_GFPBFP/outs/molecule_info.h5"  >> INT_00_Aggr.csv
+echo "ECCITE2,$DATA/ECCITE2_onlyRNA_GFPBFP/outs/molecule_info.h5" >> INT_00_Aggr.csv
+echo "ECCITE5,$DATA/ECCITE5_onlyRNA/outs/molecule_info.h5" >> INT_00_Aggr.csv
+
 cat INT_00_Aggr.csv
 
 id=INT_00_Aggr
 
 $HOME/code/cellranger-6.0.1/cellranger aggr --id=$id --csv=INT_00_Aggr.csv --normalize=none &> $id.log
 
-mkdir -p ~/GFS/PROJECTS/TfCf/Data/$id/
-mv $id/outs ~/GFS/PROJECTS/TfCf/Data/$id/
+mkdir -p $DATA/$id/
+mv $id/outs $DATA/$id/
 
 # # REMOVE UNWANTED CELLS
 #

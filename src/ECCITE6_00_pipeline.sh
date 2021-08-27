@@ -8,28 +8,56 @@ fi
 
 
 
-######### BASIC ANALYSIS
+# ######### BASIC ANALYSIS
+#
+# cd $HOME/omicstmp
+#
+# id=ECCITE6
+#
+# echo $id
+#
+# echo "Files"
+# cat $CODEBASE/tfcf/metadata/${id}_Library.csv
+#
+# echo "Features"
+# cat $CODEBASE/tfcf/metadata/ECCITE6_Features.csv
+#
+# ~/code/cellranger-6.0.1/cellranger count --id=$id \
+#  --no-bam \
+#  --libraries=$CODEBASE/tfcf/metadata/${id}_Library.csv \
+#  --transcriptome=newGenomeExtended/ \
+#  --feature-ref=$CODEBASE/tfcf/metadata/ECCITE6_Features.csv \
+#  --localcores=24 \
+#  --localmem=128 \
+#  --expect-cells=10000 &> ${id}.log
+#
+# mkdir -p ~/GFS/PROJECTS/TfCf/Data/$id
+# cp -R $id/outs ~/GFS/PROJECTS/TfCf/Data/$id
+
+
+######### BASIC ANALYSIS without guides
 
 cd $HOME/omicstmp
 
-id=ECCITE6
-    
+id_original=ECCITE6
+
+echo $id_original
+id="${id_original}_onlyRNA"
 echo $id
+
+grep -v "CRISPR Guide Capture" $CODE/metadata/${id_original}_Library.csv > $CODE/metadata/${id}_Library.csv
 
 echo "Files"
 cat $CODEBASE/tfcf/metadata/${id}_Library.csv
 
-echo "Features"
-cat $CODEBASE/tfcf/metadata/ECCITE6_Features.csv
 
 ~/code/cellranger-6.0.1/cellranger count --id=$id \
  --no-bam \
- --libraries=$CODEBASE/tfcf/metadata/${id}_Library.csv \
+ --libraries=$CODE/metadata/${id}_Library.csv \
  --transcriptome=newGenomeExtended/ \
- --feature-ref=$CODEBASE/tfcf/metadata/ECCITE6_Features.csv \
- --localcores=24 \
- --localmem=128 \
+ --localcores=4 \
+ --localmem=12 \
  --expect-cells=10000 &> ${id}.log
 
-mkdir -p ~/GFS/PROJECTS/TfCf/Data/$id
-cp -R $id/outs ~/GFS/PROJECTS/TfCf/Data/$id
+mkdir -p $DATA/$id
+mv $id/outs $DATA/$id
