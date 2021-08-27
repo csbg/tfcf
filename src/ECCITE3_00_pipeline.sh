@@ -46,68 +46,98 @@ fi
 
 
 
-######### BASIC ANALYSIS
+# ######### BASIC ANALYSIS
+#
+#
+# cd $HOME/omicstmp
+#
+# for id in ECCITE3_low_7d ECCITE3_low_14d ECCITE3_high_7d ECCITE3_high_14d; do
+# #for id in ECCITE3_low_7d; do
+#
+#     echo $id
+#     #id="ECCITE3_low_7d"
+#     #id="ECCITE3_low_14d"
+#
+#     echo "Files"
+#     cat $CODEBASE/tfcf/metadata/${id}_Library.csv
+#
+#     echo "Features"
+#     cat $CODEBASE/tfcf/metadata/ECCITE3_Features.csv
+#
+# 	~/code/cellranger-6.0.1/cellranger count --id=$id \
+# 	 --no-bam \
+# 	 --libraries=$CODEBASE/tfcf/metadata/${id}_Library.csv \
+# 	 --transcriptome=newGenomeExtended/ \
+# 	 --feature-ref=$CODEBASE/tfcf/metadata/ECCITE3_Features.csv \
+# 	 --localcores=24 \
+# 	 --localmem=128 \
+# 	 --expect-cells=10000 &> ${id}.log
+#
+#     rm -rf $id/SC_RNA_COUNTER_CS
+#
+#     mv ${id}* $GFS/PROJECTS/TfCf/Data/
+# done
+#
+#
+#
+#
+#
+# ######### LOOK FOR GUIDES IN EXPRESSION
+#
+#
+# cd $HOME/omicstmp
+#
+# for id in ECCITE3_low_7d ECCITE3_low_14d ECCITE3_high_7d ECCITE3_high_14d; do
+#
+#     echo $id
+#     #id="ECCITE3_low_7d"
+#     #id="ECCITE3_low_14d"
+#
+#     echo "Files"
+#     cat $CODEBASE/tfcf/metadata/${id}_Library_CRISPR.csv
+#
+#     echo "Features"
+#     cat $CODEBASE/tfcf/metadata/ECCITE3_Features.csv
+#
+# 	~/code/cellranger-6.0.1/cellranger count --id=${id}_CRISPR \
+# 	 --no-bam \
+# 	 --libraries=$CODEBASE/tfcf/metadata/${id}_Library_CRISPR.csv \
+# 	 --transcriptome=newGenomeExtended/ \
+# 	 --feature-ref=$CODEBASE/tfcf/metadata/ECCITE3_Features.csv \
+# 	 --localcores=24 \
+# 	 --localmem=128 \
+# 	 --expect-cells=10000 &> ${id}_CRISPR.log
+#
+#	mkdir -p $DATA/$id
+#	mv $id/outs $DATA/$id
+# done
+
+
+######### BASIC ANALYSIS without crispr guides
 
 
 cd $HOME/omicstmp
 
-for id in ECCITE3_low_7d ECCITE3_low_14d ECCITE3_high_7d ECCITE3_high_14d; do
+for id_original in ECCITE3_low_7d ECCITE3_low_14d ECCITE3_high_7d ECCITE3_high_14d; do
 #for id in ECCITE3_low_7d; do
-        
-    echo $id
-    #id="ECCITE3_low_7d"
-    #id="ECCITE3_low_14d"
-    
+
+    echo $id_original
+	id="${id_original}_onlyRNA"
+	echo $id
+	
+	grep -v "CRISPR Guide Capture" $CODE/metadata/${id_original}_Library.csv > $CODE/metadata/${id}_Library.csv
+	
     echo "Files"
     cat $CODEBASE/tfcf/metadata/${id}_Library.csv
-    
-    echo "Features"
-    cat $CODEBASE/tfcf/metadata/ECCITE3_Features.csv
-    
+
 	~/code/cellranger-6.0.1/cellranger count --id=$id \
 	 --no-bam \
-	 --libraries=$CODEBASE/tfcf/metadata/${id}_Library.csv \
+	 --libraries=$CODE/metadata/${id}_Library.csv \
 	 --transcriptome=newGenomeExtended/ \
-	 --feature-ref=$CODEBASE/tfcf/metadata/ECCITE3_Features.csv \
-	 --localcores=24 \
-	 --localmem=128 \
+	 --localcores=4 \
+	 --localmem=12 \
 	 --expect-cells=10000 &> ${id}.log
-    
-	mkdir -p $DATA/$id/
-	mv $id/outs $DATA/$id/
-done
 
-
-
-
-
-######### LOOK FOR GUIDES IN EXPRESSION
-
-
-cd $HOME/omicstmp
-
-for id in ECCITE3_low_7d ECCITE3_low_14d ECCITE3_high_7d ECCITE3_high_14d; do
-        
-    echo $id
-    #id="ECCITE3_low_7d"
-    #id="ECCITE3_low_14d"
-    
-    echo "Files"
-    cat $CODEBASE/tfcf/metadata/${id}_Library_CRISPR.csv
-    
-    echo "Features"
-    cat $CODEBASE/tfcf/metadata/ECCITE3_Features.csv
-    
-	~/code/cellranger-6.0.1/cellranger count --id=${id}_CRISPR \
-	 --no-bam \
-	 --libraries=$CODEBASE/tfcf/metadata/${id}_Library_CRISPR.csv \
-	 --transcriptome=newGenomeExtended/ \
-	 --feature-ref=$CODEBASE/tfcf/metadata/ECCITE3_Features.csv \
-	 --localcores=24 \
-	 --localmem=128 \
-	 --expect-cells=10000 &> ${id}_CRISPR.log
-    
-    rm -rf ${id}_CRISPR/SC_RNA_COUNTER_CS
-    
-    mv ${id}_CRISPR* $GFS/PROJECTS/TfCf/Data/
+	mkdir -p $DATA/$id
+	mv $id/outs $DATA/$id
 done
