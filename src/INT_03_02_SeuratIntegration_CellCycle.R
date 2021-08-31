@@ -6,8 +6,8 @@ require(Seurat)
 # Read cellranger analysis results --------------------------------------------
 
 
-# AGG.CSV <- fread(paste(Sys.getenv("DATA"), "INT_00_Aggr", "outs", "aggregation.csv", sep="/"))
-# AGG.CSV$i <- 1:nrow(AGG.CSV)
+AGG.CSV <- fread(paste(Sys.getenv("DATA"), "INT_00_Aggr", "outs", "aggregation.csv", sep="/"))
+AGG.CSV$i <- 1:nrow(AGG.CSV)
 
 marker.genes <- fread("metadata/markers.csv")
 
