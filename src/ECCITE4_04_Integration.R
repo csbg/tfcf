@@ -191,6 +191,27 @@ ggsave(out("UMAP_cluster.pdf"), w=11, h=10)
 
 
 
+# Top gene count ----------------------------------------------------------
+m <- sobj@assays$RNA@counts
+gcnt <- Matrix::rowSums(m)
+gcnt <- data.table(gene=row.names(m), cnt = gcnt)
+gcnt <- gcnt[order(-cnt)]
+write.tsv(gcnt, out("GeneCount.tsv"))
+ggplot(gcnt, aes(x=cnt)) + 
+  stat_ecdf() + 
+  scale_x_log10() + 
+  theme_bw() + 
+  xlab("Number of reads") + 
+  ylab("Fraction of genes") +
+  ggtitle(paste(nrow(gcnt), " genes"))
+ggsave(out("GeneCount.pdf"),w=4,h=4)
+
+gcnt$total <- sum(gcnt$cnt)
+gcnt[,percent := (cnt/total) * 100]
+gcnt$gene <- factor(gcnt$gene, levels=gcnt[order(-cnt)]$gene)
+ggplot(gcnt[1:500], aes(x=gene, y=percent)) + geom_bar(stat="identity") + xRot()
+
+
 # Plot marker genes -------------------------------------------------------
 # res <- data.table()
 # abx <- marker.genes$Name[1]

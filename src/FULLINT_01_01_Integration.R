@@ -1,19 +1,21 @@
 source(paste0(Sys.getenv("CODE"), "src/00_init.R"))
-out <- dirout("INVIVO_01_01_Integration/")
+out <- dirout("FULLINT_01_01_Integration/")
 
 require(Seurat)
 
 # Read cellranger analysis results --------------------------------------------
 
 
-# AGG.CSV <- fread(paste(Sys.getenv("DATA"), "INT_00_Aggr", "outs", "aggregation.csv", sep="/"))
-# AGG.CSV$i <- 1:nrow(AGG.CSV)
+AGG.CSV <- fread(paste(Sys.getenv("DATA"), "FULLINT_00_Aggr", "outs", "aggregation.csv", sep="/"))
+AGG.CSV$i <- 1:nrow(AGG.CSV)
 
-ff <- list.files(Sys.getenv("DATA"), pattern = "ECCITE3")
+ff <- list.files(Sys.getenv("DATA"))
 ff <- ff[!grepl(".log$", ff)]
-ff <- ff[!grepl("_CRISPR", ff)]
-ff <- ff[!grepl("_OLD", ff)]
-ff <- c(ff, "ECCITE6")
+ff <- ff[!grepl("_onlyRNA", ff)]
+ff <- ff[!grepl("RNAonly", ff)]
+ff <- ff[grepl("ECCITE", ff) | grepl("CITESEQ", ff)]
+ff <- ff[!grepl("ECCITE4_INT", ff)]
+ff <- ff[!grepl("ECCITE1_", ff)]
 
 marker.genes <- fread("metadata/markers.csv")
 
@@ -74,6 +76,20 @@ if(!file.exists(seurat.file)){
   sobj <- RunUMAP(sobj, reduction = "pca", dims = 1:20)
   sobj <- FindNeighbors(sobj, reduction = "pca", dims = 1:20)
   sobj <- FindClusters(sobj, resolution = 0.5)
+
+  # add ECCITE1 guides
+  read.csv(PATHS$ECCITE1$DATA$guides)
+  matrix_dir = paste(Sys.getenv("DATA"), "ECCITE1_citeseq_combined//umi_count/", sep="/")
+  barcode.path <- paste0(matrix_dir, "barcodes.tsv.gz")
+  features.path <- paste0(matrix_dir, "features.tsv.gz")
+  matrix.path <- paste0(matrix_dir, "matrix.mtx.gz")
+  mat <- readMM(file = matrix.path)
+  feature.names = read.delim(features.path, header = FALSE, stringsAsFactors = FALSE)
+  barcode.names = read.delim(barcode.path, header = FALSE, stringsAsFactors = FALSE)
+  colnames(mat) = paste0(barcode.names$V1, "-1")
+  rownames(mat) = gsub("\\-.+$", "", feature.names$V1)
+  mat <- mat[row.names(mat) != "unmapped",]
+  additional.info[["ECCITE1"]] <- list("CRISPR Guide Capture" = as(mat, "dgCMatrix"))
   
   # Store full dataset
   sobj <- SCRNA.DietSeurat(sobj)

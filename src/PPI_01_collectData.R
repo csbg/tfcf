@@ -87,56 +87,67 @@ prob %*% prob
 
 
 # HIPPIE ------------------------------------------------------------------
-hippie <- fread(inDir("hippie.txt"))
-hippie <- merge(hippie, uniprot.id.map, by.x="V1", by.y="ID")
-hippie <- merge(hippie, uniprot.id.map, by.x="V3", by.y="ID")
-hippie <- setNames(hippie[,c("Gene.x", "Gene.y", "V5"), with=F], c("A","B","Score"))
-hippie <- unique(hippie)
-hippie <- data.table(hippie, db="HIPPIE", dataset="HIPPIE", organism="Human")
-
+hippie.file <- out("Table_HIPPIE.tsv")
+if(!file.exists(hippie.file)){
+  hippie <- fread(inDir("hippie.txt"))
+  hippie <- merge(hippie, uniprot.id.map, by.x="V1", by.y="ID")
+  hippie <- merge(hippie, uniprot.id.map, by.x="V3", by.y="ID")
+  hippie <- setNames(hippie[,c("Gene.x", "Gene.y", "V5"), with=F], c("A","B","Score"))
+  hippie <- unique(hippie)
+  hippie <- data.table(hippie, db="HIPPIE", dataset="HIPPIE", organism="Human")
+  write.tsv(hippie, hippie.file)
+} else {
+  hippie <- fread(hippie.file)
+}
 
 # HIPPIE DISTANCE ---------------------------------------------------------
-g <- graph.edgelist(as.matrix(hippie[Score > 0.7][,c("A","B"),with=F]), directed = FALSE)
-g <- simplify(g)
-goi <- intersect(hm[Mouse %in% GENES.OF.INTEREST]$Human, V(g)$name)
-
-# distances (not very helpful)
-dd <- distances(g, goi, goi)
-table(dd)
-
-# calculate walktrap probabilities
-steps=8
-probs <- walktrap.probabilities(g, steps = steps)
-
-# Look at differences
-i <- 1
-j <- 2
-for(i in 1:(steps-1)){
-  for(j in (i+1):steps){
-    message(i, " vs ", j)
-    print(sum(abs(probs[[i]][goi,] - probs[[j]][goi,])))
+hippieDIST.file <- out("Table_HIPPIEdistances.tsv")
+if(!file.exists(hippieDIST.file)){
+  g <- graph.edgelist(as.matrix(hippie[Score > 0.7][,c("A","B"),with=F]), directed = FALSE)
+  g <- simplify(g)
+  goi <- intersect(hm[Mouse %in% GENES.OF.INTEREST]$Human, V(g)$name)
+  
+  # distances (not very helpful)
+  dd <- distances(g, goi, goi)
+  table(dd)
+  
+  # calculate walktrap probabilities
+  steps=8
+  probs <- walktrap.probabilities(g, steps = steps)
+  
+  # Look at differences
+  i <- 1
+  j <- 2
+  for(i in 1:(steps-1)){
+    for(j in (i+1):steps){
+      message(i, " vs ", j)
+      print(sum(abs(probs[[i]][goi,] - probs[[j]][goi,])))
+    }
   }
+  
+  # Get similarity
+  sim <- cor(t(as.matrix(probs[[4]][goi,])))
+  diag(sim) <- NA
+  cleanDev(); pdf(out("HIPPIE_DISTANCES.pdf"), w=30,h=30)
+  pheatmap(sim, fontsize_row = 5)
+  dev.off()
+  
+  # similarity into a table
+  sum(sim > 0.7, na.rm = TRUE)
+  adj2 <- sim
+  adj2[adj2 < 0.7] <- 0
+  adj2[is.na(adj2)] <- 0
+  sum(adj2 > 0.7, na.rm = TRUE)
+  g <- graph.adjacency(adj2, weighted = "max")
+  hippie_distance <- data.table(get.edgelist(g), E(g)$max)
+  for(i in 1:10){
+    stopifnot(sim[hippie_distance[i]$V1, hippie_distance[i]$V2] == hippie_distance[i]$V3)
+  }
+  hippie_distance <- data.table(setNames(hippie_distance, c("A","B", "Score")), db="HIPPIE", dataset="HIPPIE_Distances", organism="Human")
+  write.tsv(hippie_distance, hippieDIST.file)
+} else {
+  hippie_distance <- fread(hippieDIST.file)
 }
-
-# Get similarity
-sim <- cor(t(as.matrix(probs[[4]][goi,])))
-diag(sim) <- NA
-cleanDev(); pdf(out("HIPPIE_DISTANCES.pdf"), w=30,h=30)
-pheatmap(sim, fontsize_row = 5)
-dev.off()
-
-# similarity into a table
-sum(sim > 0.7, na.rm = TRUE)
-adj2 <- sim
-adj2[adj2 < 0.7] <- 0
-adj2[is.na(adj2)] <- 0
-sum(adj2 > 0.7, na.rm = TRUE)
-g <- graph.adjacency(adj2, weighted = "max")
-hippie_distance <- data.table(get.edgelist(g), E(g)$max)
-for(i in 1:10){
-  stopifnot(sim[hippie_distance[i]$V1, hippie_distance[i]$V2] == hippie_distance[i]$V3)
-}
-hippie_distance <- data.table(setNames(hippie_distance, c("A","B", "Score")), db="HIPPIE", dataset="HIPPIE_Distances", organism="Human")
 # hippie[A == "KLF9" & B == "JDP2"]
 # hippie[A == "JDP2" & B == "KLF9"]
 # hippie[A %in% goi & B %in% goi]
@@ -146,173 +157,232 @@ hippie_distance <- data.table(setNames(hippie_distance, c("A","B", "Score")), db
 
 
 # HUMAP2 ------------------------------------------------------------------
-humap2 <- fread(inDir("hu.MAP2.Drew.2021.MolSysBio"))
-quantile(humap2$V3)
-humap2 <- humap2[V3 > 0.01]
-
-# Clean up protein ids
-humap2.clean <- humap2[!grepl("^sp", V2) & !grepl("^sp", V1)]
-humap2.corr <- humap2[grepl("^sp", V2) | grepl("^sp", V1)]
-i <- 1
-for(i in 1:nrow(humap2.corr)){
-  if(grepl("^sp", humap2.corr[i]$V2)){
-    acc <- gsub("^sp\\|(.+)\\|(.+)?", "\\1", humap2.corr[i]$V2)
-    name <- uniprot.id.map[ACC == acc]$Gene
-    if(length(name) == 0) name <- NA
-    humap2.corr[i, V2 := name]
+humap2.file <- out("Table_HUMAP2.tsv")
+if(!file.exists(humap2.file)){
+  humap2 <- fread(inDir("hu.MAP2.Drew.2021.MolSysBio"))
+  quantile(humap2$V3)
+  humap2 <- humap2[V3 > 0.01]
+  
+  # Clean up protein ids
+  humap2.clean <- humap2[!grepl("^sp", V2) & !grepl("^sp", V1)]
+  humap2.corr <- humap2[grepl("^sp", V2) | grepl("^sp", V1)]
+  i <- 1
+  for(i in 1:nrow(humap2.corr)){
+    if(grepl("^sp", humap2.corr[i]$V2)){
+      acc <- gsub("^sp\\|(.+)\\|(.+)?", "\\1", humap2.corr[i]$V2)
+      name <- uniprot.id.map[ACC == acc]$Gene
+      if(length(name) == 0) name <- NA
+      humap2.corr[i, V2 := name]
+    }
+    if(grepl("^sp", humap2.corr[i]$V1)){
+      acc <- gsub("^sp\\|(.+)\\|(.+)?", "\\1", humap2.corr[i]$V1)
+      name <- uniprot.id.map[ACC == acc]$Gene
+      if(length(name) == 0) name <- NA
+      humap2.corr[i, V1 := name]
+    }
   }
-  if(grepl("^sp", humap2.corr[i]$V1)){
-    acc <- gsub("^sp\\|(.+)\\|(.+)?", "\\1", humap2.corr[i]$V1)
-    name <- uniprot.id.map[ACC == acc]$Gene
-    if(length(name) == 0) name <- NA
-    humap2.corr[i, V1 := name]
-  }
+  stopifnot(nrow(humap2.corr) + nrow(humap2.clean) == nrow(humap2))
+  humap2 <- rbind(humap2.clean, humap2.corr[!is.na(V1) & !is.na(V2) & V1 != "" & V2 != ""])
+  humap2 <- setNames(unique(humap2), c("A","B","Score"))
+  humap2 <- data.table(humap2, db="hu.Map2", dataset="hu.Map2", organism="Human")
+  write.tsv(humap2, humap2.file)
+} else {
+  humap2 <- fread(humap2.file)
 }
-stopifnot(nrow(humap2.corr) + nrow(humap2.clean) == nrow(humap2))
-humap2 <- rbind(humap2.clean, humap2.corr[!is.na(V1) & !is.na(V2) & V1 != "" & V2 != ""])
-humap2 <- setNames(unique(humap2), c("A","B","Score"))
-humap2 <- data.table(humap2, db="hu.Map2", dataset="hu.Map2", organism="Human")
 
 
 # Hu.Map DISTANCE ---------------------------------------------------------
-g <- graph.edgelist(as.matrix(humap2[Score > 0.7][,c("A","B"),with=F]), directed = FALSE)
-g <- simplify(g)
-goi <- intersect(hm[Mouse %in% GENES.OF.INTEREST]$Human, V(g)$name)
-
-# distances (not very helpful)
-dd <- distances(g, goi, goi)
-table(dd)
-
-# calculate walktrap probabilities
-steps=8
-probs <- walktrap.probabilities(g, steps = steps)
-
-# Look at differences
-i <- 1
-j <- 2
-for(i in 1:(steps-1)){
-  for(j in (i+1):steps){
-    message(i, " vs ", j)
-    print(sum(abs(probs[[i]][goi,] - probs[[j]][goi,])))
+humap2DIST.file <- out("Table_HUMAP2distances.tsv")
+if(!file.exists(humap2DIST.file)){
+  g <- graph.edgelist(as.matrix(humap2[Score > 0.7][,c("A","B"),with=F]), directed = FALSE)
+  g <- simplify(g)
+  goi <- intersect(hm[Mouse %in% GENES.OF.INTEREST]$Human, V(g)$name)
+  
+  # distances (not very helpful)
+  dd <- distances(g, goi, goi)
+  table(dd)
+  
+  # calculate walktrap probabilities
+  steps=8
+  probs <- walktrap.probabilities(g, steps = steps)
+  
+  # Look at differences
+  i <- 1
+  j <- 2
+  for(i in 1:(steps-1)){
+    for(j in (i+1):steps){
+      message(i, " vs ", j)
+      print(sum(abs(probs[[i]][goi,] - probs[[j]][goi,])))
+    }
   }
+  
+  # Get similarity
+  sim <- cor(t(as.matrix(probs[[4]][goi,])))
+  diag(sim) <- NA
+  cleanDev(); pdf(out("HUMAP2_DISTANCES.pdf"), w=30,h=30)
+  pheatmap(sim, fontsize_row = 5)
+  dev.off()
+  
+  # similarity into a table
+  sum(sim > 0.7, na.rm = TRUE)
+  adj2 <- sim
+  adj2[adj2 < 0.7] <- 0
+  adj2[is.na(adj2)] <- 0
+  sum(adj2 > 0.7, na.rm = TRUE)
+  g <- graph.adjacency(adj2, weighted = "max")
+  humap2_distance <- data.table(get.edgelist(g), E(g)$max)
+  for(i in 1:10){
+    stopifnot(sim[humap2_distance[i]$V1, humap2_distance[i]$V2] == humap2_distance[i]$V3)
+  }
+  humap2_distance <- data.table(setNames(humap2_distance, c("A","B", "Score")), db="hu.Map2", dataset="hu.Map2_Distances", organism="Human")
+  write.tsv(humap2_distance, humap2DIST.file)
+} else {
+  humap2_distance <- fread(humap2DIST.file)
 }
-
-# Get similarity
-sim <- cor(t(as.matrix(probs[[4]][goi,])))
-diag(sim) <- NA
-cleanDev(); pdf(out("HUMAP2_DISTANCES.pdf"), w=30,h=30)
-pheatmap(sim, fontsize_row = 5)
-dev.off()
-
-# similarity into a table
-sum(sim > 0.7, na.rm = TRUE)
-adj2 <- sim
-adj2[adj2 < 0.7] <- 0
-adj2[is.na(adj2)] <- 0
-sum(adj2 > 0.7, na.rm = TRUE)
-g <- graph.adjacency(adj2, weighted = "max")
-humap2_distance <- data.table(get.edgelist(g), E(g)$max)
-for(i in 1:10){
-  stopifnot(sim[humap2_distance[i]$V1, humap2_distance[i]$V2] == humap2_distance[i]$V3)
-}
-humap2_distance <- data.table(setNames(humap2_distance, c("A","B", "Score")), db="hu.Map2", dataset="hu.Map2_Distances", organism="Human")
 
 
 
 # CFMS --------------------------------------------------------------------
-cfms <- fread(inDir("CFMS.Skinnider.2021.NatureMethods.tsv"))
-ggplot(cfms, aes(x=score, y=precision)) + geom_hex()
-ggsave(out("CFMS_ScorevsPrecision.pdf"),w=5,h=5)
-cfms <- setNames(cfms[,c("protein_A", "protein_B", "score"),with=F], c("A","B","Score"))
-cfms <- data.table(cfms, db="CF-MS", dataset="CF-MS", organism="Human")
-
+cfms.file <- out("Table_CFMS.tsv")
+  if(!file.exists(cfms.file)){
+  cfms <- fread(inDir("CFMS.Skinnider.2021.NatureMethods.tsv"))
+  ggplot(cfms, aes(x=score, y=precision)) + geom_hex()
+  ggsave(out("CFMS_ScorevsPrecision.pdf"),w=5,h=5)
+  cfms <- setNames(cfms[,c("protein_A", "protein_B", "score"),with=F], c("A","B","Score"))
+  cfms <- data.table(cfms, db="CF-MS", dataset="CF-MS", organism="Human")
+  write.tsv(cfms, cfms.file)
+} else {
+  cfms <- fread(cfms.file)
+}
 
 # PCP SILAM ---------------------------------------------------------------
-pcp <- data.table(readxl::read_xlsx(inDir("PCP.SILAM.Skinnider.2021.Cell.xlsx"), sheet = 1))
-pcp.list <- split(setNames(pcp[,-"Tissue"], c("A","B", "Score")), pcp$Tissue)
-pcp.list <- lapply(names(pcp.list), function(nam) data.table(pcp.list[[nam]], db="PCP SILAM", dataset=nam, organism="Mouse"))
+pcp.file <- out("Table_PCP.RData")
+if(!file.exists(pcp.file)){
+  pcp <- data.table(readxl::read_xlsx(inDir("PCP.SILAM.Skinnider.2021.Cell.xlsx"), sheet = 1))
+  pcp.list <- split(setNames(pcp[,-"Tissue"], c("A","B", "Score")), pcp$Tissue)
+  pcp.list <- lapply(names(pcp.list), function(nam) data.table(pcp.list[[nam]], db="PCP SILAM", dataset=nam, organism="Mouse"))
+  save(pcp.list, file=pcp.file)
+} else {
+  load(pcp.file)
+}
 
 
 # CORUM -------------------------------------------------------------------
-corumCore <- fread(cmd = paste0('unzip -cq ', inDir("CorumCore.txt.zip")), check.names = T)
-corumAll <- fread(cmd = paste0('unzip -cq ', inDir("CorumAll.txt.zip")), check.names = T)
-interactions.from.corum <- function(x){
-  x[,subunits.simple := gsub(" ", ";", gsub(",", ";", subunits.Gene.name.))]
-  gg <- unique(do.call(c, strsplit(x$subunits.simple, ";")))
-  adjm <- matrix(0, length(gg), length(gg))
-  row.names(adjm) <- gg
-  colnames(adjm) <- gg
-  i <- 1
-  for(i in 1:nrow(x)){
-    gs <- unique(strsplit(x[i, subunits.simple], ";")[[1]])
-    gs <- gs[gs != ""]
-    adjm[gs, gs] <- 1
+corum.file <- out("Table_CORUM.RData")
+if(!file.exists(corum.file)){
+  corumCore <- fread(cmd = paste0('unzip -cq ', inDir("CorumCore.txt.zip")), check.names = T)
+  corumAll <- fread(cmd = paste0('unzip -cq ', inDir("CorumAll.txt.zip")), check.names = T)
+  interactions.from.corum <- function(x){
+    x[,subunits.simple := gsub(" ", ";", gsub(",", ";", subunits.Gene.name.))]
+    gg <- unique(do.call(c, strsplit(x$subunits.simple, ";")))
+    adjm <- matrix(0, length(gg), length(gg))
+    row.names(adjm) <- gg
+    colnames(adjm) <- gg
+    i <- 1
+    for(i in 1:nrow(x)){
+      gs <- unique(strsplit(x[i, subunits.simple], ";")[[1]])
+      gs <- gs[gs != ""]
+      adjm[gs, gs] <- 1
+    }
+    res <- unique(melt(data.table(data.frame(adjm),keep.rownames = TRUE), id.vars ="rn")[value == 1])
+    res <- setNames(res, c("A","B", "Score"))
+    return(res)
   }
-  res <- unique(melt(data.table(data.frame(adjm),keep.rownames = TRUE), id.vars ="rn")[value == 1])
-  res <- setNames(res, c("A","B", "Score"))
-  return(res)
+  corum.list <- list(
+    data.table(interactions.from.corum(corumCore[Organism == "Human"]), db="Corum", dataset="Core", organism="Human"),
+    data.table(interactions.from.corum(corumCore[Organism == "Mouse"]), db="Corum", dataset="Core", organism="Mouse"),
+    data.table(interactions.from.corum(corumAll[Organism == "Human"]), db="Corum", dataset="All", organism="Human"),
+    data.table(interactions.from.corum(corumAll[Organism == "Mouse"]), db="Corum", dataset="All", organism="Mouse")
+  )
+  save(corum.list, file=corum.file)
+} else {
+  load(corum.file)
 }
-corum.list <- list(
-  data.table(interactions.from.corum(corumCore[Organism == "Human"]), db="Corum", dataset="Core", organism="Human"),
-  data.table(interactions.from.corum(corumCore[Organism == "Mouse"]), db="Corum", dataset="Core", organism="Mouse"),
-  data.table(interactions.from.corum(corumAll[Organism == "Human"]), db="Corum", dataset="All", organism="Human"),
-  data.table(interactions.from.corum(corumAll[Organism == "Mouse"]), db="Corum", dataset="All", organism="Mouse")
-)
 
 
 
 # Manual Complex annotation -----------------------------------------------
-compexes.David <- fread(dirout_load("EXT_01_GetAnnotationsDavid")("ManualComplexes.tsv"))
-
-x <- compexes.David
-interactions.from.david <- function(x){
-  gg <- unique(x$Gene)
-  adjm <- matrix(0, length(gg), length(gg))
-  row.names(adjm) <- gg
-  colnames(adjm) <- gg
-  cx <- x$Complex[1]
-  for(cx in unique(x$Complex)){
-    gs <- x[Complex == cx]$Gene
-    adjm[gs, gs] <- 1
+complexes.file <- out("Table_COMPLEXES.RData")
+if(!file.exists(complexes.file)){
+  compexes.David <- fread(dirout_load("EXT_01_GetAnnotationsDavid")("ManualComplexes.tsv"))
+  x <- compexes.David
+  interactions.from.david <- function(x){
+    gg <- unique(x$Gene)
+    adjm <- matrix(0, length(gg), length(gg))
+    row.names(adjm) <- gg
+    colnames(adjm) <- gg
+    cx <- x$Complex[1]
+    for(cx in unique(x$Complex)){
+      gs <- x[Complex == cx]$Gene
+      adjm[gs, gs] <- 1
+    }
+    res <- unique(melt(data.table(data.frame(adjm),keep.rownames = TRUE), id.vars ="rn")[value == 1])
+    res <- setNames(res, c("A","B", "Score"))
+    return(res)
   }
-  res <- unique(melt(data.table(data.frame(adjm),keep.rownames = TRUE), id.vars ="rn")[value == 1])
-  res <- setNames(res, c("A","B", "Score"))
-  return(res)
+  complexes.manual.list <- list(
+    data.table(interactions.from.david(compexes.David), db="Manual", dataset="Manual", organism="Mouse")
+  )
+  save(complexes.manual.list, file=complexes.file)
+} else {
+  load(complexes.file)
 }
-complexes.manual.list <- list(
-  data.table(interactions.from.david(compexes.David), db="Manual", dataset="Manual", organism="Mouse")
-)
 
 
 
 # DEPMAP ------------------------------------------------------------------
-depmap <- read.table(inDir("depmap.CRISPR.csv"), row.names = 1, sep=",", header = TRUE)
-str(depmap)
-stopifnot(all(sapply(depmap, is.numeric)))
-depmap <- as.matrix(depmap)
-depmap.ann <- fread(inDir("depmap.ann.csv"))
-depmap <- depmap[row.names(depmap) %in% depmap.ann$DepMap_ID,]
-depmap.ann <- depmap.ann[DepMap_ID %in% row.names(depmap)]
-depmap.clean <- depmap
-colnames(depmap.clean) <- gsub("\\..+", "", colnames(depmap.clean))
-depmap.genes <- hm[Mouse%in% GENES.OF.INTEREST & Human %in% colnames(depmap.clean)]$Human
-depmap.clean <- depmap.clean[,depmap.genes]
-str(depmap.clean)
-
-m <- depmap.clean
-get.depmap.cor <- function(m, name){
+get.depmap.cor <- function(m, name, db="DepMap", org="Human"){
   cMT <- cor(m, use="pairwise.complete.obs")
   cMT[upper.tri(cMT, diag = TRUE)] <- NA
   cDT <- melt(data.table(cMT, keep.rownames = TRUE), id.vars="rn")[!is.na(value)]
   names(cDT) <- c("A", "B", "Score")
-  return(data.table(cDT, db="DepMap", dataset=name, organism="Human"))
+  return(data.table(cDT, db=db, dataset=name, organism=org))
+}
+
+depmap.file <- out("Table_DEPMAP.RData")
+if(!file.exists(depmap.file)){
+  depmap <- read.table(inDir("depmap.CRISPR.csv"), row.names = 1, sep=",", header = TRUE)
+  str(depmap)
+  stopifnot(all(sapply(depmap, is.numeric)))
+  depmap <- as.matrix(depmap)
+  depmap.ann <- fread(inDir("depmap.ann.csv"))
+  depmap <- depmap[row.names(depmap) %in% depmap.ann$DepMap_ID,]
+  depmap.ann <- depmap.ann[DepMap_ID %in% row.names(depmap)]
+  depmap.clean <- depmap
+  colnames(depmap.clean) <- gsub("\\..+", "", colnames(depmap.clean))
+  depmap.genes <- hm[Mouse%in% GENES.OF.INTEREST & Human %in% colnames(depmap.clean)]$Human
+  depmap.clean <- depmap.clean[,depmap.genes]
+  str(depmap.clean)
+  
+  m <- depmap.clean
+  
+  depmap.list <- list(All = get.depmap.cor(m = depmap.clean, name = "All"))
+  for(tx in unique(depmap.ann[,.N, by="lineage"][N>20]$lineage)){
+    depmap.list[[tx]] <- get.depmap.cor(m = depmap.clean[depmap.ann[lineage == tx]$DepMap_ID,], name = tx)
+  }
+  save(depmap.list, file=depmap.file)
+} else {
+  load(depmap.file)
 }
 
 
-depmap.list <- list(All = get.depmap.cor(m = depmap.clean, name = "All"))
-for(tx in unique(depmap.ann[,.N, by="lineage"][N>20]$lineage)){
-  depmap.list[[tx]] <- get.depmap.cor(m = depmap.clean[depmap.ann[lineage == tx]$DepMap_ID,], name = tx)
+
+# AML SCREEN --------------------------------------------------------------
+aml.file <- out("Table_AML.RData")
+if(!file.exists(aml.file)){
+  aml <- data.table(read_xlsx("metadata/AML_Scores_WangEtAl.xlsx", skip = 1, sheet=1))
+  aml <- aml[Gene %in% hm[Mouse %in% GENES.OF.INTEREST]$Human]
+  aml <- as.matrix(aml[,-c("Gene", "sgRNAs included"), with=F], rownames=aml$Gene)
+  
+  stopifnot(all(sapply(aml, is.numeric)))
+  
+  aml.list <- list(AML = get.depmap.cor(m = t(aml), name = "AML", db="AML"))
+  save(aml.list, file=aml.file)
+} else {
+  load(aml.file)
 }
+
+
 # lapply(depmap.list, function(dt) dt[A == "ACTL6A" & B == "AHCTF1"])
 
 
@@ -358,8 +428,12 @@ all.interactions <- rbind(all.interactions, do.call(rbind, pcp.list))
 all.interactions <- rbind(all.interactions, do.call(rbind, corum.list))
 all.interactions <- rbind(all.interactions, do.call(rbind, complexes.manual.list))
 all.interactions <- rbind(all.interactions, do.call(rbind, depmap.list))
-all.interactions <- rbind(all.interactions, hippie)
+all.interactions <- rbind(all.interactions, do.call(rbind, aml.list))
+#all.interactions <- rbind(all.interactions, hippie)
 all.interactions.orig <- copy(all.interactions)
+
+# look at numbers
+all.interactions[,.N, by=c("db", "dataset", "organism")]
 
 # Get human names
 all.interactions <- merge(all.interactions, hm, by.x="A", by.y="Mouse", all.x=TRUE)
