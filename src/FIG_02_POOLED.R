@@ -20,6 +20,12 @@ RESULTS.wt.agg <- fread(inDir("Aggregated.tsv"))
 RESULTS.wt.mds <- fread(inDir("Correlation_hits_MDS.tsv"))
 
 
+# SETUP ENDS HERE ---------------------------------------------------------
+
+
+
+
+
 # Hopefully Cool plot ---------------------------------------------------------------
 # Add Main branch
 cleanComparisons2 <- function(x){
@@ -72,6 +78,7 @@ pDT.stats <- pDT.stats[Comparison %in% COMPARISONS.USE]
 mx <- toMT(pDT.stats, row = "Gene", col = "Comparison", val = "V1")
 mx[is.na(mx)] <- 0
 pDT.stats$Cluster <- cutree(hclust(dist(mx)), k = 7)[pDT.stats$Gene]
+write.tsv(pDT.stats, out("SimpleHM.tsv"))
 
 ggplot(pDT.stats, aes(y=cleanComparisons(Comparison, ggtext = TRUE), x=Gene)) +
   theme_bw(12) + 
