@@ -1,7 +1,7 @@
 setwd(paste0(Sys.getenv("CODE")))
 
-source("~/code/resources/RFunctions/Basics.R")
-source("~/code/resources/RFunctions/scRNA_Basics.R")
+source(paste(Sys.getenv("CODEBASE"), "resources", "RFunctions", "Basics.R", sep="/"))
+source(paste(Sys.getenv("CODEBASE"), "resources", "RFunctions", "scRNA_Basics.R", sep="/"))
 
 
 # Packages ----------------------------------------------------------------
