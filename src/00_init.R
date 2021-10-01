@@ -1,15 +1,42 @@
-setwd(paste0(Sys.getenv("CODE")))
+# Environmental variables for working on the CAME Cluster ----------------------------------------
+if(Sys.getenv("GFS") == ""){  # GFS is not set (we are on the CAME Cluster)
+  if(dir.exists("/media/AGFORTELNY")){  # we are on the CAME Cluster
+    Sys.setenv(CODEBASE=paste0(Sys.getenv("HOME"), "/code/"))
+    Sys.setenv(GFS="/media/AGFORTELNY")
+    Sys.setenv(
+      CODE=paste0(Sys.getenv("CODEBASE"), "/tfcf/"),
+      DATA=paste0(Sys.getenv("GFS"), "/PROJECTS/TfCf/Data/"),
+      RAWDATA=paste0(Sys.getenv("GFS"), "/PROJECTS/TfCf/RawData/"),
+      ANALYSIS=paste0(Sys.getenv("GFS"), "/PROJECTS/TfCf/Analysis/")
+    )
+  } else {
+    stop("Environmental variables missing")
+  }
+}
 
+
+
+# # Setwd -------------------------------------------------------------------
+# setwd(paste0(Sys.getenv("CODE")))
+# 
+
+# Packages and functions ----------------------------------------------------------------
 source(paste(Sys.getenv("CODEBASE"), "resources", "RFunctions", "Basics.R", sep="/"))
 source(paste(Sys.getenv("CODEBASE"), "resources", "RFunctions", "scRNA_Basics.R", sep="/"))
 
-
-# Packages ----------------------------------------------------------------
 require(data.table)
 require(ggplot2)
 require(pheatmap)
+require(renv)
+require(hdf5r)
+require(dplyr)
+require(tidyr)
+require(mixtools)
+
+# renv::init()
 
 
+# Enrichr DBs -------------------------------------------------------------
 ENRICHR.DBS <- c("KEGG_2019_Mouse", "NCI-Nature_2016", "WikiPathways_2019_Mouse", "Reactome_2016",
                  "TRANSFAC_and_JASPAR_PWMs", "ENCODE_and_ChEA_Consensus_TFs_from_ChIP-X", "ENCODE_TF_ChIP-seq_2015", "ChEA_2016", "TRRUST_Transcription_Factors_2019"
                  )

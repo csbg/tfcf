@@ -1,7 +1,8 @@
-source(paste0(Sys.getenv("CODE"), "src/00_init.R"))
+source("src/00_init.R")
 out <- dirout("FULLINT_01_01_Integration/")
 
 require(Seurat)
+require(monocle3)
 
 # Read cellranger analysis results --------------------------------------------
 
@@ -20,10 +21,10 @@ ff <- ff[!grepl("ECCITE1_", ff)]
 marker.genes <- fread("metadata/markers.csv")
 
 # Read data  and Seurat integration --------------------------------------------
-seurat.file <- out("SeuratObject.RData")
-if(!file.exists(seurat.file)){
+monocle.file <- out("MonocleObject.RData")
+if(!file.exists(monocle.file)){
   
-  seurat.list <- list()
+  monocle.obj.list <- list()
   additional.info <- list()
   
   for(dsx in ff){
@@ -31,6 +32,13 @@ if(!file.exists(seurat.file)){
     print(dsx)
     print("---------------")
     path <- paste(Sys.getenv("DATA"), dsx, "outs", "filtered_feature_bc_matrix.h5", sep = "/")
+    dsx.file <- out(paste0("SeuratObj_",dsx,".RData"))
+    
+    if(dsx %in% names(monocle.obj.list)){
+      message(dsx, " already processed")
+      next
+    }
+    
     if(!file.exists(path)){
       message("File for ", dsx, " not found")
       next
@@ -44,59 +52,118 @@ if(!file.exists(seurat.file)){
       data.gx <- data[["Gene Expression"]]
       additional.info[[dsx]] <- data[names(data) != "Gene Expression"]
     }
+    
+    if(dsx == "ECCITE1"){
+      read.csv(PATHS$ECCITE1$DATA$guides)
+      matrix_dir = paste(Sys.getenv("DATA"), "ECCITE1_citeseq_combined//umi_count/", sep="/")
+      barcode.path <- paste0(matrix_dir, "barcodes.tsv.gz")
+      features.path <- paste0(matrix_dir, "features.tsv.gz")
+      matrix.path <- paste0(matrix_dir, "matrix.mtx.gz")
+      mat <- readMM(file = matrix.path)
+      feature.names = read.delim(features.path, header = FALSE, stringsAsFactors = FALSE)
+      barcode.names = read.delim(barcode.path, header = FALSE, stringsAsFactors = FALSE)
+      colnames(mat) = paste0(barcode.names$V1, "-1")
+      rownames(mat) = gsub("\\-.+$", "", feature.names$V1)
+      mat <- mat[row.names(mat) != "unmapped",]
+      additional.info[[dsx]] <- list("CRISPR Guide Capture" = as(mat, "dgCMatrix"))
+    }
+
     if(class(data.gx) != "dgCMatrix"){
       message("Data for ", dsx, " not in the right format")
     }
-    seurat.obj <- CreateSeuratObject(counts = data.gx, project = dsx, min.cells = 5)
+    
+    
+    seurat.obj <- CreateSeuratObject(counts = data.gx, project = dsx)
     seurat.obj[["percent.mt"]] <- PercentageFeatureSet(seurat.obj, pattern = "^mt-")
     seurat.obj <- subset(seurat.obj, subset = nFeature_RNA > 500 & nCount_RNA > 1000 & percent.mt < 10)
     seurat.obj <- NormalizeData(seurat.obj, verbose = FALSE)
-    seurat.obj <- FindVariableFeatures(seurat.obj, selection.method = "vst", nfeatures = 2000)
-    seurat.list[[dsx]] <- seurat.obj
+    seurat.obj <- CellCycleScoring(seurat.obj, s.features = cc.genes$s.genes,g2m.features = cc.genes$g2m.genes,set.ident = TRUE)
+    
+    # Add additional info to metadata
+    cutoff <- 5
+    tx <- names(additional.info[[dsx]])[1]
+    for(tx in names(additional.info[[dsx]])){
+      txn <- make.names(tx)
+      print(tx)
+      x <- additional.info[[dsx]][[tx]]
+      if(class(x) != "dgCMatrix") next
+      x <- as.matrix(x[,apply(x, 2, max) >= cutoff,drop=F]) # only keep cells with any guide counted above cutoff
+      ii <- apply(x, 2, function(col) which(col >= cutoff)) # for each cell (column) get the rows that are above the cutoff
+      labelsx <- sapply(ii, function(ix) paste(row.names(x)[ix], collapse = ","))
+      seurat.obj@meta.data[[txn]] <- labelsx[row.names(seurat.obj@meta.data)]
+    }
+    
+    if("CRISPR.Guide.Capture" %in% seurat.obj@meta.data){
+      orig.guides <- seurat.obj@meta.data$CRISPR.Guide.Capture
+      guides.clean <- orig.guides
+      guides.clean[grepl(",", orig.guides)] <- NA
+      guides.clean[grepl("^NTC_", orig.guides)] <- "NTC"
+      guides.clean[guides.clean %in% names(which(table(guides.clean) < 5))] <- NA
+      seurat.obj@meta.data$guide <- guides.clean
+      
+      # Mixscape
+      eccite <- subset(seurat.obj, cells=row.names(seurat.obj@meta.data)[!is.na(seurat.obj$guide)])
+      eccite <- ScaleData(eccite, vars.to.regress = c("S.Score", "G2M.Score"), verbose = FALSE)
+      eccite <- FindVariableFeatures(eccite, selection.method = "vst", nfeatures = 2000, verbose = FALSE)
+      eccite <- RunPCA(eccite, npcs = 30, verbose = FALSE)
+      eccite <- CalcPerturbSig(
+          object = eccite, assay = "RNA", slot = "data",
+          gd.class ="guide",nt.cell.class = "NTC",
+          reduction = "pca",ndims = 20, num.neighbors = 20,
+          new.assay.name = "PRTB")
+      eccite <- ScaleData(object = eccite, assay = "PRTB", do.scale = F, do.center = T)
+      eccite <- RunMixscape(
+          object = eccite,assay = "PRTB",slot = "scale.data",
+          labels = "guide",nt.class.name = "NTC",
+          min.de.genes = 5,
+          iter.num = 10,
+          de.assay = "RNA",
+          verbose = TRUE,
+          prtb.type = "KO")
+    }
+    
+    eccite <- SCRNA.DietSeurat(sobj = eccite)
+    seurat.obj <- SCRNA.DietSeurat(sobj = seurat.obj)
+    save(seurat.obj, eccite, file=dsx.file)
+      
+    mat.use <- seurat.obj@assays$RNA@counts
+    stopifnot(!any(duplicated(row.names(mat.use))))
+    if(!"GFP" %in% row.names(mat.use)){
+      x <- matrix(0, nrow = 2, ncol = ncol(mat.use))
+      row.names(x) <- c("GFP", "BFP")
+      mat.use <- rbind(mat.use, x)
+    }
+    monocle.obj.list[[dsx]] <- new_cell_data_set(expression_data = mat.use, cell_metadata = seurat.obj@meta.data)
   }
   
-  # Integrate
-  anchors <- FindIntegrationAnchors(object.list = seurat.list, dims = 1:20)
-  rm(list=c("seurat.list", "data.gx", "data"))
-  sobj <- IntegrateData(anchorset = anchors, dims = 1:20)
-  rm(list="anchors")
+  stopifnot(length(unique(sapply(monocle.obj.list, nrow))) == 1)
   
-  DefaultAssay(sobj) <- "integrated"
-  sobj@meta.data$dataset <- sobj@meta.data$orig.ident
+  monocle.obj <- combine_cds(cds_list = monocle.obj.list, cell_names_unique = FALSE)
   
-  # Cell Cycle scoring
-  sobj <- CellCycleScoring(sobj, 
-                           s.features = cc.genes$s.genes, 
-                           g2m.features = cc.genes$g2m.genes, 
-                           set.ident = TRUE)
+  monocle.obj <- 
+    preprocess_cds(monocle.obj, verbose = TRUE) %>% 
+    reduce_dimension(preprocess_method = "PCA", verbose = TRUE)
   
-  # Process full dataset
-  sobj <- ScaleData(sobj, vars.to.regress = c("S.Score", "G2M.Score"), verbose = FALSE)
-  sobj <- RunPCA(sobj, npcs = 30, verbose = FALSE)
-  sobj <- RunUMAP(sobj, reduction = "pca", dims = 1:20)
-  sobj <- FindNeighbors(sobj, reduction = "pca", dims = 1:20)
-  sobj <- FindClusters(sobj, resolution = 0.5)
-
-  # add ECCITE1 guides
-  read.csv(PATHS$ECCITE1$DATA$guides)
-  matrix_dir = paste(Sys.getenv("DATA"), "ECCITE1_citeseq_combined//umi_count/", sep="/")
-  barcode.path <- paste0(matrix_dir, "barcodes.tsv.gz")
-  features.path <- paste0(matrix_dir, "features.tsv.gz")
-  matrix.path <- paste0(matrix_dir, "matrix.mtx.gz")
-  mat <- readMM(file = matrix.path)
-  feature.names = read.delim(features.path, header = FALSE, stringsAsFactors = FALSE)
-  barcode.names = read.delim(barcode.path, header = FALSE, stringsAsFactors = FALSE)
-  colnames(mat) = paste0(barcode.names$V1, "-1")
-  rownames(mat) = gsub("\\-.+$", "", feature.names$V1)
-  mat <- mat[row.names(mat) != "unmapped",]
-  additional.info[["ECCITE1"]] <- list("CRISPR Guide Capture" = as(mat, "dgCMatrix"))
+  set.seed(42)
+  monocle.obj <- 
+    align_cds(monocle.obj, alignment_group = "sample", verbose = TRUE) %>% 
+    reduce_dimension(
+      reduction_method = "UMAP",
+      preprocess_method = "Aligned",
+      verbose = TRUE
+    ) %>% 
+    reduce_dimension(
+      reduction_method = "tSNE",
+      preprocess_method = "Aligned",
+      verbose = TRUE
+    )
   
   # Store full dataset
   sobj <- SCRNA.DietSeurat(sobj)
-  save(sobj, additional.info, file=seurat.file)
+  save(monocle.obj, additional.info, file=monocle.file)
 } else {
   print("Loading Seurat file")
-  load(seurat.file)
+  load(monocle.file)
 }
 #additional.info[["ECCITE1"]] <- NULL
 sobj <- SCRNA.UndietSeurat(sobj)
