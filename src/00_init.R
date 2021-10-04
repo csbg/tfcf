@@ -15,25 +15,27 @@ if(Sys.getenv("GFS") == ""){  # GFS is not set (we are on the CAME Cluster)
 }
 
 
-
 # # Setwd -------------------------------------------------------------------
 # setwd(paste0(Sys.getenv("CODE")))
 # 
 
-# Packages and functions ----------------------------------------------------------------
-source(paste(Sys.getenv("CODEBASE"), "resources", "RFunctions", "Basics.R", sep="/"))
-source(paste(Sys.getenv("CODEBASE"), "resources", "RFunctions", "scRNA_Basics.R", sep="/"))
+.libPaths()
 
+# Packages and functions ----------------------------------------------------------------
 require(data.table)
 require(ggplot2)
 require(pheatmap)
-require(renv)
+# require(renv)
 require(hdf5r)
 require(dplyr)
 require(tidyr)
+require(Seurat)
+require(monocle3)
 require(mixtools)
 
-# renv::init()
+
+source(paste(Sys.getenv("CODEBASE"), "resources", "RFunctions", "Basics.R", sep="/"))
+source(paste(Sys.getenv("CODEBASE"), "resources", "RFunctions", "scRNA_Basics.R", sep="/"))
 
 
 # Enrichr DBs -------------------------------------------------------------
