@@ -14,8 +14,6 @@ ff <- ff[grepl("ECCITE", ff) | grepl("CITESEQ", ff)]
 ff <- ff[!grepl("ECCITE4_INT", ff)]
 ff <- ff[!grepl("ECCITE1_", ff)]
 
-marker.genes <- fread("metadata/markers.csv")
-
 
 # Read data, Seurat processing, and Monocle integration --------------------------------------------
 monocle.file <- out("MonocleObject.RData")
@@ -33,7 +31,7 @@ if(file.exists(monocle.file)){
 
   
   dsx <- ff[1]
-  dsx <- "ECCITE1"
+  dsx <- "CITESEQ1"
   for(dsx in ff){
     
     # already processed?
@@ -52,7 +50,7 @@ if(file.exists(monocle.file)){
     # Load or process file
     if(file.exists(dsx.file)){
       print("Loading processed dataset")
-      load(dsx.file)
+      (load(dsx.file))
     } else {
       print("Processing dataset")
       if(!file.exists(path)){
@@ -66,7 +64,7 @@ if(file.exists(monocle.file)){
       }
       if(is.list(data) && "Gene Expression" %in% names(data)){
         data.gx <- data[["Gene Expression"]]
-        additional.info[[dsx]] <- data[names(data) != "Gene Expression"]
+        additional.info.x <- data[names(data) != "Gene Expression"]
       }
       
       if(dsx == "ECCITE1"){
@@ -81,29 +79,29 @@ if(file.exists(monocle.file)){
         colnames(mat) = paste0(barcode.names$V1, "-1")
         rownames(mat) = gsub("\\-.+$", "", feature.names$V1)
         mat <- mat[row.names(mat) != "unmapped",]
-        additional.info[[dsx]] <- list("CRISPR Guide Capture" = as(mat, "dgCMatrix"))
+        additional.info.x <- list("CRISPR Guide Capture" = as(mat, "dgCMatrix"))
       }
       
       if(class(data.gx) != "dgCMatrix"){
         message("Data for ", dsx, " not in the right format")
       }
-    
+
       seurat.obj <- CreateSeuratObject(counts = data.gx, project = dsx)
       seurat.obj[["percent.mt"]] <- PercentageFeatureSet(seurat.obj, pattern = "^mt-")
       seurat.obj <- subset(seurat.obj, subset = nFeature_RNA > 500 & nCount_RNA > 1000 & percent.mt < 10)
       seurat.obj <- NormalizeData(seurat.obj, verbose = FALSE)
       seurat.obj <- CellCycleScoring(seurat.obj, s.features = cc.genes$s.genes,g2m.features = cc.genes$g2m.genes,set.ident = TRUE)
-      
+
       # Add additional info to metadata
-      tx <- names(additional.info[[dsx]])[1]
-      for(tx in names(additional.info[[dsx]])){
+      tx <- names(additional.info.x)[1]
+      for(tx in names(additional.info.x)){
         txn <- make.names(tx)
         print(tx)
-        
+
         # Get dataset
-        x <- additional.info[[dsx]][[tx]]
+        x <- additional.info.x[[tx]]
         if(class(x) != "dgCMatrix") next
-        
+
         # Get features for each cells
         if(txn == "CRISPR.Guide.Capture"){
           colcnts <- colSums(x)
@@ -117,7 +115,7 @@ if(file.exists(monocle.file)){
           x <- as.matrix(x[,apply(x, 2, max) >= cutoff,drop=F]) # only keep cells with any guide counted above cutoff
           ii <- apply(x, 2, function(col) which(col >= cutoff)) # for each cell (column) get the rows that are above the cutoff
         }
-        
+
         # label features and combine them
         if(length(ii) == 0) next
         labelsx <- sapply(ii, function(ix) paste(row.names(x)[ix], collapse = ","))
@@ -132,10 +130,10 @@ if(file.exists(monocle.file)){
         guides.clean[grepl(",", orig.guides)] <- NA
         guides.clean[grepl("^NTC_", orig.guides)] <- "NTC"
         guides.clean[guides.clean %in% names(which(table(guides.clean) < 5))] <- NA
-        
+
         if(sum(!is.na(guides.clean)) > 5){
           seurat.obj@meta.data$guide <- guides.clean
-  
+
           # Mixscape
           eccite <- subset(seurat.obj, cells=row.names(seurat.obj@meta.data)[!is.na(seurat.obj$guide)])
           eccite <- subset(eccite, features=names(which(Matrix::rowSums(eccite@assays$RNA@counts) > 10)))
@@ -143,7 +141,7 @@ if(file.exists(monocle.file)){
           #eccite <- subset(eccite, features=eccite@assays$RNA@var.features)
           eccite <- ScaleData(eccite, vars.to.regress = c("S.Score", "G2M.Score"), verbose = FALSE)
           eccite <- RunPCA(eccite, npcs = 30, verbose = FALSE)
-          
+
           # CalcPerturbSig
           for(nn in seq(from = 20,to = 5, by = -5)){
             tryCatch({
@@ -157,7 +155,7 @@ if(file.exists(monocle.file)){
               message(e)
             })
           }
-          
+
           # RunMixscape
           eccite <- ScaleData(object = eccite, assay = "PRTB", do.scale = F, do.center = T)
           eccite <- RunMixscape(
@@ -175,7 +173,7 @@ if(file.exists(monocle.file)){
       }
 
       seurat.obj <- SCRNA.DietSeurat(sobj = seurat.obj)
-      save(seurat.obj, file=dsx.file)
+      save(seurat.obj, additional.info.x, file=dsx.file)
     }
     
     # Extract information for Monocle
@@ -187,36 +185,29 @@ if(file.exists(monocle.file)){
       mat.use <- rbind(mat.use, x)
     }
     monocle.obj.list[[dsx]] <- new_cell_data_set(expression_data = mat.use, cell_metadata = seurat.obj@meta.data)
+    additional.info[[dsx]] <- additional.info.x
   }
-  
+    
   # Make sure all objects have the same number of rows
   stopifnot(length(unique(sapply(monocle.obj.list, nrow))) == 1)
-  
+
   # Combine datasets
   monocle.obj <- combine_cds(cds_list = monocle.obj.list, cell_names_unique = FALSE)
-  
+
   # Process dataset
-  monocle.obj <- 
-    preprocess_cds(monocle.obj, verbose = TRUE) %>% 
+  monocle.obj <-
+    preprocess_cds(monocle.obj, verbose = TRUE) %>%
     reduce_dimension(preprocess_method = "PCA", verbose = TRUE)
   set.seed(42)
-  monocle.obj <- 
-    align_cds(monocle.obj, alignment_group = "sample", verbose = TRUE) %>% 
+  monocle.obj <-
+    align_cds(monocle.obj, alignment_group = "sample", verbose = TRUE) %>%
     reduce_dimension(
       reduction_method = "UMAP",
       preprocess_method = "Aligned",
       verbose = TRUE)
   
   # Store full dataset
-  save(monocle.obj, additional.info, file=monocle.file)
+  save(monocle.obj, additional.info, AGG.CSV, file=monocle.file)
 }
 
-ann <- data.table(data.frame(colData(monocle.obj)@listData), keep.rownames = TRUE)
-ann[,.N, by=c("guide", "mixscape_class.global", "sample")][!is.na(guide)][mixscape_class.global == "KO"]
-
-
-x <- data.table(reducedDims(monocle.obj)$UMAP, keep.rownames = TRUE)
-x[,sample := gsub(".+?\\-1_", "", rn)]
-
-ggplot(x, aes(x=V1, y=V2)) + geom_hex()
-ggplot(x, aes(x=V1, y=V2)) + geom_hex() + facet_wrap(~sample)
+  
