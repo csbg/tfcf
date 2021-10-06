@@ -1,17 +1,23 @@
 # Environmental variables for working on the CAME Cluster ----------------------------------------
-if(Sys.getenv("GFS") == ""){  # GFS is not set (we are on the CAME Cluster)
+if(Sys.getenv("GFS") == "" | Sys.getenv("GFS") == "/usr/local/AGFORTELNY/"){  # GFS is not set (we are on the CAME Cluster)
+  print("Setting GFS PATH")
   if(dir.exists("/media/AGFORTELNY")){  # we are on the CAME Cluster
     Sys.setenv(CODEBASE=paste0(Sys.getenv("HOME"), "/code/"))
     Sys.setenv(GFS="/media/AGFORTELNY")
-    Sys.setenv(
-      CODE=paste0(Sys.getenv("CODEBASE"), "/tfcf/"),
-      DATA=paste0(Sys.getenv("GFS"), "/PROJECTS/TfCf/Data/"),
-      RAWDATA=paste0(Sys.getenv("GFS"), "/PROJECTS/TfCf/RawData/"),
-      ANALYSIS=paste0(Sys.getenv("GFS"), "/PROJECTS/TfCf/Analysis/")
-    )
   } else {
     stop("Environmental variables missing")
   }
+}
+
+
+if(Sys.getenv("DATA") == ""){
+	print("Setting DATA and others paths")
+	Sys.setenv(
+	  CODE=paste0(Sys.getenv("CODEBASE"), "/tfcf/"),
+	  DATA=paste0(Sys.getenv("GFS"), "/PROJECTS/TfCf/Data/"),
+	  RAWDATA=paste0(Sys.getenv("GFS"), "/PROJECTS/TfCf/RawData/"),
+	  ANALYSIS=paste0(Sys.getenv("GFS"), "/PROJECTS/TfCf/Analysis/")
+	)
 }
 
 
@@ -110,6 +116,8 @@ PATHS$POOLED$DATA <- list(
 sapply(PATHS$POOLED$DATA, file.exists)
 
 
+PATHS$FULLINT <- list()
+PATHS$FULLINT$Monocle <- dirout_load("FULLINT_01_01_Integration")("MonocleObject.RData")
 
 
 PATHS$CITESEQ1 <- list()
