@@ -12,6 +12,3 @@ export ANALYSIS="$GFS/PROJECTS/TfCf/Analysis/"
 #conda create -n tfcf
 #conda install pip
 #pip install CITE-seq-Count==1.4.4
-
-
-export PATH=/home/people/nfortelny/aws/files/v2/2.2.10/bin/:$PATH
