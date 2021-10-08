@@ -6,12 +6,20 @@ require(igraph)
 
 
 # LOAD DATA ---------------------------------------------------------------
+# single cell
 (load(PATHS$FULLINT$Monocle))
 fData(monocle.obj)$gene_short_name <- row.names(fData(monocle.obj))
+
+# Markers
 marker.genes <- fread("metadata/markers.csv")
+
+# SingleR
+ff <- list.files(dirout_load("FULLINT_05_01_SingleR")(""), pattern = "cell_types_.*.csv", full.names = TRUE)
+singleR.res <- setNames(lapply(ff, fread), gsub("cell_types_(.+).csv", "\\1", basename(ff)))
 
 
 # CLUSTERING ------------------------------------------------------
+set.seed(12121)
 monocle.obj = cluster_cells(monocle.obj, resolution=1e-5)
 
 
@@ -75,6 +83,44 @@ ggsave(out("Clusters_UMAP.pdf"), w=6,h=5)
 plot_genes_by_group(monocle.obj, markers = marker.genes$Name, group_cells_by = "cluster") + scale_size_continuous(range=c(0,5))
 ggsave(out("Clusters_Markers.pdf"), w=6,h=8)
 
+
+
+
+# CELLTYPES SingleR -------------------------------------------------------
+srx <- names(singleR.res)[1]
+for(srx in names(singleR.res)){
+  print(srx)
+  #   x <- singleR.res[[srx]]
+  #   x[3:5]
+  #   x <- merge(
+  #     melt(x[,c("cell", grep("^score", colnames(x), value = TRUE)), with=F], id.vars = "cell"),
+  #     ann[,c("UMAP1", "UMAP2", "rn"),with=F],
+  #     by.x="cell", by.y="rn")
+  #   print(quantile(x[,median(value), by="variable"]$V1))
+  # }
+  
+  x <- singleR.res[[srx]]
+  x[3:5]
+  x <- merge(
+    melt(x[,c("cell", grep("^score", colnames(x), value = TRUE)), with=F], id.vars = "cell"),
+    ann[,c("UMAP1", "UMAP2", "rn"),with=F],
+    by.x="cell", by.y="rn")
+  
+  ggplot(x, aes(x=variable, y=value)) + 
+    theme_bw(12) + 
+    geom_violin() + 
+    xRot()
+  ggsave(out("SingleR_", srx, "_Barplot.pdf"), w=12, h=7)
+  
+  n <- length(unique(x$variable))
+  ggplot(x, aes(x=UMAP1, y=UMAP2)) + 
+    theme_bw(12) + 
+    stat_summary_hex(aes(z=value),fun=mean) +
+    scale_fill_gradient(low="white", high="blue") +
+    facet_wrap(~variable, ncol=5) +
+    theme_bw(12)
+  ggsave(out("SingleR_", srx, ".pdf"), w=5*2+2, h=ceiling(n/5)*2+1, limitsize = FALSE)
+}
 
 
 # ANTIBODIES --------------------------------------------------------------

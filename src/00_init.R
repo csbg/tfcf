@@ -108,6 +108,10 @@ cleanComparisons <- function(x, order=TRUE, ggtext=FALSE){
 
 PATHS <- list()
 
+PATHS$RESOURCES <- list(
+  HM.MAP = dirout_load("PPI_00_getData/")("BioMart_Human_Mouse_2021_07_27.txt")
+)
+
 PATHS$POOLED <- list()
 PATHS$POOLED$DATA <- list(
   matrix=dirout_load("POOLED_01_CollectData")("Matrix.csv"),
@@ -117,7 +121,9 @@ sapply(PATHS$POOLED$DATA, file.exists)
 
 
 PATHS$FULLINT <- list()
-PATHS$FULLINT$Monocle <- dirout_load("FULLINT_01_01_Integration")("MonocleObject.RData")
+#PATHS$FULLINT$Monocle <- dirout_load("FULLINT_01_01_Integration")("MonocleObject.RData")
+PATHS$FULLINT$Monocle <- dirout_load("FULLINT_01_01_Integration")("MonocleObject_2021_10_08_ECCITE6.RData")
+
 
 
 PATHS$CITESEQ1 <- list()
