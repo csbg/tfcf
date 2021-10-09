@@ -17,6 +17,8 @@ marker.genes <- fread("metadata/markers.csv")
 ff <- list.files(dirout_load("FULLINT_05_01_SingleR")(""), pattern = "cell_types_.*.csv", full.names = TRUE)
 singleR.res <- setNames(lapply(ff, fread), gsub("cell_types_(.+).csv", "\\1", basename(ff)))
 
+# CytoTRACE
+
 
 # CLUSTERING ------------------------------------------------------
 set.seed(12121)
@@ -28,6 +30,12 @@ ann <- data.table(data.frame(colData(monocle.obj)@listData), keep.rownames = TRU
 ann$Clusters <- as.character(monocle.obj@clusters$UMAP$clusters[ann$rn])
 umap <- setNames(data.table(reducedDims(monocle.obj)$UMAP, keep.rownames = TRUE), c("rn", "UMAP1", "UMAP2"))
 ann <- merge(ann, umap, by="rn", all=TRUE)
+
+
+
+# SETUP ENDS HERE ---------------------------------------------------------
+
+
 
 
 # ADDITIONAL QC to remove bad clusters --------------------------------------------------------
@@ -60,14 +68,25 @@ if("AGG.CSV" %in% ls()){
 
 
 
-# OVERVIEW -----------------------------------------------------------------
+# SAMPLES -----------------------------------------------------------------
 ggplot(ann, aes(x=UMAP1, y=UMAP2)) + 
   theme_bw(12) +
   geom_hex() +
   scale_fill_gradient(low="lightgrey", high="blue") +
   facet_wrap(~sample, ncol=5)
-ggsave(out("OVERVIEW_Samples.pdf"), w=5*2+2,h=ceiling(length(unique(ann$sample))/5) * 2 + 1)
+ggsave(out("Samples_UMAP.pdf"), w=5*2+2,h=ceiling(length(unique(ann$sample))/5) * 2 + 1)
 
+pDT <- ann[,.N, by=c("sample", "Clusters")]
+pDT[,sumS := sum(N), by="sample"]
+pDT[,sumC := sum(N), by="Clusters"]
+pDT[,percentS := N/sumS*100]
+pDT[,percentC := N/sumC*100]
+ggplot(pDT, aes(y=sample,x=factor(as.numeric(Clusters)), size=percentS, color=percentC)) +
+  scale_size_continuous(name="% of sample") + 
+  scale_color_gradient(name="% of cluster", low="black", high="red") + 
+  theme_bw() + 
+  geom_point()
+ggsave(out("Samples_Clusters.pdf"), w=8,h=length(unique(pDT$sample)) * 0.3+1)
 
 
 # CLUSTERS ----------------------------------------------------
@@ -99,27 +118,60 @@ for(srx in names(singleR.res)){
   #   print(quantile(x[,median(value), by="variable"]$V1))
   # }
   
-  x <- singleR.res[[srx]]
-  x[3:5]
-  x <- merge(
-    melt(x[,c("cell", grep("^score", colnames(x), value = TRUE)), with=F], id.vars = "cell"),
-    ann[,c("UMAP1", "UMAP2", "rn"),with=F],
+  singleR.resX <- singleR.res[[srx]]
+  #x[3:5]
+  pDT <- merge(
+    melt(singleR.resX[,c("cell", grep("^score", colnames(singleR.resX), value = TRUE)), with=F], id.vars = "cell"),
+    ann[,c("UMAP1", "UMAP2", "rn", "Clusters"),with=F],
     by.x="cell", by.y="rn")
   
-  ggplot(x, aes(x=variable, y=value)) + 
-    theme_bw(12) + 
-    geom_violin() + 
-    xRot()
-  ggsave(out("SingleR_", srx, "_Barplot.pdf"), w=12, h=7)
+  # Violin plots
+  # ggplot(pDT, aes(x=variable, y=value)) + 
+  #   theme_bw(12) + 
+  #   geom_violin() + 
+  #   xRot()
+  # ggsave(out("SingleR_", srx, "_Violin.pdf"), w=12, h=7)
   
-  n <- length(unique(x$variable))
-  ggplot(x, aes(x=UMAP1, y=UMAP2)) + 
-    theme_bw(12) + 
-    stat_summary_hex(aes(z=value),fun=mean) +
-    scale_fill_gradient(low="white", high="blue") +
-    facet_wrap(~variable, ncol=5) +
-    theme_bw(12)
-  ggsave(out("SingleR_", srx, ".pdf"), w=5*2+2, h=ceiling(n/5)*2+1, limitsize = FALSE)
+  # Clusters - Scores
+  # pDT2 <- pDT[,.(mean=mean(value)), by=c("Clusters", "variable")]
+  # pDT2[,scaleMean := scale(mean), by=c("Clusters")]
+  # for(mx in c("mean")){
+  #   pDT3 <- copy(pDT2)
+  #   #pDT3 <- hierarch.ordering(pDT3, toOrder = "Clusters", orderBy = "variable", value.var = mx)
+  #   pDT3 <- hierarch.ordering(pDT3, toOrder = "variable", orderBy = "Clusters", value.var = mx)
+  #   ggplot(pDT3, aes_string(x="Clusters", y="variable", fill=mx)) + 
+  #     theme_bw(12) +
+  #     geom_tile() +
+  #     xRot() +
+  #     scale_fill_gradient(low="white", high="blue")
+  #   ggsave(out("SingleR_", srx, "_Clusters_", mx, ".pdf"), 
+  #          h=length(unique(pDT3$variable)) * 0.3+1,
+  #          w=length(unique(pDT3$Clusters)) * 0.3+2
+  #          )
+  # }
+  
+  # UMAP
+  # n <- length(unique(pDT$variable))
+  # ggplot(pDT, aes(x=UMAP1, y=UMAP2)) + 
+  #   theme_bw(12) + 
+  #   stat_summary_hex(aes(z=value),fun=mean) +
+  #   scale_fill_gradient(low="white", high="blue") +
+  #   facet_wrap(~variable, ncol=5) +
+  #   theme_bw(12)
+  # ggsave(out("SingleR_", srx, ".pdf"), w=5*2+2, h=ceiling(n/5)*2+1, limitsize = FALSE)
+  
+  # Clusters - Predictions
+  pDT.ann <- merge(singleR.resX[,c("pruned_labels", "cell")],ann, by.x="cell", by.y="rn")
+  pDT.ann <- pDT.ann[,.N, by=c("Clusters", "pruned_labels")]
+  pDT.ann[,sum := sum(N), by="Clusters"]
+  pDT.ann[,percent := N/sum*100]
+  ggplot(pDT.ann, aes(x=factor(as.numeric(Clusters)), y=pruned_labels, fill=percent)) + 
+    geom_tile() +
+    scale_fill_gradient(low="white", high="red")
+  ggsave(out("SingleR_", srx, "_Clusters_", "PercPredicted", ".pdf"),          
+         h=length(unique(pDT.ann$pruned_labels)) * 0.3+1,
+         w=length(unique(pDT.ann$Clusters)) * 0.3+2)
+  
 }
 
 

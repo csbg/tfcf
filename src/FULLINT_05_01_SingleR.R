@@ -5,6 +5,7 @@ library(Seurat)
 library(SingleR)
 library(celldex)
 library(tidyverse)
+library(CytoTRACE)
 
 
 # LOAD DATA ---------------------------------------------------------------
@@ -43,8 +44,40 @@ reference_cell_types <- list(
   dmap = NovershternHematopoieticData(),
   
   # for PBMC
-  monaco = MonacoImmuneData()
+  monaco = MonacoImmuneData(),
+  
+  # ImmGen
+  immgen=ImmGenData(),
+  
+  # DB ImmuneCells
+  # immuneCellExDB=DatabaseImmuneCellExpressionData(),
+  
+  # Mouse RNA-seq
+  mouseRNA=MouseRNAseqData(),
+  
+  # CytoTRACE 10x Marrow
+  marrow10x=SummarizedExperiment(
+    assays = SimpleList(logcounts=SCRNA.TPXToLog(SCRNA.RawToTPX(SCRNA.ToSparseMT(as.matrix(marrow_10x_expr)), 1e6))), 
+    colData=DataFrame(
+      label.main=marrow_10x_pheno, 
+      row.names = names(marrow_10x_pheno)
+    )
+  ),
+  
+  # CytoTRACE plate
+  marrowPlate <- SummarizedExperiment(
+    assays = SimpleList(logcounts=SCRNA.TPXToLog(SCRNA.RawToTPX(SCRNA.ToSparseMT(as.matrix(marrow_plate_expr)), 1e6))), 
+    colData=DataFrame(
+      label.main=marrow_plate_pheno, 
+      row.names = names(marrow_plate_pheno)
+    )
+  )
 )
+
+stopifnot(all(colnames(marrow_10x_expr) == names(marrow_10x_pheno)))
+stopifnot(all(colnames(marrow_plate_expr) == names(marrow_plate_pheno)))
+
+
 
 # head(row.names(reference_cell_types$dmap), 40)
 # head(row.names(reference_cell_types$monaco), 40)
@@ -52,21 +85,28 @@ reference_cell_types <- list(
 # head(row.names(reference_cell_types$hpca), 40)
 
 
-#reference_cell_types <- reference_cell_types.orig
-#reference_cell_types <- reference_cell_types[3]
-
-str(reference_cell_types[[ref]])
-colData(reference_cell_types[[ref]])
-
 ref <- names(reference_cell_types)[1]
 for(ref in names(reference_cell_types)){
+  print(ref)
+  
+  # Figure out organism
+  olh <- sum(row.names(reference_cell_types[[ref]]) %in% row.names(count_matrix_human))
+  olm <- sum(row.names(reference_cell_types[[ref]]) %in% row.names(count_matrix_mouse))
+  orgx <- if(olh > olm) "human" else "mouse"
+  count_matrix <- if(orgx == "human") count_matrix_human else count_matrix_mouse
+  
   labelx <- "label.main"
   for(labelx in c("label.main", "label.fine")){
+    print(paste(".", labelx))
+    
     ref.file <- out("cell_types_", ref, "_", labelx, ".csv")
     if(file.exists(ref.file)){
+      print(paste(".", "already done"))
       next
     } else {
-      if(is.null(colData(reference_cell_types[[ref]])[, labels])) next
+      if(is.null(colData(reference_cell_types[[ref]])[, labelx])) next
+      
+      print(paste(".", "running SingleR"))
       
       results <- SingleR(
         test = count_matrix,

@@ -19,6 +19,9 @@ echo "ECCITE3_high_14d,$DATA/ECCITE3_high_14d_onlyRNA/outs/molecule_info.h5" >> 
 echo "ECCITE3_low_7d,$DATA/ECCITE3_low_7d_onlyRNA/outs/molecule_info.h5"  >> $id.csv
 echo "ECCITE3_low_14d,$DATA/ECCITE3_low_14d_onlyRNA/outs/molecule_info.h5" >> $id.csv
 echo "ECCITE6,$DATA/ECCITE6_onlyRNA/outs/molecule_info.h5" >> $id.csv
+echo "ECCITE7_Lib1Rep1,$DATA/ECCITE7_Lib1Rep1_onlyRNA/outs/molecule_info.h5" >> $id.csv
+echo "ECCITE7_Lib1Rep2,$DATA/ECCITE7_Lib1Rep2_onlyRNA/outs/molecule_info.h5" >> $id.csv
+echo "ECCITE7_Lib2,$DATA/ECCITE7_Lib2_onlyRNA/outs/molecule_info.h5" >> $id.csv
 
 cat $id.csv
 
