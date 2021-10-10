@@ -18,19 +18,22 @@ ff <- list.files(dirout_load("FULLINT_05_01_SingleR")(""), pattern = "cell_types
 singleR.res <- setNames(lapply(ff, fread), gsub("cell_types_(.+).csv", "\\1", basename(ff)))
 
 # CytoTRACE
-
+(load(dirout_load("FULLINT_06_01_CytoTRACE")("CytoTRACE.RData")))
 
 # CLUSTERING ------------------------------------------------------
 set.seed(12121)
 monocle.obj = cluster_cells(monocle.obj, resolution=1e-5)
 
+sann <- fread("metadata/annotation.tsv", sep="\t")
 
 # Collect ANNOTATION --------------------------------------------------------------
 ann <- data.table(data.frame(colData(monocle.obj)@listData), keep.rownames = TRUE)
 ann$Clusters <- as.character(monocle.obj@clusters$UMAP$clusters[ann$rn])
 umap <- setNames(data.table(reducedDims(monocle.obj)$UMAP, keep.rownames = TRUE), c("rn", "UMAP1", "UMAP2"))
 ann <- merge(ann, umap, by="rn", all=TRUE)
-
+ann$CytoTRACE <- cytoRes$CytoTRACE[ann$rn]
+ann$tissue <- sann[match(gsub("_.+", "", ann$sample), sample),]$tissue
+write.tsv(ann, out("Annotation.tsv"))
 
 
 # SETUP ENDS HERE ---------------------------------------------------------
@@ -106,6 +109,7 @@ ggsave(out("Clusters_Markers.pdf"), w=6,h=8)
 
 
 # CELLTYPES SingleR -------------------------------------------------------
+singleR.sum <- data.table()
 srx <- names(singleR.res)[1]
 for(srx in names(singleR.res)){
   print(srx)
@@ -172,7 +176,43 @@ for(srx in names(singleR.res)){
          h=length(unique(pDT.ann$pruned_labels)) * 0.3+1,
          w=length(unique(pDT.ann$Clusters)) * 0.3+2)
   
+  pDT.ann$dataset <- srx
+  singleR.sum <- rbind(singleR.sum, pDT.ann)
 }
+
+singleR.sum[,id := paste(dataset, pruned_labels)]
+pDT <- merge(singleR.sum[,max(percent), by=c("id")][V1 > 20][,c("id")], singleR.sum, by=c("id"))
+pDT <- hierarch.ordering(pDT, toOrder = "Clusters", orderBy = "pruned_labels", value.var = "percent", aggregate = TRUE)
+pDT <- hierarch.ordering(pDT, toOrder = "pruned_labels", orderBy = "Clusters", value.var = "percent", aggregate = TRUE)
+ggplot(pDT, aes(y=Clusters, x=pruned_labels, fill=percent)) + 
+  geom_tile() +
+  facet_grid(. ~ gsub("_", "\n", dataset), scales = "free", space = "free") + 
+  scale_fill_gradient(low="white", high="red") +
+  xRot()
+ggsave(out("SingleR_Clusters_", "PercPredicted", ".pdf"),          
+       w=nrow(pDT[,.N, by=c("dataset", "pruned_labels")]) * 0.2+2,
+       h=length(unique(pDT$Clusters)) * 0.3+1)
+
+
+
+# CYTOTRACE ---------------------------------------------------------------
+
+# Umap
+ggplot(ann, aes(x=UMAP1, y=UMAP2)) + 
+  stat_summary_hex(aes(z=CytoTRACE),fun=mean) +
+  scale_fill_gradient2(low="blue", midpoint = 0.5, high="red") +
+  theme_bw(12) +
+  ggtitle("CytoTRACE - (1: less diff; 0: more diff)")
+ggsave(out("CytoTRACE_UMAP.pdf"), w=5,h=4)
+
+# Clusters
+ggplot(ann, aes(x=factor(as.numeric(Clusters)), y=CytoTRACE)) + 
+  geom_violin(color=NA, fill="lightblue") + 
+  geom_boxplot(fill=NA, coef=Inf) + 
+  theme_bw(12) +
+  xRot() +
+  ggtitle("CytoTRACE - (1: less diff; 0: more diff)")
+ggsave(out("CytoTRACE_Clusters.pdf"), w=7,h=4)
 
 
 # ANTIBODIES --------------------------------------------------------------
@@ -301,122 +341,126 @@ obj.de <- obj.de[rowSums(counts(obj.de)) > 20,]
 colData(obj.de)$ClusterDE <- obj.de@clusters$UMAP$clusters[row.names(colData(obj.de))]
 colData(obj.de)$GuideDE <- gsub("_.+$", "", colData(obj.de)$guide)
 colData(obj.de)$GuideDE <- factor(colData(obj.de)$GuideDE, levels=c("NTC", setdiff(unique(colData(obj.de)$GuideDE), "NTC")))
+stopifnot(all(colnames(obj.de) == row.names(colData(obj.de))))
+colData(obj.de)$tissueDE <- factor(ann[match(colnames(obj.de), rn)]$tissue, levels=c("in vitro", "leukemia", "in vivo"))
 
+
+#  . Fit model -------------------------------------------------------------
 de.file <- out("DEG_Results.RData")
 if(file.exists(de.file)){
   load(de.file)
 } else {
-  x <- fit_models(obj.de, model_formula_str = "~GuideDE + ClusterDE + sample", verbose=TRUE, cores=10)
+  x <- fit_models(obj.de, model_formula_str = "~GuideDE * tissueDE + ClusterDE", verbose=TRUE, cores=10)
   res <- data.table(coefficient_table(x), keep.rownames = TRUE)
   res <- res[,-c("model", "model_summary", "rn", "gene_short_name", "model_component"),with=F]
   save(res, file=de.file)
 }
 
-#  . Export results -------------------------------------------------------
-resGuides <- res[grepl("GuideDE", term)]
-resGuides[,term := gsub("GuideDE", "", term)]
-write.tsv(resGuides, file=out("DEG_Results.tsv"))
 
-
-#  . Plot top genes -------------------------------------------------------
-
-# Estimate and P-value
-gg <- resGuides[q_value < 0.05][order(-abs(estimate))][,head(.SD,n=10), by="term"]$gene_id
-pDT <- resGuides[gene_id %in% gg]
-pDT <- hierarch.ordering(pDT, toOrder="gene_id", orderBy = "term", value.var = "estimate")
-pDT <- hierarch.ordering(pDT, toOrder="term", orderBy = "gene_id", value.var = "estimate")
-ggplot(pDT, aes(x=term, y=gene_id, size=pmin(5, -log10(q_value)), color=sign(estimate) * pmin(5,abs(estimate)))) + 
-  scale_size_continuous(name="padj", range=c(0,5)) + 
-  scale_color_gradient2(name="delta", low="blue", high="red") +
-  theme_bw(12) +
-  geom_point() +
-  xRot()
-ggsave(out("DEG_examples.pdf"), w=6,h=15)
-
-# Dotplots
-ll <- with(resGuides[q_value < 0.05][order(-abs(estimate))][,head(.SD,n=10), by="term"], split(gene_id, term))
-lx <- "Chd4"
-for(lx in names(ll)){
-  pDT <- DotPlotData(obj.de, markers=ll[[lx]], cols=c("GuideDE", "ClusterDE", "sample"))
-  #pDT[GuideDE == lx & Gene == "Fyb2"]
-  #0.075 * 40
-  ggplot(pDT, aes(x=ClusterDE, y=sample, color=mean, size=percentage)) + 
-    theme_bw(12) +
-    geom_point() + 
-    scale_size_continuous(range=c(0,5)) +
-    scale_color_gradient(low="black", high="red") +
-    facet_grid(Gene ~ GuideDE) +
-    xRot() +
-    ggtitle(lx)
-  ggsave(out("DEG_examples_Dotplot_",lx,".pdf"), w=30,h=length(unique(pDT$Gene)) * length(unique(pDT$sample)) * 0.15 + 1)
-}
-
-# Checking one specific gene
-colData(obj.de)$GroupDE <- paste(colData(obj.de)$GuideDE, colData(obj.de)$sample, colData(obj.de)$ClusterDE)
-samples.ko <- ann[grepl("Chd4", guide) & mixscape_class.global != "NP"]$rn
-samples.NTC <- ann[mixscape_class.global == "NTC"]$rn
-plot_genes_violin(cds_subset = obj.de["Fyb2",c(samples.ko, samples.NTC)], group_cells_by = "GroupDE", normalize = TRUE, log_scale = FALSE, pseudocount = 0) + xRot()
-ggsave(out("DEG_Fyb2.pdf"), w=12,h=4)
-# counts(obj.de["Fyb2", ann[sample == "ECCITE4_Cas9" & grepl("Chd4", guide) & mixscape_class.global != "NP" & Clusters == 2]$rn])
-# pDT[GuideDE == lx & Gene == "Fyb2"]
-
-
-
-# COR of DEG --------------------------------------------------------------
-umapMT <- toMT(dt=resGuides, row = "gene_id", col = "term", val = "estimate")
-colnames(umapMT) <- gsub("GuideDE", "", colnames(umapMT))
-cMT <- corS(umapMT)
-gn <- ncol(umapMT)
-diag(cMT) <- NA
-cleanDev(); pdf(out("DEG_CorHM.pdf"),w=gn/6+2, h=gn/6+1.5)
-pheatmap(cMT)#, breaks=seq(-1,1, 0.01), color=colorRampPalette(c("#6a3d9a", "#a6cee3", "white", "#fdbf6f", "#e31a1c"))(200))
-dev.off()
-
-
-
-# UMAP of DEG -----------------------------------------
-
-# UMAP
-umapMT <- toMT(dt=resGuides, row = "gene_id", col = "term", val = "estimate")
-colnames(umapMT) <- gsub("GuideDE", "", colnames(umapMT))
-
-cMT <- corS(umapMT)
-diag(cMT) <- NA
-pheatmap(cMT)
-
-set.seed(1212)
-umap.res <- umap(umapMT)
-umap <- data.table(umap.res$layout, keep.rownames = TRUE)
-ggplot(umap, aes(x=V1, y=V2)) + geom_hex() + theme_bw(12)
-ggsave(out("RegulatoryMap_UMAP.pdf"), w=6,h=5)
-
-# Cluster
-set.seed(1212)
-idx <- umap.res$knn$indexes
-g <- do.call(rbind, apply(idx[, 2:ncol(idx)], 2, function(col){data.table(row.names(idx)[col], row.names(idx)[idx[,1]])}))
-(g <- graph.edgelist(as.matrix(g),directed=FALSE))
-cl <- cluster_walktrap(g)
-clx <- setNames(cl$membership, V(g)$name)
-umap$Cluster <- clx[umap$rn]
-ggplot(umap, aes(x=V1, y=V2, color=factor(Cluster))) + geom_point() + theme_bw(12)
-ggsave(out("RegulatoryMap_UMAP_Clusters.pdf"), w=6,h=5)
-
-# Export annotation
-umap <- setNames(umap, c("Gene", "UMAP1", "UMAP2", "Cluster"))
-write.tsv(umap, out("RegulatoryMap_UMAP.tsv"))
-
-# Plot estimates on UMAP
-pUMAP.de <- merge(umap, resGuides[,c("gene_id", "term", "estimate")], by.x="Gene", by.y="gene_id")
-summary.function <- function(x){ret <- mean(x);return(min(5, abs(ret)) * sign(ret))}
-dim.umap1 <- floor(max(abs(pUMAP.de$UMAP1))) + 0.5
-dim.umap2 <- floor(max(abs(pUMAP.de$UMAP2))) + 0.5
-tn <- length(unique(pUMAP.de$term))
-ggplot(pUMAP.de, aes(x=UMAP1, y=UMAP2)) + 
-  stat_summary_hex(
-    aes(z=estimate),
-    fun=summary.function) +
-  scale_fill_gradient2(high="#e31a1c",mid="#ffffff", low="#1f78b4") + 
-  facet_wrap(~gsub("GuideDE", "", term), ncol = 5) + theme_bw(12) +
-  xlab("UMAP dimension 1") + ylab("UMAP dimension 2") +
-  xlim(-dim.umap1,dim.umap1) + ylim(-dim.umap2,dim.umap2)
-ggsave(out("RegulatoryMap_UMAP_Values.pdf"), w=11,h=ceiling(tn/5) * 2 + 1)
+# #  . Export results -------------------------------------------------------
+# resGuides <- res[grepl("GuideDE", term)]
+# resGuides[,term := gsub("GuideDE", "", term)]
+# write.tsv(resGuides, file=out("DEG_Results.tsv"))
+# 
+# 
+# #  . Plot top genes -------------------------------------------------------
+# # Estimate and P-value
+# gg <- resGuides[q_value < 0.05][order(-abs(estimate))][,head(.SD,n=10), by="term"]$gene_id
+# pDT <- resGuides[gene_id %in% gg]
+# pDT <- hierarch.ordering(pDT, toOrder="gene_id", orderBy = "term", value.var = "estimate")
+# pDT <- hierarch.ordering(pDT, toOrder="term", orderBy = "gene_id", value.var = "estimate")
+# ggplot(pDT, aes(x=term, y=gene_id, size=pmin(5, -log10(q_value)), color=sign(estimate) * pmin(5,abs(estimate)))) + 
+#   scale_size_continuous(name="padj", range=c(0,5)) + 
+#   scale_color_gradient2(name="delta", low="blue", high="red") +
+#   theme_bw(12) +
+#   geom_point() +
+#   xRot()
+# ggsave(out("DEG_examples.pdf"), w=6,h=15)
+# 
+# # Dotplots
+# ll <- with(resGuides[q_value < 0.05][order(-abs(estimate))][,head(.SD,n=10), by="term"], split(gene_id, term))
+# lx <- "Chd4"
+# for(lx in names(ll)){
+#   pDT <- DotPlotData(obj.de, markers=ll[[lx]], cols=c("GuideDE", "ClusterDE", "sample"))
+#   #pDT[GuideDE == lx & Gene == "Fyb2"]
+#   #0.075 * 40
+#   ggplot(pDT, aes(x=ClusterDE, y=sample, color=mean, size=percentage)) + 
+#     theme_bw(12) +
+#     geom_point() + 
+#     scale_size_continuous(range=c(0,5)) +
+#     scale_color_gradient(low="black", high="red") +
+#     facet_grid(Gene ~ GuideDE) +
+#     xRot() +
+#     ggtitle(lx)
+#   ggsave(out("DEG_examples_Dotplot_",lx,".pdf"), w=30,h=length(unique(pDT$Gene)) * length(unique(pDT$sample)) * 0.15 + 1)
+# }
+# 
+# # Checking one specific gene
+# colData(obj.de)$GroupDE <- paste(colData(obj.de)$GuideDE, colData(obj.de)$sample, colData(obj.de)$ClusterDE)
+# samples.ko <- ann[grepl("Chd4", guide) & mixscape_class.global != "NP"]$rn
+# samples.NTC <- ann[mixscape_class.global == "NTC"]$rn
+# plot_genes_violin(cds_subset = obj.de["Fyb2",c(samples.ko, samples.NTC)], group_cells_by = "GroupDE", normalize = TRUE, log_scale = FALSE, pseudocount = 0) + xRot()
+# ggsave(out("DEG_Fyb2.pdf"), w=12,h=4)
+# # counts(obj.de["Fyb2", ann[sample == "ECCITE4_Cas9" & grepl("Chd4", guide) & mixscape_class.global != "NP" & Clusters == 2]$rn])
+# # pDT[GuideDE == lx & Gene == "Fyb2"]
+# 
+# 
+# 
+# # COR of DEG --------------------------------------------------------------
+# umapMT <- toMT(dt=resGuides, row = "gene_id", col = "term", val = "estimate")
+# colnames(umapMT) <- gsub("GuideDE", "", colnames(umapMT))
+# cMT <- corS(umapMT)
+# gn <- ncol(umapMT)
+# diag(cMT) <- NA
+# cleanDev(); pdf(out("DEG_CorHM.pdf"),w=gn/6+2, h=gn/6+1.5)
+# pheatmap(cMT)#, breaks=seq(-1,1, 0.01), color=colorRampPalette(c("#6a3d9a", "#a6cee3", "white", "#fdbf6f", "#e31a1c"))(200))
+# dev.off()
+# 
+# 
+# 
+# # UMAP of DEG -----------------------------------------
+# 
+# # UMAP
+# umapMT <- toMT(dt=resGuides, row = "gene_id", col = "term", val = "estimate")
+# colnames(umapMT) <- gsub("GuideDE", "", colnames(umapMT))
+# 
+# cMT <- corS(umapMT)
+# diag(cMT) <- NA
+# pheatmap(cMT)
+# 
+# set.seed(1212)
+# umap.res <- umap(umapMT)
+# umap <- data.table(umap.res$layout, keep.rownames = TRUE)
+# ggplot(umap, aes(x=V1, y=V2)) + geom_hex() + theme_bw(12)
+# ggsave(out("RegulatoryMap_UMAP.pdf"), w=6,h=5)
+# 
+# # Cluster
+# set.seed(1212)
+# idx <- umap.res$knn$indexes
+# g <- do.call(rbind, apply(idx[, 2:ncol(idx)], 2, function(col){data.table(row.names(idx)[col], row.names(idx)[idx[,1]])}))
+# (g <- graph.edgelist(as.matrix(g),directed=FALSE))
+# cl <- cluster_walktrap(g)
+# clx <- setNames(cl$membership, V(g)$name)
+# umap$Cluster <- clx[umap$rn]
+# ggplot(umap, aes(x=V1, y=V2, color=factor(Cluster))) + geom_point() + theme_bw(12)
+# ggsave(out("RegulatoryMap_UMAP_Clusters.pdf"), w=6,h=5)
+# 
+# # Export annotation
+# umap <- setNames(umap, c("Gene", "UMAP1", "UMAP2", "Cluster"))
+# write.tsv(umap, out("RegulatoryMap_UMAP.tsv"))
+# 
+# # Plot estimates on UMAP
+# pUMAP.de <- merge(umap, resGuides[,c("gene_id", "term", "estimate")], by.x="Gene", by.y="gene_id")
+# summary.function <- function(x){ret <- mean(x);return(min(5, abs(ret)) * sign(ret))}
+# dim.umap1 <- floor(max(abs(pUMAP.de$UMAP1))) + 0.5
+# dim.umap2 <- floor(max(abs(pUMAP.de$UMAP2))) + 0.5
+# tn <- length(unique(pUMAP.de$term))
+# ggplot(pUMAP.de, aes(x=UMAP1, y=UMAP2)) + 
+#   stat_summary_hex(
+#     aes(z=estimate),
+#     fun=summary.function) +
+#   scale_fill_gradient2(high="#e31a1c",mid="#ffffff", low="#1f78b4") + 
+#   facet_wrap(~gsub("GuideDE", "", term), ncol = 5) + theme_bw(12) +
+#   xlab("UMAP dimension 1") + ylab("UMAP dimension 2") +
+#   xlim(-dim.umap1,dim.umap1) + ylim(-dim.umap2,dim.umap2)
+# ggsave(out("RegulatoryMap_UMAP_Values.pdf"), w=11,h=ceiling(tn/5) * 2 + 1)

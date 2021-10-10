@@ -65,7 +65,7 @@ reference_cell_types <- list(
   ),
   
   # CytoTRACE plate
-  marrowPlate <- SummarizedExperiment(
+  marrowPlate=SummarizedExperiment(
     assays = SimpleList(logcounts=SCRNA.TPXToLog(SCRNA.RawToTPX(SCRNA.ToSparseMT(as.matrix(marrow_plate_expr)), 1e6))), 
     colData=DataFrame(
       label.main=marrow_plate_pheno, 
@@ -95,7 +95,7 @@ for(ref in names(reference_cell_types)){
   orgx <- if(olh > olm) "human" else "mouse"
   count_matrix <- if(orgx == "human") count_matrix_human else count_matrix_mouse
   
-  labelx <- "label.main"
+  labelx <- "label.fine"
   for(labelx in c("label.main", "label.fine")){
     print(paste(".", labelx))
     
@@ -104,7 +104,7 @@ for(ref in names(reference_cell_types)){
       print(paste(".", "already done"))
       next
     } else {
-      if(is.null(colData(reference_cell_types[[ref]])[, labelx])) next
+      if(!labelx %in% colnames(colData(reference_cell_types[[ref]]))) next
       
       print(paste(".", "running SingleR"))
       
