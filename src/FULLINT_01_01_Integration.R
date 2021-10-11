@@ -6,6 +6,8 @@ out <- dirout("FULLINT_01_01_Integration/")
 AGG.CSV <- fread(paste(Sys.getenv("DATA"), "FULLINT_00_Aggr", "outs", "aggregation.csv", sep="/"))
 AGG.CSV$i <- 1:nrow(AGG.CSV)
 
+SANN <- fread("metadata/annotation.tsv", sep="\t")
+
 ff <- list.files(Sys.getenv("DATA"))
 ff <- ff[!grepl(".log$", ff)]
 ff <- ff[!grepl("_onlyRNA", ff)]
@@ -205,6 +207,9 @@ if(file.exists(monocle.file)){
       reduction_method = "UMAP",
       preprocess_method = "Aligned",
       verbose = TRUE)
+  
+  # Add tissue information
+  colData(monocle.obj)$tissue <- SANN[match(gsub("_.+", "", colData(monocle.obj)$sample), sample)]$tissue
   
   # Store full dataset
   save(monocle.obj, additional.info, AGG.CSV, file=monocle.file)

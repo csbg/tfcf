@@ -3,6 +3,7 @@ out <- dirout("FULLINT_10_01_BasicAnalysis/")
 
 require(umap)
 require(igraph)
+source("src/FUNC_Monocle_PLUS.R")
 
 
 # LOAD DATA ---------------------------------------------------------------
@@ -92,6 +93,27 @@ ggplot(pDT, aes(y=sample,x=factor(as.numeric(Clusters)), size=percentS, color=pe
 ggsave(out("Samples_Clusters.pdf"), w=8,h=length(unique(pDT$sample)) * 0.3+1)
 
 
+# TISSUES -----------------------------------------------------------------
+ggplot(ann, aes(x=UMAP1, y=UMAP2)) + 
+  theme_bw(12) +
+  geom_hex() +
+  scale_fill_gradient(low="lightgrey", high="blue") +
+  facet_wrap(~tissue, ncol=3)
+ggsave(out("Tissues_UMAP.pdf"), w=3*2+2,h=3 + 1)
+
+pDT <- ann[,.N, by=c("tissue", "Clusters")]
+pDT[,sumS := sum(N), by="tissue"]
+pDT[,sumC := sum(N), by="Clusters"]
+pDT[,percentS := N/sumS*100]
+pDT[,percentC := N/sumC*100]
+ggplot(pDT, aes(y=tissue,x=factor(as.numeric(Clusters)), size=percentS, color=percentC)) +
+  scale_size_continuous(name="% of tissue") + 
+  scale_color_gradient(name="% of cluster", low="black", high="red") + 
+  theme_bw() + 
+  geom_point()
+ggsave(out("Tissues_Clusters.pdf"), w=8,h=length(unique(pDT$tissue)) * 1+1)
+
+
 # CLUSTERS ----------------------------------------------------
 # UMAP
 ggplot(ann, aes(x=UMAP1, y=UMAP2)) + 
@@ -171,7 +193,7 @@ for(srx in names(singleR.res)){
   pDT.ann[,percent := N/sum*100]
   ggplot(pDT.ann, aes(x=factor(as.numeric(Clusters)), y=pruned_labels, fill=percent)) + 
     geom_tile() +
-    scale_fill_gradient(low="white", high="red")
+    scale_fill_gradient(limits=c(0,100), low="white", high="red")
   ggsave(out("SingleR_", srx, "_Clusters_", "PercPredicted", ".pdf"),          
          h=length(unique(pDT.ann$pruned_labels)) * 0.3+1,
          w=length(unique(pDT.ann$Clusters)) * 0.3+2)
@@ -185,11 +207,12 @@ pDT <- merge(singleR.sum[,max(percent), by=c("id")][V1 > 20][,c("id")], singleR.
 pDT <- hierarch.ordering(pDT, toOrder = "Clusters", orderBy = "pruned_labels", value.var = "percent", aggregate = TRUE)
 pDT <- hierarch.ordering(pDT, toOrder = "pruned_labels", orderBy = "Clusters", value.var = "percent", aggregate = TRUE)
 ggplot(pDT, aes(y=Clusters, x=pruned_labels, fill=percent)) + 
+  theme_bw(12) + 
   geom_tile() +
   facet_grid(. ~ gsub("_", "\n", dataset), scales = "free", space = "free") + 
-  scale_fill_gradient(low="white", high="red") +
+  scale_fill_gradient(limits=c(0,100), low="white", high="red") +
   xRot()
-ggsave(out("SingleR_Clusters_", "PercPredicted", ".pdf"),          
+ggsave(out("SingleR_0_Clusters_", "PercPredicted", ".pdf"),          
        w=nrow(pDT[,.N, by=c("dataset", "pruned_labels")]) * 0.2+2,
        h=length(unique(pDT$Clusters)) * 0.3+1)
 
@@ -357,36 +380,83 @@ if(file.exists(de.file)){
 }
 
 
-# #  . Export results -------------------------------------------------------
-# resGuides <- res[grepl("GuideDE", term)]
-# resGuides[,term := gsub("GuideDE", "", term)]
-# write.tsv(resGuides, file=out("DEG_Results.tsv"))
-# 
-# 
-# #  . Plot top genes -------------------------------------------------------
-# # Estimate and P-value
-# gg <- resGuides[q_value < 0.05][order(-abs(estimate))][,head(.SD,n=10), by="term"]$gene_id
-# pDT <- resGuides[gene_id %in% gg]
-# pDT <- hierarch.ordering(pDT, toOrder="gene_id", orderBy = "term", value.var = "estimate")
-# pDT <- hierarch.ordering(pDT, toOrder="term", orderBy = "gene_id", value.var = "estimate")
-# ggplot(pDT, aes(x=term, y=gene_id, size=pmin(5, -log10(q_value)), color=sign(estimate) * pmin(5,abs(estimate)))) + 
-#   scale_size_continuous(name="padj", range=c(0,5)) + 
-#   scale_color_gradient2(name="delta", low="blue", high="red") +
-#   theme_bw(12) +
-#   geom_point() +
-#   xRot()
-# ggsave(out("DEG_examples.pdf"), w=6,h=15)
-# 
+#  . Export results -------------------------------------------------------
+resGuides <- res[grepl("GuideDE", term)]
+resGuides[grepl("tissueDE", term), tissue.ie := gsub("^.+\\:tissueDE", "", term)]
+resGuides[, guide := gsub("^GuideDE", "", term)]
+resGuides[, guide := gsub("\\:tissueDE.+$", "", guide)]
+resGuides <- resGuides[!is.na(estimate)]
+write.tsv(resGuides[q_value < 1][,-"term",with=F], file=out("DEG_Results.tsv"))
+
+
+#  . Check approach by fitting model only in leukemia -------------------------------------------
+obj.de.L <- obj.de[unique(resGuides$gene_id),colData(obj.de)$tissueDE == "leukemia"]
+de.file.L <- out("DEG_Results_LeukemiaOnly.RData")
+if(file.exists(de.file.L)){
+  load(de.file.L)
+} else {
+  x <- fit_models(obj.de.L, model_formula_str = "~GuideDE + ClusterDE", verbose=TRUE, cores=10)
+  res <- data.table(coefficient_table(x), keep.rownames = TRUE)
+  resL <- res[,-c("model", "model_summary", "rn", "gene_short_name", "model_component"),with=F]
+  save(resL, file=de.file.L)
+}
+
+x <- resGuides[q_value < 0.05][!is.na(tissue.ie)][tissue.ie == "leukemia"]
+i <- 1
+check.ie <- data.table()
+for(i in 1:nrow(x)){
+  genex <- x[i]$gene_id
+  guidex <- x[i]$guide
+  tissuex <- x[i]$tissue.ie
+  
+  resL[grepl("GuideDE", term)][gene_id == genex][grepl(guidex, term)]$estimate
+  
+  resGuides[gene_id == genex][guide == guidex][tissue.ie == tissuex]$estimate
+  resGuides[gene_id == genex][guide == guidex][is.na(tissue.ie)]$estimate
+  
+  check.ie <- rbind(check.ie, 
+               data.table(
+                 gene=genex, guide=guidex, tissue=tissuex,
+                 estimate.tissue=resL[grepl("GuideDE", term)][gene_id == genex][grepl(guidex, term)]$estimate,
+                 estimate.vitro=resGuides[gene_id == genex][guide == guidex][is.na(tissue.ie)]$estimate,
+                 estimate.ie=resGuides[gene_id == genex][guide == guidex][tissue.ie == tissuex]$estimate
+                 ))
+}
+check.ie[, estimate.tissue.calc := estimate.vitro + estimate.ie]
+ggplot(check.ie, aes(x=estimate.tissue.calc, y=estimate.tissue, color=guide, shape=tissue)) +
+  theme_bw(12) +
+  geom_point()
+ggsave(out("DEG_CheckingInteractionEffects.pdf"), w=6,h=5)
+
+with(ann[mixscape_class.global == "KO"], table(guide, tissue))
+
+
+#  . Plot top genes -------------------------------------------------------
+# Estimate and P-value
+gg <- resGuides[q_value < 0.05][order(-abs(estimate))][,head(.SD,n=10), by="term"]$gene_id
+pDT <- resGuides[gene_id %in% gg]
+pDT[is.na(tissue.ie), tissue.ie := "in vitro"]
+pDT <- hierarch.ordering(pDT, toOrder="gene_id", orderBy = "term", value.var = "estimate")
+pDT <- hierarch.ordering(pDT, toOrder="term", orderBy = "gene_id", value.var = "estimate")
+ggplot(pDT, aes(x=guide, y=gene_id, size=pmin(5, -log10(q_value)), color=sign(estimate) * pmin(5,abs(estimate)))) +
+  scale_size_continuous(name="padj", range=c(0,5)) +
+  scale_color_gradient2(name="delta", low="blue", high="red") +
+  facet_grid(. ~ tissue.ie, space = "free", scales = "free") + 
+  theme_bw(12) +
+  geom_point() +
+  xRot()
+ggsave(out("DEG_examples.pdf"), w=6,h=20)
+
 # # Dotplots
-# ll <- with(resGuides[q_value < 0.05][order(-abs(estimate))][,head(.SD,n=10), by="term"], split(gene_id, term))
+# ll <- with(resGuides[q_value < 0.05][order(-abs(estimate))][,head(.SD,n=10), by="term"], split(gene_id, paste(guide, tissue.ie)))
 # lx <- "Chd4"
 # for(lx in names(ll)){
 #   pDT <- DotPlotData(obj.de, markers=ll[[lx]], cols=c("GuideDE", "ClusterDE", "sample"))
 #   #pDT[GuideDE == lx & Gene == "Fyb2"]
 #   #0.075 * 40
-#   ggplot(pDT, aes(x=ClusterDE, y=sample, color=mean, size=percentage)) + 
+#   ggplot(pDT, aes(x=ClusterDE, y=sample, color=mean, size=percentage)) +
 #     theme_bw(12) +
-#     geom_point() + 
+#     geom_point() +
 #     scale_size_continuous(range=c(0,5)) +
 #     scale_color_gradient(low="black", high="red") +
 #     facet_grid(Gene ~ GuideDE) +
@@ -403,64 +473,81 @@ if(file.exists(de.file)){
 # ggsave(out("DEG_Fyb2.pdf"), w=12,h=4)
 # # counts(obj.de["Fyb2", ann[sample == "ECCITE4_Cas9" & grepl("Chd4", guide) & mixscape_class.global != "NP" & Clusters == 2]$rn])
 # # pDT[GuideDE == lx & Gene == "Fyb2"]
-# 
-# 
-# 
-# # COR of DEG --------------------------------------------------------------
-# umapMT <- toMT(dt=resGuides, row = "gene_id", col = "term", val = "estimate")
-# colnames(umapMT) <- gsub("GuideDE", "", colnames(umapMT))
-# cMT <- corS(umapMT)
-# gn <- ncol(umapMT)
-# diag(cMT) <- NA
-# cleanDev(); pdf(out("DEG_CorHM.pdf"),w=gn/6+2, h=gn/6+1.5)
-# pheatmap(cMT)#, breaks=seq(-1,1, 0.01), color=colorRampPalette(c("#6a3d9a", "#a6cee3", "white", "#fdbf6f", "#e31a1c"))(200))
-# dev.off()
-# 
-# 
-# 
-# # UMAP of DEG -----------------------------------------
-# 
-# # UMAP
-# umapMT <- toMT(dt=resGuides, row = "gene_id", col = "term", val = "estimate")
-# colnames(umapMT) <- gsub("GuideDE", "", colnames(umapMT))
-# 
-# cMT <- corS(umapMT)
-# diag(cMT) <- NA
-# pheatmap(cMT)
-# 
-# set.seed(1212)
-# umap.res <- umap(umapMT)
-# umap <- data.table(umap.res$layout, keep.rownames = TRUE)
-# ggplot(umap, aes(x=V1, y=V2)) + geom_hex() + theme_bw(12)
-# ggsave(out("RegulatoryMap_UMAP.pdf"), w=6,h=5)
-# 
-# # Cluster
-# set.seed(1212)
-# idx <- umap.res$knn$indexes
-# g <- do.call(rbind, apply(idx[, 2:ncol(idx)], 2, function(col){data.table(row.names(idx)[col], row.names(idx)[idx[,1]])}))
-# (g <- graph.edgelist(as.matrix(g),directed=FALSE))
-# cl <- cluster_walktrap(g)
-# clx <- setNames(cl$membership, V(g)$name)
-# umap$Cluster <- clx[umap$rn]
-# ggplot(umap, aes(x=V1, y=V2, color=factor(Cluster))) + geom_point() + theme_bw(12)
-# ggsave(out("RegulatoryMap_UMAP_Clusters.pdf"), w=6,h=5)
-# 
-# # Export annotation
-# umap <- setNames(umap, c("Gene", "UMAP1", "UMAP2", "Cluster"))
-# write.tsv(umap, out("RegulatoryMap_UMAP.tsv"))
-# 
-# # Plot estimates on UMAP
-# pUMAP.de <- merge(umap, resGuides[,c("gene_id", "term", "estimate")], by.x="Gene", by.y="gene_id")
-# summary.function <- function(x){ret <- mean(x);return(min(5, abs(ret)) * sign(ret))}
-# dim.umap1 <- floor(max(abs(pUMAP.de$UMAP1))) + 0.5
-# dim.umap2 <- floor(max(abs(pUMAP.de$UMAP2))) + 0.5
-# tn <- length(unique(pUMAP.de$term))
-# ggplot(pUMAP.de, aes(x=UMAP1, y=UMAP2)) + 
-#   stat_summary_hex(
-#     aes(z=estimate),
-#     fun=summary.function) +
-#   scale_fill_gradient2(high="#e31a1c",mid="#ffffff", low="#1f78b4") + 
-#   facet_wrap(~gsub("GuideDE", "", term), ncol = 5) + theme_bw(12) +
-#   xlab("UMAP dimension 1") + ylab("UMAP dimension 2") +
-#   xlim(-dim.umap1,dim.umap1) + ylim(-dim.umap2,dim.umap2)
-# ggsave(out("RegulatoryMap_UMAP_Values.pdf"), w=11,h=ceiling(tn/5) * 2 + 1)
+
+
+
+# COR of DEG --------------------------------------------------------------
+
+umapMT <- dcast.data.table(resGuides, gene_id + guide ~ tissue.ie, value.var = "estimate")
+names(umapMT) <- make.names(names(umapMT))
+umapMT[, in.vivo := NA. + in.vivo]
+umapMT[, leukemia := NA. + leukemia]
+umapMT <- melt(umapMT, id.vars = c("gene_id", "guide"))[!is.na(value)]
+umapMT[, term := paste(guide, gsub("NA.", "in.vitro", variable), sep="_")]
+umapMT <- toMT(dt=umapMT, row = "gene_id", col = "term", val = "value")
+colnames(umapMT) <- gsub("GuideDE", "", colnames(umapMT))
+cMT <- corS(umapMT)
+gn <- ncol(umapMT)
+diag(cMT) <- NA
+cleanDev(); pdf(out("DEG_CorHM.pdf"),w=gn/6+2, h=gn/6+1.5)
+pheatmap(cMT)#, breaks=seq(-1,1, 0.01), color=colorRampPalette(c("#6a3d9a", "#a6cee3", "white", "#fdbf6f", "#e31a1c"))(200))
+dev.off()
+
+
+
+# UMAP of DEG -----------------------------------------
+
+# UMAP
+#umapMT <- toMT(dt=resGuides, row = "gene_id", col = "term", val = "estimate")
+#colnames(umapMT) <- gsub("GuideDE", "", colnames(umapMT))
+
+cMT <- corS(umapMT)
+diag(cMT) <- NA
+pheatmap(cMT)
+
+set.seed(1212)
+umap.res <- umap(umapMT)
+umap <- data.table(umap.res$layout, keep.rownames = TRUE)
+ggplot(umap, aes(x=V1, y=V2)) + geom_hex() + theme_bw(12)
+ggsave(out("RegulatoryMap_UMAP.pdf"), w=6,h=5)
+
+# Cluster
+set.seed(1212)
+idx <- umap.res$knn$indexes
+g <- do.call(rbind, apply(idx[, 2:ncol(idx)], 2, function(col){data.table(row.names(idx)[col], row.names(idx)[idx[,1]])}))
+(g <- graph.edgelist(as.matrix(g),directed=FALSE))
+cl <- cluster_walktrap(g)
+clx <- setNames(cl$membership, V(g)$name)
+umap$Cluster <- clx[umap$rn]
+ggplot(umap, aes(x=V1, y=V2, color=factor(Cluster))) + geom_point() + theme_bw(12)
+ggsave(out("RegulatoryMap_UMAP_Clusters.pdf"), w=6,h=5)
+
+# Export annotation
+umap <- setNames(umap, c("Gene", "UMAP1", "UMAP2", "Cluster"))
+write.tsv(umap, out("RegulatoryMap_UMAP.tsv"))
+
+# Plot estimates on UMAP
+pUMAP.de <- merge(umap, setNames(melt(data.table(umapMT, keep.rownames = TRUE), id.vars = "rn"), c("gene_id", "term", "estimate")), by.x="Gene", by.y="gene_id")
+summary.function <- function(x){ret <- mean(x);return(min(5, abs(ret)) * sign(ret))}
+dim.umap1 <- floor(max(abs(pUMAP.de$UMAP1))) + 0.5
+dim.umap2 <- floor(max(abs(pUMAP.de$UMAP2))) + 0.5
+tn <- length(unique(pUMAP.de$term))
+ggplot(pUMAP.de, aes(x=UMAP1, y=UMAP2)) +
+  stat_summary_hex(
+    aes(z=estimate),
+    fun=summary.function) +
+  scale_fill_gradient2(high="#e31a1c",mid="#ffffff", low="#1f78b4") +
+  facet_wrap(~gsub("GuideDE", "", term), ncol = 5) + theme_bw(12) +
+  xlab("UMAP dimension 1") + ylab("UMAP dimension 2") +
+  xlim(-dim.umap1,dim.umap1) + ylim(-dim.umap2,dim.umap2)
+ggsave(out("RegulatoryMap_UMAP_Values.pdf"), w=11,h=ceiling(tn/5) * 2 + 1)
+
+pDT <- pUMAP.de[, mean(estimate), by=c("Cluster", "term")]
+pDT <- hierarch.ordering(pDT, toOrder = "Cluster", orderBy = "term", value.var = "V1")
+pDT <- hierarch.ordering(pDT, orderBy = "Cluster", toOrder = "term", value.var = "V1")
+ggplot(pDT, aes(x=factor(Cluster), y=term, fill=V1)) + 
+  theme_bw(12) + 
+  geom_tile() +
+  scale_fill_gradient2(high="#e31a1c",mid="#ffffff", low="#1f78b4") +
+  xlab("Gene modules (Gene-UMAP Clusters)")
+ggsave(out("RegulatoryMap_Clusters_Values.pdf"), w=10,h=tn * 0.2 + 1)
