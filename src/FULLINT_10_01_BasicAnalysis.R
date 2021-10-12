@@ -19,7 +19,11 @@ ff <- list.files(dirout_load("FULLINT_05_01_SingleR")(""), pattern = "cell_types
 singleR.res <- setNames(lapply(ff, fread), gsub("cell_types_(.+).csv", "\\1", basename(ff)))
 
 # CytoTRACE
-(load(dirout_load("FULLINT_06_01_CytoTRACE")("CytoTRACE.RData")))
+tryCatch({
+  (load(dirout_load("FULLINT_06_01_CytoTRACE")("CytoTRACE.RData")))
+}, error=function(e){
+  message("CytoTRACE import failed")
+})
 
 # CLUSTERING ------------------------------------------------------
 set.seed(12121)
@@ -32,7 +36,7 @@ ann <- data.table(data.frame(colData(monocle.obj)@listData), keep.rownames = TRU
 ann$Clusters <- as.character(monocle.obj@clusters$UMAP$clusters[ann$rn])
 umap <- setNames(data.table(reducedDims(monocle.obj)$UMAP, keep.rownames = TRUE), c("rn", "UMAP1", "UMAP2"))
 ann <- merge(ann, umap, by="rn", all=TRUE)
-ann$CytoTRACE <- cytoRes$CytoTRACE[ann$rn]
+if("cytoRes" %in% ls()) ann$CytoTRACE <- cytoRes$CytoTRACE[ann$rn]
 ann$tissue <- sann[match(gsub("_.+", "", ann$sample), sample),]$tissue
 write.tsv(ann, out("Annotation.tsv"))
 
@@ -219,23 +223,25 @@ ggsave(out("SingleR_0_Clusters_", "PercPredicted", ".pdf"),
 
 
 # CYTOTRACE ---------------------------------------------------------------
+if("cytoRes" %in% ls()){
+  # Umap
+  ggplot(ann, aes(x=UMAP1, y=UMAP2)) +
+    stat_summary_hex(aes(z=CytoTRACE),fun=mean) +
+    scale_fill_gradient2(low="blue", midpoint = 0.5, high="red") +
+    theme_bw(12) +
+    ggtitle("CytoTRACE - (1: less diff; 0: more diff)")
+  ggsave(out("CytoTRACE_UMAP.pdf"), w=5,h=4)
 
-# Umap
-ggplot(ann, aes(x=UMAP1, y=UMAP2)) + 
-  stat_summary_hex(aes(z=CytoTRACE),fun=mean) +
-  scale_fill_gradient2(low="blue", midpoint = 0.5, high="red") +
-  theme_bw(12) +
-  ggtitle("CytoTRACE - (1: less diff; 0: more diff)")
-ggsave(out("CytoTRACE_UMAP.pdf"), w=5,h=4)
+  # Clusters
+  ggplot(ann, aes(x=factor(as.numeric(Clusters)), y=CytoTRACE)) +
+    geom_violin(color=NA, fill="lightblue") +
+    geom_boxplot(fill=NA, coef=Inf) +
+    theme_bw(12) +
+    xRot() +
+    ggtitle("CytoTRACE - (1: less diff; 0: more diff)")
+  ggsave(out("CytoTRACE_Clusters.pdf"), w=7,h=4)
+}
 
-# Clusters
-ggplot(ann, aes(x=factor(as.numeric(Clusters)), y=CytoTRACE)) + 
-  geom_violin(color=NA, fill="lightblue") + 
-  geom_boxplot(fill=NA, coef=Inf) + 
-  theme_bw(12) +
-  xRot() +
-  ggtitle("CytoTRACE - (1: less diff; 0: more diff)")
-ggsave(out("CytoTRACE_Clusters.pdf"), w=7,h=4)
 
 
 # ANTIBODIES --------------------------------------------------------------
@@ -371,7 +377,7 @@ colData(obj.de)$tissueDE <- factor(ann[match(colnames(obj.de), rn)]$tissue, leve
 #  . Fit model -------------------------------------------------------------
 de.file <- out("DEG_Results.RData")
 if(file.exists(de.file)){
-  load(de.file)
+  (load(de.file))
 } else {
   x <- fit_models(obj.de, model_formula_str = "~GuideDE * tissueDE + ClusterDE", verbose=TRUE, cores=10)
   res <- data.table(coefficient_table(x), keep.rownames = TRUE)

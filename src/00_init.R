@@ -1,3 +1,5 @@
+
+
 # Environmental variables for working on the CAME Cluster ----------------------------------------
 if(Sys.getenv("GFS") == "" | Sys.getenv("GFS") == "/usr/local/AGFORTELNY/"){  # GFS is not set (we are on the CAME Cluster)
   print("Setting GFS PATH")
@@ -8,7 +10,6 @@ if(Sys.getenv("GFS") == "" | Sys.getenv("GFS") == "/usr/local/AGFORTELNY/"){  # 
     stop("Environmental variables missing")
   }
 }
-
 
 if(Sys.getenv("DATA") == ""){
 	print("Setting DATA and others paths")
@@ -42,6 +43,12 @@ require(mixtools)
 
 source(paste(Sys.getenv("CODEBASE"), "resources", "RFunctions", "Basics.R", sep="/"))
 source(paste(Sys.getenv("CODEBASE"), "resources", "RFunctions", "scRNA_Basics.R", sep="/"))
+
+
+# RENV LOCKFILE -----------------------------------------------------------
+if(!dir.exists("lockfiles/")) dir.create("lockfiles/")
+renv::snapshot(lockfile = paste0("lockfiles/renv_lockfile_", make.names(Sys.time()), ".lockfile"), force = TRUE, prompt = FALSE)
+
 
 
 # Enrichr DBs -------------------------------------------------------------
@@ -121,8 +128,8 @@ sapply(PATHS$POOLED$DATA, file.exists)
 
 
 PATHS$FULLINT <- list()
-#PATHS$FULLINT$Monocle <- dirout_load("FULLINT_01_01_Integration")("MonocleObject.RData")
-PATHS$FULLINT$Monocle <- dirout_load("FULLINT_01_01_Integration")("MonocleObject_2021_10_08_ECCITE6.RData")
+PATHS$FULLINT$Monocle <- dirout_load("FULLINT_01_01_Integration")("MonocleObject.RData")
+#PATHS$FULLINT$Monocle <- dirout_load("FULLINT_01_01_Integration")("MonocleObject_2021_10_08_ECCITE6.RData")
 
 
 

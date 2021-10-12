@@ -10,11 +10,35 @@ out <- dirout("FULLINT_06_01_CytoTRACE/")
 # renv::install("ccaPP")
 # renv::install(out("CytoTRACE_0.3.3.tar.gz"), type = "source")
 
+require(sva)
+require(ccaPP)
 require(CytoTRACE)
+require(scran)
 
+# Get most variable genes
+vg <- monocle.obj %>%
+  scran::modelGeneVar(assay.type = "counts") %>% 
+  scran::getTopHVGs(n = 10000)
+
+# Calculate rowsums
 counts <- counts(monocle.obj)
-counts <- counts[Matrix::rowSums(counts) > 20,]
-str(as.matrix(counts))
-cytoRes <- CytoTRACE(as.matrix(counts), batch = colData(monocle.obj)[,"sample"], ncores = 10)
+rowsumsMT <- Matrix::rowSums(counts)
+
+# Get top 10 000 genes (most variable first, then by rowsums)
+gg <- unique(c(vg, names(sort(rowsumsMT, decreasing = TRUE))))[1:1e4]
+
+counts <- counts[gg,]
+# str(as.matrix(counts))
+batch <- colData(monocle.obj)[,"sample"]
+names(batch) <- row.names(colData(monocle.obj))
+data <- as.matrix(counts)
+stopifnot(all(!is.na(batch)))
+stopifnot(ncol(data) == length(batch))
+stopifnot(all(colnames(data) == names(batch)))
+stopifnot(!any(duplicated(row.names(data))))
+stopifnot(!any(duplicated(colnames(data))))
+stopifnot(!any(duplicated(names(batch))))
+
+cytoRes <- CytoTRACE(mat = data, batch = batch, ncores = 10)
 cytoRes$exprMatrix <- NULL
 save(cytoRes, file=out("CytoTRACE.RData"))
