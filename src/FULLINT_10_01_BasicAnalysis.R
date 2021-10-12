@@ -47,6 +47,7 @@ write.tsv(ann, out("Annotation.tsv"))
 
 
 # ADDITIONAL QC to remove bad clusters --------------------------------------------------------
+qcm <- "nCount_RNA"
 for(qcm in c("percent.mt", "nFeature_RNA", "nCount_RNA")){
   print(qcm)
   ann$measure <- ann[[qcm]]
@@ -55,13 +56,20 @@ for(qcm in c("percent.mt", "nFeature_RNA", "nCount_RNA")){
     geom_boxplot(fill=NA, coef=Inf) +
     scale_y_log10() +
     theme_bw(12) +
-    ylab(qcm)
-  ggtitle(qcm)
-  ggsave(out("QC_", qcm, ".pdf"), w=5,h=4, plot=p)
-}
-ann[,cluster.qual.keep :=TRUE]
-ann[Clusters %in% ann[,median(percent.mt), by="Clusters"][V1 < 1]$Clusters, cluster.qual.keep := FALSE]
-
+    ylab(qcm) +
+    ggtitle(qcm)
+  ggsave(out("QC_", qcm, "_Clusters.pdf"), w=5,h=4, plot=p)
+  
+  ggplot(ann, aes(x=UMAP1, y=UMAP2)) + 
+    theme_bw(12) +
+    stat_summary_hex(aes(z=measure),fun=mean) +
+    scale_fill_gradient(low="white", high="blue") +
+    ggtitle(qcm)
+  ggsave(out("QC_", qcm, "_UMAP.pdf"), w=5,h=4)
+  }
+ann$measure <- NULL
+#ann[,cluster.qual.keep :=TRUE]
+#ann[Clusters %in% ann[,median(percent.mt), by="Clusters"][V1 < 1]$Clusters, cluster.qual.keep := FALSE]
 
 
 # CELLRANGER -------------------------------------------
@@ -326,7 +334,7 @@ for(sx in unique(ann[!is.na(mixscape_class)]$sample)){
   ggsave(out("Guides_UMAP_", sx, ".pdf"), w=7*4,h=ceiling(grps/7)*4+1)
 }
 
-# . Guides per cluster ------------------------------------------------------
+# . Guides per cluster ---------res[---------------------------------------------
 res <- data.table()
 pDT1 <- ann[!is.na(mixscape_class)][mixscape_class.global != "NP"]
 for(sx in unique(pDT1$sample)){
@@ -365,13 +373,28 @@ ggsave(out("Guides_Fisher.pdf"), w=10, h=10)
 
 # DE for GUIDES -----------------------------------------
 obj.de <- monocle.obj
-obj.de <- obj.de[,colData(obj.de)$mixscape_class.global %in% c("KO", "NTC")]
-obj.de <- obj.de[rowSums(counts(obj.de)) > 20,]
-colData(obj.de)$ClusterDE <- obj.de@clusters$UMAP$clusters[row.names(colData(obj.de))]
-colData(obj.de)$GuideDE <- gsub("_.+$", "", colData(obj.de)$guide)
-colData(obj.de)$GuideDE <- factor(colData(obj.de)$GuideDE, levels=c("NTC", setdiff(unique(colData(obj.de)$GuideDE), "NTC")))
+
+#obj.de <- obj.de[,!grepl("ECCITE7", obj.de$sample)]
+
+# Keep only KO and NTCs
+obj.de <- obj.de[,obj.de$mixscape_class.global %in% c("KO", "NTC")]
+
+# Remove lowly expressed genes
+obj.de <- obj.de[Matrix::rowSums(counts(obj.de)) > 20,]
+
+# Add cluster column and remove clusters with less than 30 cells
+obj.de$ClusterDE <- as.character(obj.de@clusters$UMAP$clusters[row.names(colData(obj.de))])
+table(obj.de$ClusterDE)
+obj.de <- obj.de[,obj.de$ClusterDE %in% names(which(table(obj.de$ClusterDE) > 30))]
+table(obj.de$ClusterDE)
+
+# Add guides
+obj.de$GuideDE <- gsub("_.+$", "", obj.de$guide)
+obj.de$GuideDE <- factor(obj.de$GuideDE, levels=c("NTC", setdiff(unique(obj.de$GuideDE), "NTC")))
 stopifnot(all(colnames(obj.de) == row.names(colData(obj.de))))
-colData(obj.de)$tissueDE <- factor(ann[match(colnames(obj.de), rn)]$tissue, levels=c("in vitro", "leukemia", "in vivo"))
+
+# Add tissue
+obj.de$tissueDE <- factor(ann[match(colnames(obj.de), rn)]$tissue, levels=c("in vitro", "leukemia", "in vivo"))
 
 
 #  . Fit model -------------------------------------------------------------
@@ -396,14 +419,14 @@ write.tsv(resGuides[q_value < 1][,-"term",with=F], file=out("DEG_Results.tsv"))
 
 
 #  . Check approach by fitting model only in leukemia -------------------------------------------
-obj.de.L <- obj.de[unique(resGuides$gene_id),colData(obj.de)$tissueDE == "leukemia"]
+obj.de.L <- obj.de[unique(resGuides$gene_id),obj.de$tissueDE == "leukemia"]
 de.file.L <- out("DEG_Results_LeukemiaOnly.RData")
 if(file.exists(de.file.L)){
   load(de.file.L)
 } else {
   x <- fit_models(obj.de.L, model_formula_str = "~GuideDE + ClusterDE", verbose=TRUE, cores=10)
-  res <- data.table(coefficient_table(x), keep.rownames = TRUE)
-  resL <- res[,-c("model", "model_summary", "rn", "gene_short_name", "model_component"),with=F]
+  resL <- data.table(coefficient_table(x), keep.rownames = TRUE)
+  resL <- resL[,-c("model", "model_summary", "rn", "gene_short_name", "model_component"),with=F]
   save(resL, file=de.file.L)
 }
 
