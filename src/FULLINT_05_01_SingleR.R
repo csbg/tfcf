@@ -131,6 +131,7 @@ for(dx in unique(res$dataset)){
     quantile(pMT)
     cleanDev(); pdf(out("CF_Expression_HM_", dx, "_", lx, ".pdf"),w=ncol(pMT) * 0.2+2,h=60)
     pheatmap(pMT,
+             main = paste(dx, lx),
              scale="row",
              fontsize_row = 6,
              breaks=seq(-5,5, 0.05),

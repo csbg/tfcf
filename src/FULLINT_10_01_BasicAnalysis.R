@@ -501,7 +501,8 @@ if(file.exists(neb.file)){
 
 
 #  . Export results -------------------------------------------------------
-resGuides <- res[grepl("GuideDE", term)]
+resGuides <- res[grepl("GuideDE", term)][convergence >= -15]
+table(res$convergence)
 resGuides[!grepl("tissueDE", term), tissue := gsub("^.+?_", "", term)]
 resGuides[grepl("tissueDE", term), tissue := gsub("^.+\\:tissueDE", "", term)]
 resGuides[, interaction := grepl("tissueDE", term)]
@@ -569,7 +570,7 @@ ggplot(pDT, aes(x=guide, y=gene_id, size=pmin(5, -log10(q_value)), color=sign(es
   theme_bw(12) +
   geom_point() +
   xRot()
-ggsave(out("DEG_examples.pdf"), w=10,h=20)
+ggsave(out("DEG_examples.pdf"), w=10,h=30)
 
 # # Dotplots
 # ll <- with(resGuides[q_value < 0.05][order(-abs(estimate))][,head(.SD,n=10), by="term"], split(gene_id, paste(guide, tissue.ie)))
@@ -644,7 +645,8 @@ dev.off()
 set.seed(1212)
 umap.res <- umap(umapMT)
 umap <- data.table(umap.res$layout, keep.rownames = TRUE)
-ggplot(umap, aes(x=V1, y=V2)) + geom_hex() + theme_bw(12)
+umap <- setNames(umap, c("Gene", "UMAP1", "UMAP2"))
+ggplot(umap, aes(x=UMAP1, y=UMAP2)) + geom_hex() + theme_bw(12)
 ggsave(out("RegulatoryMap_UMAP.pdf"), w=6,h=5)
 
 # Cluster
@@ -652,14 +654,18 @@ set.seed(1212)
 idx <- umap.res$knn$indexes
 g <- do.call(rbind, apply(idx[, 2:ncol(idx)], 2, function(col){data.table(row.names(idx)[col], row.names(idx)[idx[,1]])}))
 (g <- graph.edgelist(as.matrix(g),directed=FALSE))
+set.seed(1234)
 cl <- cluster_walktrap(g)
 clx <- setNames(cl$membership, V(g)$name)
-umap$Cluster <- clx[umap$rn]
-ggplot(umap, aes(x=V1, y=V2, color=factor(Cluster))) + geom_point() + theme_bw(12)
+umap$Cluster <- clx[umap$Gene]
+
+ggplot(umap, aes(x=UMAP1, y=UMAP2, color=factor(Cluster))) + 
+  geom_point() + 
+  theme_bw(12) +
+  geom_label(data=umap[, .(UMAP1=median(UMAP1), UMAP2=median(UMAP2)), by="Cluster"], aes(label=Cluster))
 ggsave(out("RegulatoryMap_UMAP_Clusters.pdf"), w=6,h=5)
 
 # Export annotation
-umap <- setNames(umap, c("Gene", "UMAP1", "UMAP2", "Cluster"))
 write.tsv(umap, out("RegulatoryMap_UMAP.tsv"))
 
 # Plot estimates on UMAP
