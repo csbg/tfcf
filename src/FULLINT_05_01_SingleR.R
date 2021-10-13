@@ -76,15 +76,73 @@ reference_cell_types <- list(
 
 stopifnot(all(colnames(marrow_10x_expr) == names(marrow_10x_pheno)))
 stopifnot(all(colnames(marrow_plate_expr) == names(marrow_plate_pheno)))
-
-
-
 # head(row.names(reference_cell_types$dmap), 40)
 # head(row.names(reference_cell_types$monaco), 40)
 # head(row.names(reference_cell_types$blueprint), 40)
 # head(row.names(reference_cell_types$hpca), 40)
 
 
+# Plot expression of *our* genes ------------------------------------------
+genes <- fread("metadata/TFCF_Annotations.tsv")
+table(genes$Category)
+genes <- genes[Category == "CF"]
+genes.hm <- hm.map[Gene.name %in% genes$GENE]
+
+res <- data.table()
+ref <- names(reference_cell_types)[1]
+for(ref in names(reference_cell_types)){
+  olh <- sum(row.names(reference_cell_types[[ref]]) %in% row.names(count_matrix_human))
+  olm <- sum(row.names(reference_cell_types[[ref]]) %in% row.names(count_matrix_mouse))
+  orgx <- if(olh > olm) "human" else "mouse"
+  
+  m <- assay(reference_cell_types[[ref]], "logcounts")
+  gg <- if(orgx == "mouse") genes.hm$Gene.name else genes.hm$Human.gene.name
+  gg <- unique(gg[!is.na(gg)])
+  m <- m[gg[gg %in% row.names(m)],]
+  labelx <- "label.fine"
+  for(labelx in c("label.main", "label.fine")){
+    if(!labelx %in% colnames(colData(reference_cell_types[[ref]]))) next
+    annx <- colData(reference_cell_types[[ref]])[,labelx]
+    gx <- annx[1]
+    for(gx in unique(annx)){
+      mx <- m[, annx == gx, drop=FALSE]
+      res <- rbind(res, data.table(
+        dataset=ref,
+        label=labelx,
+        celltype=gx,
+        gene=row.names(m),
+        logcnt=rowMeans(mx),
+        N=ncol(mx)
+      ))
+    }
+  }
+}
+save(res, file=out("CFs_Datasets.RData"))
+
+# generate plots
+dx <- res$dataset[1]
+for(dx in unique(res$dataset)){
+  lx <- res$label[1]
+  for(lx in unique(res[dataset==dx]$label)){
+    pDT <- res[dataset==dx & label==lx]
+    pMT <- toMT(pDT, row = "gene", col = "celltype", val = "logcnt")
+    pMT <- pMT[rowSums(pMT != 0) >= 1,]
+    pMT <- t(scale(t(pMT)))
+    quantile(pMT)
+    cleanDev(); pdf(out("CF_Expression_HM_", dx, "_", lx, ".pdf"),w=ncol(pMT) * 0.2+2,h=60)
+    pheatmap(pMT,
+             scale="row",
+             fontsize_row = 6,
+             breaks=seq(-5,5, 0.05),
+             color=colorRampPalette(c("#6a3d9a", "#a6cee3", "white", "#fdbf6f", "#e31a1c"))(201)
+             )
+    dev.off()
+  }
+}
+
+
+
+# SingleR analysis --------------------------------------------------------
 ref <- names(reference_cell_types)[1]
 for(ref in names(reference_cell_types)){
   print(ref)
