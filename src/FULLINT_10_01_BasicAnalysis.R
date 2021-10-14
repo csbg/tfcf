@@ -26,6 +26,9 @@ tryCatch({
   message("CytoTRACE import failed")
 })
 
+# ChIP Targets
+(load(dirout_load("CHIP_20_01_Peaks_julen")("ChIP.Targets.RData")))
+
 # CLUSTERING ------------------------------------------------------
 set.seed(12121)
 monocle.obj = cluster_cells(monocle.obj, resolution=1e-5)
@@ -696,3 +699,57 @@ ggplot(pDT, aes(x=factor(Cluster), y=term, fill=V1)) +
   scale_fill_gradient2(high="#e31a1c",mid="#ffffff", low="#1f78b4") +
   xlab("Gene modules (Gene-UMAP Clusters)")
 ggsave(out("RegulatoryMap_Clusters_Values.pdf"), w=10,h=tn * 0.2 + 1)
+
+
+# CF targets on UMAP
+# umap <- fread(out("RegulatoryMap_UMAP.tsv"))
+pDT <- data.table()
+for(cf in names(chip.targets)){
+  x <- copy(umap)
+  x[,Target := Gene %in% chip.targets[[cf]] + 0]
+  x$CF <- cf
+  pDT <- rbind(pDT, x)
+}
+pDT[, tissue := gsub("_.+$", "", CF)] 
+pDT[, factor := gsub("^.+?_", "", CF)]
+# dimensions for umap
+dim.umap1 <- floor(max(abs(pDT$UMAP1))) + 0.5
+dim.umap2 <- floor(max(abs(pDT$UMAP2))) + 0.5
+# UMAP percentage
+hex.percent <- function(x){sum(x)/length(x) * 100}
+ggplot(pDT, aes(x=UMAP1, y=UMAP2)) +
+  stat_summary_hex(
+    aes(z=Target),
+    fun=hex.percent) +
+  scale_fill_gradient(high="#e31a1c", low="#ffffff") +
+  facet_grid(factor~tissue) + theme_bw(12) +
+  xlab("UMAP dimension 1") + ylab("UMAP dimension 2") +
+  xlim(-dim.umap1,dim.umap1) + ylim(-dim.umap2,dim.umap2)
+ggsave(out("RegulatoryMap_CFtargets.pdf"), 
+       w=length(unique(pDT$tissue))*1+2,
+       h=length(unique(pDT$factor))*1+1)
+
+# UMAP normalized
+df <- pDT[CF == pDT$CF[1]]
+makeHexData <- function(df) {
+  h <- hexbin::hexbin(df$UMAP1, df$UMAP2, IDs = TRUE)
+  ret <- data.frame(hexbin::hcell2xy(h),
+             percent = tapply(df$Target, h@cID, FUN = function(z) sum(z)/length(z)*100),
+             cid = h@cell)
+  ret <- mutate(ret, norm = percent / max(ret$percent))
+  ret
+}
+pDT.hex <- do.call(rbind, lapply(unique(pDT$CF), function(cfx){
+  data.table(makeHexData(pDT[CF == cfx]), CF=cfx)
+}))
+pDT.hex[, tissue := gsub("_.+$", "", CF)] 
+pDT.hex[, factor := gsub("^.+?_", "", CF)]
+ggplot(pDT.hex) +
+  geom_hex(aes(x = x, y = y, fill = norm), stat = "identity") +
+  scale_fill_gradient(high="#e31a1c", low="#ffffff") +
+  facet_grid(factor~tissue) + theme_bw(12) +
+  xlab("UMAP dimension 1") + ylab("UMAP dimension 2") +
+  xlim(-dim.umap1,dim.umap1) + ylim(-dim.umap2,dim.umap2)
+ggsave(out("RegulatoryMap_CFtargets_normalized.pdf"), 
+       w=length(unique(pDT.hex$tissue))*1+2,
+       h=length(unique(pDT.hex$factor))*1+1)

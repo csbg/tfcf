@@ -19,11 +19,20 @@ for(fx in gsub("_.+", "", basename(grep("extended.txt$", ff, value = TRUE)))){
     xnam <- gsub(paste0(fx, ".+$"), fx, xx)
     print(xx)
     message(xnam)
+    xx.fc <- gsub("\\.bool$", ".fc", xx)
     
-    x <- peaks[,c("chr", "start", "end", "interval_id", "Distance.to.TSS", "Annotation", "Gene.Name", xx),with=F]
+    x <- peaks[,c("chr", "start", "end", "interval_id", "Distance.to.TSS", "Annotation", "Gene.Name", xx, xx.fc),with=F]
     x <- x[get(xx) == TRUE]
+    x <- x[grepl("promoter-TSS", Annotation)]
+    x[[xx.fc]] <- sapply(strsplit(x[[xx.fc]], ";"), function(j){
+      max(as.numeric(j))
+    })
+    x <- x[get(xx.fc) > 5,]
+    
     #unique(x[abs(Distance.to.TSS) < 500]$Gene.Name)
-    res[[xnam]] <- unique(x[grepl("promoter-TSS", Annotation)]$Gene.Name)
+    res[[xnam]] <- unique(x$Gene.Name)
   }
 }
 sapply(res, length)
+chip.targets <- res
+save(chip.targets, file=out("ChIP.Targets.RData"))

@@ -73,6 +73,19 @@ dirout_load <- function(out, ext=""){
   dirout(out=out, ext=ext, init=FALSE)
 }
 
+# Get main datasets
+getMainDatasets <- function(){
+  ff <- list.files(Sys.getenv("DATA"))
+  ff <- ff[!grepl(".log$", ff)]
+  ff <- ff[!grepl("_onlyRNA", ff)]
+  ff <- ff[!grepl("RNAonly", ff)]
+  ff <- ff[grepl("^ECCITE", ff) | grepl("^CITESEQ", ff)]
+  ff <- ff[!grepl("ECCITE4_INT", ff)]
+  ff <- ff[!grepl("ECCITE1_", ff)]
+  list(folders=ff, dir=Sys.getenv("DATA"))
+}
+
+
 
 
 # Comparisons -------------------------------------------------------------

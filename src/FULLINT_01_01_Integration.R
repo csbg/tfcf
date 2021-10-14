@@ -8,13 +8,7 @@ AGG.CSV$i <- 1:nrow(AGG.CSV)
 
 SANN <- fread("metadata/annotation.tsv", sep="\t")
 
-ff <- list.files(Sys.getenv("DATA"))
-ff <- ff[!grepl(".log$", ff)]
-ff <- ff[!grepl("_onlyRNA", ff)]
-ff <- ff[!grepl("RNAonly", ff)]
-ff <- ff[grepl("ECCITE", ff) | grepl("CITESEQ", ff)]
-ff <- ff[!grepl("ECCITE4_INT", ff)]
-ff <- ff[!grepl("ECCITE1_", ff)]
+str(ff <- getMainDatasets()$folders)
 
 
 # Read data, Seurat processing, and Monocle integration --------------------------------------------
