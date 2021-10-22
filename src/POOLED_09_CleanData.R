@@ -39,6 +39,6 @@ ggplot(pDT, aes(x=sample, y=value)) + geom_bar(stat="identity") +
   facet_grid(variable ~ Genotype + Population, space = "free_x", scales = "free") +
   theme_bw(12) +
   xRot()
-ggsave(out("QC.pdf"),w=20,h=20)
+ggsave(out("QC.pdf"),w=30,h=20)
 
 

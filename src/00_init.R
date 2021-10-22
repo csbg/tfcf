@@ -47,7 +47,7 @@ source(paste(Sys.getenv("CODEBASE"), "resources", "RFunctions", "scRNA_Basics.R"
 
 # RENV LOCKFILE -----------------------------------------------------------
 if(!dir.exists("lockfiles/")) dir.create("lockfiles/")
-renv::snapshot(lockfile = paste0("lockfiles/renv_lockfile_", make.names(Sys.time()), ".lockfile"), force = TRUE, prompt = FALSE)
+# renv::snapshot(lockfile = paste0("lockfiles/renv_lockfile_", make.names(Sys.time()), ".lockfile"), force = TRUE, prompt = FALSE)
 
 
 
@@ -88,7 +88,7 @@ getMainDatasets <- function(){
 
 
 
-# Comparisons -------------------------------------------------------------
+# Comparisons (POOLED) -------------------------------------------------------------
 COMPARISONS <- list(
   LSK.CKIT=c("LSKd9", "cKit"),
   GMP.LSK=c("GMP", "LSKd7"),
@@ -98,11 +98,15 @@ COMPARISONS <- list(
   MYE.GMP=c("Mye", "GMP"),
   MYE.UND=c("Mye", "Und"),
   GMPcd11.DN=c("GMP.CD11bGr1", "GMP.DN"),
-  CD34pos.neg=c("CD34pos", "CD34neg"),
-  CFSEhigh.low=c("CFSEhigh", "CFSElow")
+  DMCD34pos.neg=c("DM.CD34pos", "DM.CD34neg"),
+  DMCFSEhigh.low=c("DM.CFSEhigh", "DM.CFSElow"),
+  DMEry.LSC=c("DM.Ery", "DM.LSC"),
+  DMMye.LSC=c("DM.Mye", "DM.LSC"),
+  DMMye.Ery=c("DM.Mye", "DM.Ery"),
+  DMCD11b.LSC=c("DM.LSC.CD11b", "DM.LSC")
 )
 
-COMPARISONS.USE <- c(
+COMPARISONS.healthy <- c(
   "LSK.CKIT",
   "GMP.LSK",
   "MEP.LSK",

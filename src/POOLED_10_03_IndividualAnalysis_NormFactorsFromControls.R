@@ -18,7 +18,8 @@ ann[,Date := paste0(Date, "_",Date2)]
 stopifnot(all(ann$sample == colnames(m)))
 ann[, id := paste(Genotype, Population, Library, sep="_")]
 
-#m2 <- 
+
+# Aggregate values for replicates -----------------------------------------
 m2 <- sapply(with(ann, split(sample, id)), function(sx){
   apply(m[,sx, drop=F], 1, function(row){
     if(all(is.na(row))){
@@ -141,7 +142,7 @@ ggplot(res, aes(x=Score)) +
   geom_density(aes(color=Genotype)) +
   facet_grid(Library ~ Comparison, scales = "free") + 
   theme_bw(12)
-ggsave(out("PopulationScores_Density_BgNormal.pdf"), w=15,h=15)
+ggsave(out("PopulationScores_Density_BgNormal.pdf"), w=20,h=15)
 
 
 # Calculate z-scores and p-values ------------------------------------------
@@ -176,7 +177,7 @@ ggplot(res.stats, aes(y=z, x=paste(Genotype, GuideType), fill=paste(Genotype, Gu
   scale_fill_manual(values=c("Cas9 Targeted"="#ff7f00", "WT Targeted"="#a6cee3", "Cas9 CTRL"="#a6cee3", "WT CTRL"="#a6cee3")) +
   xRot() +
   guides(fill=FALSE)
-ggsave(out("PopulationScores_Z_Boxplots_all.pdf"), w=15,h=15)
+ggsave(out("PopulationScores_Z_Boxplots_all.pdf"), w=20,h=15)
 
 ggplot(res.stats[Genotype == "Cas9" & GuideType == "Targeted"], 
        aes(y=z, x=Comparison)) + 

@@ -15,15 +15,18 @@ cleanNames <- function(x){
 }
 
 # read data files ---------------------------------------------------------------
-ff <- list.files(paste0(Sys.getenv("RAWDATA"), "Raw_pooled/v4_final/"), recursive = TRUE, pattern="", full.names = TRUE)
+ff <- list.files(paste0(Sys.getenv("RAWDATA"), "POOLED/v4_final/"), recursive = TRUE, pattern="", full.names = TRUE)
+ff <- ff[!grepl("\\/DM\\/", ff) | grepl("Time0", ff)]
 ff <- ff[grepl(".txt$", ff) | grepl(".tsv$", ff)]
 stopifnot(sum(duplicated(basename(ff))) == 0)
 names(ff) <- cleanNames(basename(ff))
 ff <- lapply(ff, fread)
-fnam <- names(ff)[5]
+fnam <- names(ff)[2]
 dDT <- setNames(lapply(names(ff), function(fnam){
   print(fnam)
   fx <- ff[[fnam]]
+  print(colnames(fx))
+  print("------------")
   fx <- fx[,!grepl("_score", colnames(fx)) & !grepl(".Norm", colnames(fx)) & !grepl("_norm", colnames(fx)), with=F]
   fx <- fx[,!colnames(fx) %in% c("n", "l"), with=F]
   names(fx) <- cleanNames(paste(names(fx), fnam))
@@ -52,7 +55,7 @@ for(fnam in names(dDT)){
   }
 }
 
-lapply(data.table(do.call(rbind,strsplit(gsub(" .+", "", grep("^V1$", do.call(c, lapply(dDT, colnames)), invert = TRUE, value = TRUE)), "_"))), unique)
+#lapply(data.table(do.call(rbind,strsplit(gsub(" .+", "", grep("^V1$", do.call(c, lapply(dDT, colnames)), invert = TRUE, value = TRUE)), "_"))), unique)
 
 
 
@@ -75,6 +78,7 @@ lapply(dDT, function(dt) head(dt$V1))
 lapply(dDT, function(dt) unique(dt[grepl("NonTargetingControlGuideForMouse", V1)]$V1))
 dt <- copy(dDT[[1]])
 dDT2 <-lapply(dDT, function(dt){
+  # Cleaning up guide names
   dt[grep("^NonTargetingControlGuideForMouse", V1), V1 := gsub("^(NonTargetingControlGuideForMouse_\\d+)_.+$", "\\1", V1)]
   dt[!grep("^NonTargetingControlGuideForMouse", V1),V1 := gsub("(\\d+)_(\\d{6})$", "\\1", V1)]
   dt[!grep("^NonTargetingControlGuideForMouse", V1),V1 := gsub("^(.+?)_(.+?)_(\\d+)$", "\\1_\\3", V1)]
@@ -83,20 +87,33 @@ dDT2 <-lapply(dDT, function(dt){
   dt
 })
 #& !grepl("NonTargetingControl", V1),
+# Merge DTs
 dMT <- dDT2[[1]]
 for(i in 2:length(dDT2)){
   dMT <- merge(dMT, dDT2[[i]], by="V1", all=TRUE)
 }
+# Convert to matrix
 m <- as.matrix(dMT[,-"V1",with=F])
 row.names(m) <- dMT$V1
 unique(gsub("_\\d+$", "", row.names(m)))
 unique(gsub("^.+_(.+)_\\d+$", "\\1", row.names(m)))
 
+# Clean up DM names
+names.to.clean <- colnames(m)
+names.to.clean <- gsub("^Cas9DM_", "Cas9_DM.", names.to.clean, ignore.case = TRUE)
+names.to.clean <- gsub("^Cas9_DM_", "Cas9_DM.", names.to.clean, ignore.case = TRUE)
+names.to.clean <- gsub("^Cas9_DM\\.LSC_CD11b_", "Cas9_DM.LSC.CD11b_", names.to.clean, ignore.case = TRUE)
+colnames(m) <- names.to.clean
+
 
 
 # Read Annotation --------------------------------------------------------------
+# First those that do not start with "Lib" --> actual data
 names1 <- grep("^Lib", colnames(m),invert = TRUE, value=TRUE)
+# names1 <- gsub("^Cas9(.*?)_", "Cas9_\\1_", names1, ignore.case = TRUE)
+# names1 <- gsub("^WT(.*?)_", "WT_\\1_", names1, ignore.case = TRUE)
 ann <- data.table(sample=names1, do.call(rbind, strsplit(gsub("Wt", "WT", gsub(" ", "_", gsub("\\-", "_", names1))), "_")))
+#ann[1:100]
 ann[V4 == "Jul2020", VX := V2]
 ann[V4 == "Jul2020", V2 := V3]
 ann[V4 == "Jul2020", V3 := VX]
@@ -104,6 +121,10 @@ ann$VX <- NULL
 ann[,V1 := gsub("CAS9", "Cas9", V1, ignore.case = TRUE)]
 ann[,V1 := gsub("Cas9.+", "Cas9", V1, ignore.case = TRUE)]
 table(ann$V1)
+table(ann$V2)
+table(ann$V3)
+table(ann$V4)
+table(ann$V5)
 
 unique(ann[,c("V3", "V5"),with=F])
 ann[,V5 := gsub("Lib", "", V5)]
@@ -126,11 +147,9 @@ ann <- rbind(ann, ann2, fill=TRUE)
 # ann$VX <- NULL
 # lapply(ann, unique)
 
-# REMOVE V2
+# REMOVE v2 samples (aggregated by David thus duplicated)
 ann[grep("v2.t..$", V7)]
 ann <- ann[!grep("v2.t..$", V7)]
-
-# Revert LibA_Mye-Nov2019.txt above?
 
 ann.col = data.frame(row.names=ann$sample, ann[,c("V1", "V2", "V5", "V6"), with=F])
 
@@ -198,9 +217,13 @@ unique(gsub("^.+?_(.+?)_.+$", "\\1", rn))
 
 ann$sample <- make.names(ann$sample)
 colnames(m) <- make.names(colnames(m))
-stopifnot(all(ann$sample %in% colnames(m)))
+stopifnot(all(ann$sample == colnames(m)))
 ann <- setNames(ann, c("sample", "Genotype", "Population", "Library2", "Date", "Library", "System", "Date2"))
 ann[,Date2 := gsub("\\.txt", "", Date2)]
 ann[Date2 == "Feb2021" & Library == "R2", Date := "10022021"]
+
+# Clean up system for DM
+ann[System == "DM" & grepl("^CFSE", Population), System := "DM.CFSE"]
+ann[System == "DM" & grepl("^CD34", Population), System := "DM.CD34"]
 write.table(m[,ann$sample], quote = F, sep = ",", row.names = TRUE, col.names = TRUE, file = out("Matrix.csv"))
 write.tsv(ann, out("Annotation.tsv"))

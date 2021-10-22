@@ -29,9 +29,10 @@ stopifnot(all(ann$sample == colnames(m)))
 #   x
 # }
 
-# summary of replicates, by library and system
-ann[System == "DM" & grepl("^CFSE", Population), System := "DM.CFSE"]
-ann[System == "DM" & grepl("^CD34", Population), System := "DM.CD34"]
+# In some DM Comparisons --> Compare to basic libraries
+# ann[System == "DM" & grepl("^DM\\.CFSE", Population), System := "DM.CFSE"]
+# ann[System == "DM" & grepl("^DM\\.CD34", Population), System := "DM.CD34"]
+# with(ann, table(System, Population))
 for(sysx in c("DM.CFSE", "DM.CD34")){
   ann.lib <- ann[Genotype == "Library"]
   ann.lib[, Genotype := NA]
