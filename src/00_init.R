@@ -114,14 +114,22 @@ COMPARISONS.healthy <- c(
   "MYE.UND",
   "GMPcd11.DN"
 )
-cleanComparisons <- function(x, order=TRUE, ggtext=FALSE){
+cleanComparisons <- function(x, order=TRUE, ggtext=FALSE, dm="clean"){
   transformPretty <- function(i, gg=ggtext){
     if(gg){
-      gsub("^(.+)\\.(.+)$", "<strong style='color:#832424;'>\\1</strong> vs <strong style='color:#3A3A98;'>\\2</strong>", i)
+      i <- gsub("^(.+)\\.(.+)$", "<strong style='color:#832424;'>\\1</strong> vs <strong style='color:#3A3A98;'>\\2</strong>", i)
     } else {
-      gsub("\\.", " vs ", i)
+      i <- gsub("\\.", " vs ", i)
     }
+    if(dm == "rm"){
+      i <- sub("^DM", "", i)
+    }
+    if(dm == "clean"){
+      i <- sub("^DM", "DM: ", i)
+    }
+    return(i)
   }
+  
   x <- transformPretty(x)
   if(order) x <- factor(x, levels = intersect(transformPretty(names(COMPARISONS)), unique(x)))
   x
