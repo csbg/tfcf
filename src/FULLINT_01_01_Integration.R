@@ -87,7 +87,17 @@ if(file.exists(monocle.file)){
       seurat.obj <- subset(seurat.obj, subset = nFeature_RNA > 500 & nCount_RNA > 1000 & percent.mt < 10)
       seurat.obj <- NormalizeData(seurat.obj, verbose = FALSE)
       seurat.obj <- CellCycleScoring(seurat.obj, s.features = cc.genes$s.genes,g2m.features = cc.genes$g2m.genes,set.ident = TRUE)
-
+	  	  
+	  # require(ggplot2)
+	  # ggplot(data.frame(UMI=seurat.obj@meta.data$nCount_RNA), aes(x=UMI)) + stat_density() + scale_x_log10() +
+	  #   geom_vline(xintercept = quantile(seurat.obj@meta.data$nCount_RNA, probs=0.85)/2)
+	  #
+	  # ggplot(data.frame(UMI=seurat.obj@meta.data$percent.mt), aes(x=UMI)) + stat_density() + scale_x_log10() +
+	  #   geom_vline(xintercept = quantile(seurat.obj@meta.data$percent.mt, probs=0.85)/2)
+	  #
+	  # ggplot(data.frame(UMI=seurat.obj@meta.data$nFeature_RNA), aes(x=UMI)) + stat_density() + scale_x_log10() +
+	  #   geom_vline(xintercept = quantile(seurat.obj@meta.data$nFeature_RNA, probs=0.85)/2)
+	  
       # Add additional info to metadata
       tx <- names(additional.info.x)[1]
       for(tx in names(additional.info.x)){
