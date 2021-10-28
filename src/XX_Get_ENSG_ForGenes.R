@@ -1,6 +1,6 @@
 source("src/00_init.R")
 
-inF <- "metadata/ECCITE7_Features.csv"
+inF <- "metadata/ECCITE8_Features.csv"
 feat <- fread(inF)
 gmap <- fread(dirout_load("02_EnsemblForGenes_10x")("GMAP.tsv"))
 
@@ -11,8 +11,9 @@ feat[,id := gsub("Men_", "Men1_", id, perl = TRUE)]
 feat[,name := id]
 
 feat$target_gene_id <- gmap[match(feat$target_gene_name, Gene),]$ENSG
+feat[grepl("^NTC_", target_gene_name), target_gene_id := "Non-Targeting"]
 feat[target_gene_name == "Non-targeting control", target_gene_id := "Non-Targeting"]
-feat[target_gene_name == "Non-targeting control", target_gene_name := "Non-Targeting"]
+feat[target_gene_id == "Non-Targeting", target_gene_name := target_gene_id]
 
 feat <- unique(feat)
 

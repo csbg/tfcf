@@ -147,7 +147,9 @@ PATHS$RESOURCES <- list(
 PATHS$POOLED <- list()
 PATHS$POOLED$DATA <- list(
   matrix=dirout_load("POOLED_01_CollectData")("Matrix.csv"),
-  annotation=dirout_load("POOLED_01_CollectData")("Annotation.tsv")
+  annotation=dirout_load("POOLED_01_CollectData")("Annotation.tsv"),
+  matrix.aggregated=dirout_load("POOLED_09_CleanData")("Matrix_aggregated.csv"),
+  annotation.aggregated=dirout_load("POOLED_09_CleanData")("Annotation_aggregated.tsv")
 )
 sapply(PATHS$POOLED$DATA, file.exists)
 
