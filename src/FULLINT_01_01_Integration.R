@@ -27,7 +27,8 @@ if(file.exists(monocle.file)){
 
   
   dsx <- ff[1]
-  dsx <- "CITESEQ1"
+  dsx <- "ECCITE6"
+  dsx <- "ECCITE7_Lib1Rep1"
   for(dsx in ff){
     
     # already processed?
@@ -40,6 +41,7 @@ if(file.exists(monocle.file)){
     print(dsx)
     print("---------------")
     path <- paste(Sys.getenv("DATA"), dsx, "outs", "filtered_feature_bc_matrix.h5", sep = "/")
+    path.guides <- paste(Sys.getenv("DATA"), dsx, "outs", "crispr_analysis", "protospacer_calls_per_cell.csv", sep = "/")
     
     dsx.file <- out(paste0("SeuratObj_",dsx,".RData"))
     
@@ -53,11 +55,13 @@ if(file.exists(monocle.file)){
         message("File for ", dsx, " not found")
         next
       }
+      # Read in data
       data <- Read10X_h5(path)
       data.gx <- NA
       if(class(data) == "dgCMatrix"){
         data.gx <- data
       }
+      # Get gene expression and other modalities (guides, antibodies)
       if(is.list(data) && "Gene Expression" %in% names(data)){
         data.gx <- data[["Gene Expression"]]
         additional.info.x <- data[names(data) != "Gene Expression"]
@@ -78,29 +82,43 @@ if(file.exists(monocle.file)){
         additional.info.x <- list("CRISPR Guide Capture" = as(mat, "dgCMatrix"))
       }
       
+      # Get cellranger guide assignments
+      if(file.exists(path.guides)){
+        additional.info.x[["CRISPR_Cellranger"]] <- fread(path.guides)
+      }
+      
+      # Create Seurat object
       if(class(data.gx) != "dgCMatrix"){
         message("Data for ", dsx, " not in the right format")
       }
-
       seurat.obj <- CreateSeuratObject(counts = data.gx, project = dsx)
       seurat.obj[["percent.mt"]] <- PercentageFeatureSet(seurat.obj, pattern = "^mt-")
-      seurat.obj <- subset(seurat.obj, subset = nFeature_RNA > 500 & nCount_RNA > 1000 & percent.mt < 10)
+      
+      # Filter and normalize object
+      write.tsv(data.table(seurat.obj@meta.data, keep.rownames = TRUE), out(paste0("AnnotationOriginal_",dsx,".tsv")))
+      # set cutoffs
+      cutoffs <- list(
+        nFeature_RNA = max(500, quantile(seurat.obj@meta.data$nFeature_RNA, probs=0.90)/5),
+        nCount_RNA = max(1000, quantile(seurat.obj@meta.data$nCount_RNA, probs=0.90)/5),
+        percent.mt = 10
+      )
+      # Plots
+      for(qcx in names(cutoffs)){
+        ggplot(data.frame(Value=seurat.obj@meta.data[[qcx]]), aes(x=Value)) + stat_density() + scale_x_log10() +
+          theme_bw(12) +
+          geom_vline(xintercept = cutoffs[[qcx]]) +
+          xlab(qcx) +
+          ggtitle(paste(dsx))
+        ggsave(out("QC_", qcx, "_", dsx, ".pdf"), w=6,h=4)
+      }
+      # Subset and process
+      seurat.obj <- subset(seurat.obj, subset = nFeature_RNA > cutoffs$nFeature_RNA & nCount_RNA > cutoffs$nCount_RNA & percent.mt < cutoffs$percent.mt)
       seurat.obj <- NormalizeData(seurat.obj, verbose = FALSE)
       seurat.obj <- CellCycleScoring(seurat.obj, s.features = cc.genes$s.genes,g2m.features = cc.genes$g2m.genes,set.ident = TRUE)
-	  	  
-	  # require(ggplot2)
-	  # ggplot(data.frame(UMI=seurat.obj@meta.data$nCount_RNA), aes(x=UMI)) + stat_density() + scale_x_log10() +
-	  #   geom_vline(xintercept = quantile(seurat.obj@meta.data$nCount_RNA, probs=0.85)/2)
-	  #
-	  # ggplot(data.frame(UMI=seurat.obj@meta.data$percent.mt), aes(x=UMI)) + stat_density() + scale_x_log10() +
-	  #   geom_vline(xintercept = quantile(seurat.obj@meta.data$percent.mt, probs=0.85)/2)
-	  #
-	  # ggplot(data.frame(UMI=seurat.obj@meta.data$nFeature_RNA), aes(x=UMI)) + stat_density() + scale_x_log10() +
-	  #   geom_vline(xintercept = quantile(seurat.obj@meta.data$nFeature_RNA, probs=0.85)/2)
-	  
+      
       # Add additional info to metadata
       tx <- names(additional.info.x)[1]
-      for(tx in names(additional.info.x)){
+      for(tx in setdiff(names(additional.info.x), "CRISPR_Cellranger")){
         txn <- make.names(tx)
         print(tx)
 
@@ -112,6 +130,7 @@ if(file.exists(monocle.file)){
         if(txn == "CRISPR.Guide.Capture"){
           colcnts <- colSums(x)
           colcnts.min <- min(5, median(colcnts[colcnts != 0]))
+          # if the median nUMI per cell is lower than 5, then the cutoff is that median. Else it is 5
           x.max <- apply(x, 2, max)
           x.sum <- apply(x, 2, sum)
           x <- as.matrix(x[,x.max/x.sum > 0.75 & x.sum >= colcnts.min])
@@ -128,10 +147,34 @@ if(file.exists(monocle.file)){
         seurat.obj@meta.data[[txn]] <- labelsx[row.names(seurat.obj@meta.data)]
         print(table(seurat.obj@meta.data[[txn]]))
       }
+      # Cellranger guide counts
+      if("CRISPR_Cellranger" %in% names(additional.info.x)){
+        x <- additional.info.x$CRISPR_Cellranger
+        # Get the index of the top guide
+        if(any(grepl("\\|", x$feature_call))){
+          x$top.guide <- as.numeric(sapply(strsplit(x$num_umis, "\\|"), function(i){
+            i <- as.numeric(i)
+            #if(sum(i) < 5) return(NA)
+            i <- which(i/sum(i) > 0.75) # which guides has more than 75% of reads?
+            if(length(i) == 0) NA else paste(i, collapse = "|") # collapse just in case, checked in the next step
+          }))
+          stopifnot(!any(grepl("\\|", x$top.guide)))
+          # Get the name of the guide from the index above
+          x$guide <- sapply(1:nrow(x), function(i){
+            xx <- x[i]
+            strsplit(xx$feature_call, "\\|")[[1]][xx$top.guide]
+          })
+        } else {
+          x$guide <- x$feature_call
+        }
+
+        seurat.obj@meta.data[["CRISPR_Cellranger"]] <- setNames(x$guide, x$cell_barcode)[row.names(seurat.obj@meta.data)]
+      }
 
       # Mixscape
-      if("CRISPR.Guide.Capture" %in% colnames(seurat.obj@meta.data)){
-        orig.guides <- seurat.obj@meta.data$CRISPR.Guide.Capture
+      guides.use <- intersect(c("CRISPR_Cellranger", "CRISPR.Guide.Capture"), colnames(seurat.obj@meta.data))[1]
+      if(!is.na(guides.use)){
+        orig.guides <- seurat.obj@meta.data[[guides.use]]
         guides.clean <- orig.guides
         guides.clean[grepl(",", orig.guides)] <- NA
         guides.clean[grepl("^NTC_", orig.guides)] <- "NTC"
@@ -211,10 +254,10 @@ if(file.exists(monocle.file)){
       reduction_method = "UMAP",
       preprocess_method = "Aligned",
       verbose = TRUE)
-  
+
   # Add tissue information
   colData(monocle.obj)$tissue <- SANN[match(gsub("_.+", "", colData(monocle.obj)$sample), sample)]$tissue
-  
+
   # Store full dataset
   save(monocle.obj, additional.info, AGG.CSV, file=monocle.file)
 }

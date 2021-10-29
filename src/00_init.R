@@ -82,6 +82,8 @@ getMainDatasets <- function(){
   ff <- ff[grepl("^ECCITE", ff) | grepl("^CITESEQ", ff)]
   ff <- ff[!grepl("ECCITE4_INT", ff)]
   ff <- ff[!grepl("ECCITE1_", ff)]
+  ff <- ff[!grepl("LINES", ff)]
+  ff <- ff[!grepl("ECCITE8", ff)]
   list(folders=ff, dir=Sys.getenv("DATA"))
 }
 
