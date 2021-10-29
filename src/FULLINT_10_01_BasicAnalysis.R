@@ -50,7 +50,7 @@ write.tsv(ann, out("Annotation.tsv"))
 
 
 
-# ADDITIONAL QC to remove bad clusters --------------------------------------------------------
+# ADDITIONAL QC  --------------------------------------------------------
 qcm <- "nCount_RNA"
 for(qcm in c("percent.mt", "nFeature_RNA", "nCount_RNA")){
   print(qcm)
@@ -89,9 +89,15 @@ if("AGG.CSV" %in% ls()){
 
 
 # SAMPLES -----------------------------------------------------------------
+ggplot(ann, aes(x=sample)) +
+  theme_bw() +
+  xRot() +
+  geom_bar()
+ggsave(out("Samples_Numbers.pdf"), w=0.5 * length(unique(ann$sample)) + 1, h=6)
+
 ggplot(ann, aes(x=UMAP1, y=UMAP2)) + 
   theme_bw(12) +
-  geom_hex() +
+  geom_hex(bins=100) +
   scale_fill_gradient(low="lightgrey", high="blue") +
   facet_wrap(~sample, ncol=5)
 ggsave(out("Samples_UMAP.pdf"), w=5*2+2,h=ceiling(length(unique(ann$sample))/5) * 2 + 1)
@@ -112,7 +118,7 @@ ggsave(out("Samples_Clusters.pdf"), w=8,h=length(unique(pDT$sample)) * 0.3+1)
 # TISSUES -----------------------------------------------------------------
 ggplot(ann, aes(x=UMAP1, y=UMAP2)) + 
   theme_bw(12) +
-  geom_hex() +
+  geom_hex(bins=100) +
   scale_fill_gradient(low="lightgrey", high="blue") +
   facet_wrap(~tissue, ncol=3)
 ggsave(out("Tissues_UMAP.pdf"), w=3*2+2,h=3 + 1)
@@ -130,20 +136,32 @@ ggplot(pDT, aes(y=tissue,x=factor(as.numeric(Clusters)), size=percentS, color=pe
 ggsave(out("Tissues_Clusters.pdf"), w=8,h=length(unique(pDT$tissue)) * 1+1)
 
 
-# CLUSTERS ----------------------------------------------------
+# CLUSTERS and cell type MARKERS ----------------------------------------------------
 # UMAP
 ggplot(ann, aes(x=UMAP1, y=UMAP2)) + 
   theme_bw(12) +
-  geom_hex() +
+  geom_hex(bins=100) +
   scale_fill_gradient(low="lightgrey", high="blue") +
   geom_label(data=ann[,.(UMAP1=median(UMAP1), UMAP2=median(UMAP2)), by="Clusters"], aes(label=Clusters), fill="#ffffffaa")
 ggsave(out("Clusters_UMAP.pdf"), w=6,h=5)
+
+plot_cells(monocle.obj,
+           reduction_method="UMAP",
+           show_trajectory_graph=FALSE, 
+           color_cells_by="cluster")
+ggsave(out("Clusters_UMAP.points.jpg"), w=5,h=5)
 
 # Markers
 plot_genes_by_group(monocle.obj, markers = marker.genes$Name, group_cells_by = "cluster") + scale_size_continuous(range=c(0,5))
 ggsave(out("Clusters_Markers.pdf"), w=6,h=8)
 
-
+p <- plot_cells(monocle.obj,
+           reduction_method="UMAP",
+           genes = sort(marker.genes$Name),
+           show_trajectory_graph=FALSE, 
+           label_cell_groups=FALSE
+           )
+ggsave(out("Clusters_Markers_UMAP.jpg"), w=30,h=30)
 
 
 # CELLTYPES SingleR -------------------------------------------------------
@@ -275,7 +293,7 @@ for(abx in row.names(abMT)){
 }
 res[,Signal.norm := scale(Signal), by="Antibody"]
 ggplot(res, aes(x=UMAP1, y=UMAP2)) + 
-  stat_summary_hex(aes(z=Signal.norm),fun=mean) +
+  stat_summary_hex(bins = 100, aes(z=Signal.norm),fun=mean) +
   scale_fill_gradient2(low="blue", high="red") +
   facet_wrap(~Antibody) +
   theme_bw(12)
@@ -332,16 +350,17 @@ ggsave(out("Guides_Counts_PercAssigned.pdf"), w=6,h=4)
 sx <- "ECCITE1"
 for(sx in unique(ann[!is.na(mixscape_class)]$sample)){
   pDT <- ann[sample == sx][!is.na(mixscape_class.global)]
+  if(nrow(pDT) == 0) next
   grps <- length(unique(pDT$mixscape_class))
   ggplot(pDT, aes(x=UMAP1, y=UMAP2)) + 
-    geom_hex() +
+    geom_hex(bins=50) +
     scale_fill_gradient(low="lightgrey", high="blue") +
     facet_wrap(~mixscape_class + mixscape_class.global, ncol = 7) +
     theme_bw(12)
   ggsave(out("Guides_UMAP_", sx, ".pdf"), w=7*4,h=ceiling(grps/7)*4+1)
 }
 
-# . Guides per cluster ---------res[---------------------------------------------
+# . Guides per cluster ------------------------------------------------------
 res <- data.table()
 pDT1 <- ann[!is.na(mixscape_class)][mixscape_class.global != "NP"]
 for(sx in unique(pDT1$sample)){
@@ -350,7 +369,7 @@ for(sx in unique(pDT1$sample)){
     for(cx in unique(pDT2$Clusters)){
       message(gx, "-", cx)
       mx <- as.matrix(with(pDT2[mixscape_class %in% c(gx, "NTC")], table(Clusters == cx, mixscape_class == gx)))
-      print(mx)
+      #print(mx)
       if(dim(mx) == c(2,2)){
         fish <- fisher.test(mx)
         res <- rbind(res, data.table(Clusters=cx, mixscape_class=gx, p=fish$p.value, OR=fish$estimate, sample=sx))
@@ -606,7 +625,7 @@ ggsave(out("DEG_examples.pdf"), w=10,h=30)
 #  . Vulcano / p-val distribution -----------------------------------------
 ggplot(resGuides, aes(x=estimate, y=-log10(p_value))) + 
   theme_bw(12) +
-  geom_hex() +
+  geom_hex(bins=100) +
   facet_wrap(~gsub("_", "\n", gsub("\\:tissueDE", "\nInteraction: ", term)), scales = "free", ncol = 5)
 ggsave(out("DEG_Vulcano.pdf"), w=15,h=15)
 
@@ -649,7 +668,7 @@ set.seed(1212)
 umap.res <- umap(umapMT)
 umap <- data.table(umap.res$layout, keep.rownames = TRUE)
 umap <- setNames(umap, c("Gene", "UMAP1", "UMAP2"))
-ggplot(umap, aes(x=UMAP1, y=UMAP2)) + geom_hex() + theme_bw(12)
+ggplot(umap, aes(x=UMAP1, y=UMAP2)) + geom_hex(bins=100) + theme_bw(12)
 ggsave(out("RegulatoryMap_UMAP.pdf"), w=6,h=5)
 
 # Cluster
@@ -725,7 +744,7 @@ ggplot(pDT, aes(x=UMAP1, y=UMAP2)) +
   facet_grid(factor~tissue) + theme_bw(12) +
   xlab("UMAP dimension 1") + ylab("UMAP dimension 2") +
   xlim(-dim.umap1,dim.umap1) + ylim(-dim.umap2,dim.umap2)
-ggsave(out("RegulatoryMap_CFtargets.pdf"), 
+ggsave(out("RegulatoryMap_UMAP_CFtargets.pdf"), 
        w=length(unique(pDT$tissue))*1+2,
        h=length(unique(pDT$factor))*1+1)
 
@@ -750,6 +769,6 @@ ggplot(pDT.hex) +
   facet_grid(factor~tissue) + theme_bw(12) +
   xlab("UMAP dimension 1") + ylab("UMAP dimension 2") +
   xlim(-dim.umap1,dim.umap1) + ylim(-dim.umap2,dim.umap2)
-ggsave(out("RegulatoryMap_CFtargets_normalized.pdf"), 
+ggsave(out("RegulatoryMap_UMAP_CFtargets_normalized.pdf"), 
        w=length(unique(pDT.hex$tissue))*1+2,
        h=length(unique(pDT.hex$factor))*1+1)
