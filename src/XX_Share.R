@@ -22,7 +22,7 @@ for(fx in c(ff$folders, "FULLINT_00_Aggr")){
 }
 
 
-# LINE HTMLs ----------------------------------------
+# LINE H5 ----------------------------------------
 ff <- grep("LINES", list.files(Sys.getenv("DATA"), full.names = TRUE), value = TRUE)
 fx <- ff[1]
 for(fx in ff){
@@ -36,3 +36,16 @@ for(fx in ff){
   
   file.copy(h5, out("LINES_", basename(fx), ".h5"), overwrite = FALSE)
 }
+
+
+
+# Analyzed scRNA-seq data ----------------------------------------------------------
+ff <- list.files(dirout_load("")(""), pattern="FULLINT_10_01_BasicAnalysis", full.names = TRUE)
+names(ff) <- gsub("FULLINT_10_01_BasicAnalysis_", "", basename(ff))
+fx <- names(ff)[1]
+for(fx in names(ff)){
+  system(paste0("zip -r ", out("ECCITE_", fx,".zip "), ff[[fx]], " --exclude *.RData"))
+}
+
+folder <- dirout_load("FULLINT_01_01_Integration")("")
+system(paste0("zip -r ", out("ECCITE_QC",".zip "), folder, " --exclude *.RData --exclude *.tsv"))

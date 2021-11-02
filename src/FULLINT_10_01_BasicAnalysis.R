@@ -1,16 +1,57 @@
 source("src/00_init.R")
-out <- dirout("FULLINT_10_01_BasicAnalysis/")
 
+# Load packages and functions
 require(umap)
 require(igraph)
 require(nebula)
 source("src/FUNC_Monocle_PLUS.R")
 
+# Figure out command line arguments (which tissue to analyze)
+args = commandArgs(trailingOnly=TRUE)
+# args[1] <- "leukemia"
+# args[1] <- "in vivo"
+
+# Define output directory based on the tissue
+baseDir <- "FULLINT_10_01_BasicAnalysis"
+baseDir.add <- if(length(args) == 0){
+  "combined"
+} else {
+  if(!args[1] %in% c("leukemia", "in vitro", "in vivo")){
+    stop("Argument ", args[1], " not valid. Expecting 'leukemia', 'in vivo', or 'in vitro'")
+  } else {
+    args[1]
+  }
+}
+out <- dirout(paste0(baseDir, "_", make.names(baseDir.add), "/"))
+
 
 # LOAD DATA ---------------------------------------------------------------
-# single cell
+# load single cell data
 (load(PATHS$FULLINT$Monocle))
 fData(monocle.obj)$gene_short_name <- row.names(fData(monocle.obj))
+
+# Subset data and reprocess based on the tissue (command line argument)
+if(baseDir.add != "combined"){
+  monocle.file <- out("MonocleObject.RData")
+  if(file.exists(monocle.file)){
+    load(monocle.file)
+  } else {
+    monocle.obj <- monocle.obj[,monocle.obj$tissue == args[1]]
+    monocle.obj <-
+      preprocess_cds(monocle.obj, verbose = TRUE) %>%
+      reduce_dimension(preprocess_method = "PCA", verbose = TRUE)
+    set.seed(42)
+    monocle.obj <-
+      align_cds(monocle.obj, alignment_group = "sample", verbose = TRUE) %>%
+      reduce_dimension(
+        reduction_method = "UMAP",
+        preprocess_method = "Aligned",
+        verbose = TRUE)
+    additional.info <- additional.info[unique(monocle.obj$sample)]
+    AGG.CSV <- AGG.CSV[sample_id %in% monocle.obj$sample]
+    save(monocle.obj, additional.info, AGG.CSV, file=monocle.file)
+  }
+}
 
 # Markers
 marker.genes <- fread("metadata/markers.csv")
@@ -66,8 +107,9 @@ for(qcm in c("percent.mt", "nFeature_RNA", "nCount_RNA")){
   
   ggplot(ann, aes(x=UMAP1, y=UMAP2)) + 
     theme_bw(12) +
-    stat_summary_hex(aes(z=measure),fun=mean) +
-    scale_fill_gradient(low="white", high="blue") +
+    stat_summary_hex(bins=100, aes(z=measure),fun=mean) +
+    scale_fill_hexbin() +
+    #scale_fill_gradient(low="lightgrey", high="blue") +
     ggtitle(qcm)
   ggsave(out("QC_", qcm, "_UMAP.pdf"), w=5,h=4)
   }
@@ -136,7 +178,7 @@ ggplot(pDT, aes(y=tissue,x=factor(as.numeric(Clusters)), size=percentS, color=pe
 ggsave(out("Tissues_Clusters.pdf"), w=8,h=length(unique(pDT$tissue)) * 1+1)
 
 
-# CLUSTERS and cell type MARKERS ----------------------------------------------------
+# CLUSTERS ----------------------------------------------------
 # UMAP
 ggplot(ann, aes(x=UMAP1, y=UMAP2)) + 
   theme_bw(12) +
@@ -151,9 +193,12 @@ plot_cells(monocle.obj,
            color_cells_by="cluster")
 ggsave(out("Clusters_UMAP.points.jpg"), w=5,h=5)
 
+
+# Cell type MARKERS  ------------------------------------------------------
+
 # Markers
 plot_genes_by_group(monocle.obj, markers = marker.genes$Name, group_cells_by = "cluster") + scale_size_continuous(range=c(0,5))
-ggsave(out("Clusters_Markers.pdf"), w=6,h=8)
+ggsave(out("Markers_Clusters.pdf"), w=6,h=8)
 
 p <- plot_cells(monocle.obj,
            reduction_method="UMAP",
@@ -161,7 +206,13 @@ p <- plot_cells(monocle.obj,
            show_trajectory_graph=FALSE, 
            label_cell_groups=FALSE
            )
-ggsave(out("Clusters_Markers_UMAP.jpg"), w=30,h=30)
+ggsave(out("Markers_UMAP.jpg"), w=30,h=30)
+
+p <- plot_cells_umap_hex_NF(monocle.obj,genes = sort(marker.genes$Name))
+ggsave(out("Markers_UMAP_hex.pdf"), w=30,h=30, plot=p)
+
+p <- plot_cells_umap_hex_NF(monocle.obj,genes = sort(marker.genes$Name), scale=TRUE)
+ggsave(out("Markers_UMAP_hex_scale.pdf"), w=30,h=30, plot=p)
 
 
 # CELLTYPES SingleR -------------------------------------------------------
@@ -169,56 +220,22 @@ singleR.sum <- data.table()
 srx <- names(singleR.res)[1]
 for(srx in names(singleR.res)){
   print(srx)
-  #   x <- singleR.res[[srx]]
-  #   x[3:5]
-  #   x <- merge(
-  #     melt(x[,c("cell", grep("^score", colnames(x), value = TRUE)), with=F], id.vars = "cell"),
-  #     ann[,c("UMAP1", "UMAP2", "rn"),with=F],
-  #     by.x="cell", by.y="rn")
-  #   print(quantile(x[,median(value), by="variable"]$V1))
-  # }
-  
   singleR.resX <- singleR.res[[srx]]
-  #x[3:5]
-  pDT <- merge(
-    melt(singleR.resX[,c("cell", grep("^score", colnames(singleR.resX), value = TRUE)), with=F], id.vars = "cell"),
+  
+  # Predicted cells on UMAP
+  pDT.pc <- merge(
+    melt(singleR.resX[,c("cell", "pruned_labels"), with=F], id.vars = "cell"),
     ann[,c("UMAP1", "UMAP2", "rn", "Clusters"),with=F],
     by.x="cell", by.y="rn")
-  
-  # Violin plots
-  # ggplot(pDT, aes(x=variable, y=value)) + 
-  #   theme_bw(12) + 
-  #   geom_violin() + 
-  #   xRot()
-  # ggsave(out("SingleR_", srx, "_Violin.pdf"), w=12, h=7)
-  
-  # Clusters - Scores
-  # pDT2 <- pDT[,.(mean=mean(value)), by=c("Clusters", "variable")]
-  # pDT2[,scaleMean := scale(mean), by=c("Clusters")]
-  # for(mx in c("mean")){
-  #   pDT3 <- copy(pDT2)
-  #   #pDT3 <- hierarch.ordering(pDT3, toOrder = "Clusters", orderBy = "variable", value.var = mx)
-  #   pDT3 <- hierarch.ordering(pDT3, toOrder = "variable", orderBy = "Clusters", value.var = mx)
-  #   ggplot(pDT3, aes_string(x="Clusters", y="variable", fill=mx)) + 
-  #     theme_bw(12) +
-  #     geom_tile() +
-  #     xRot() +
-  #     scale_fill_gradient(low="white", high="blue")
-  #   ggsave(out("SingleR_", srx, "_Clusters_", mx, ".pdf"), 
-  #          h=length(unique(pDT3$variable)) * 0.3+1,
-  #          w=length(unique(pDT3$Clusters)) * 0.3+2
-  #          )
-  # }
-  
-  # UMAP
-  # n <- length(unique(pDT$variable))
-  # ggplot(pDT, aes(x=UMAP1, y=UMAP2)) + 
-  #   theme_bw(12) + 
-  #   stat_summary_hex(aes(z=value),fun=mean) +
-  #   scale_fill_gradient(low="white", high="blue") +
-  #   facet_wrap(~variable, ncol=5) +
-  #   theme_bw(12)
-  # ggsave(out("SingleR_", srx, ".pdf"), w=5*2+2, h=ceiling(n/5)*2+1, limitsize = FALSE)
+  pDT.pc <- pDT.pc[value %in% pDT.pc[,.N, by="value"][N > 10]$value]
+  p <- ggplot(pDT.pc, aes(x=UMAP1, y=UMAP2)) +
+    theme_bw(12) +
+    geom_hex(bins=100) + 
+    scale_fill_hexbin() +
+    facet_wrap(~value, ncol=5) +
+    theme_bw(12) +
+    ggtitle(srx)
+  ggsave(out("SingleR_", srx, "_UMAP_Predicted",".pdf"), w=5*3+2, h=ceiling(length(unique(pDT.pc$value))/5)*3+1, plot=p)
   
   # Clusters - Predictions
   pDT.ann <- merge(singleR.resX[,c("pruned_labels", "cell")],ann, by.x="cell", by.y="rn")
@@ -259,8 +276,9 @@ ggsave(out("SingleR_0_Clusters_", "PercPredicted", ".pdf"),
 if("cytoRes" %in% ls()){
   # Umap
   ggplot(ann, aes(x=UMAP1, y=UMAP2)) +
-    stat_summary_hex(aes(z=CytoTRACE),fun=mean) +
-    scale_fill_gradient2(low="blue", midpoint = 0.5, high="red") +
+    stat_summary_hex(aes(z=CytoTRACE),fun=mean, bins=100) +
+    #scale_fill_gradient2(low="blue", midpoint = 0.5, high="red") +
+    scale_fill_hexbin() +
     theme_bw(12) +
     ggtitle("CytoTRACE - (1: less diff; 0: more diff)")
   ggsave(out("CytoTRACE_UMAP.pdf"), w=5,h=4)
@@ -278,55 +296,56 @@ if("cytoRes" %in% ls()){
 
 
 # ANTIBODIES --------------------------------------------------------------
-abMT <- additional.info$CITESEQ2$`Antibody Capture`
-abMT <- SCRNA.TPXToLog(SCRNA.RawToTPX(abMT, scale.factor = 1e6))
-ann.c1 <- ann[sample == "CITESEQ2"]
-
-# UMAP
-res <- data.table()
-abx <- row.names(abMT)[1]
-for(abx in row.names(abMT)){
-  pDT <- copy(ann.c1)
-  pDT$Signal <- abMT[abx, gsub("_CITESEQ2", "", ann.c1$rn)]
-  pDT$Antibody <- abx
-  res <- rbind(res, pDT)
+if("CITESEQ2" %in% ann$sample){
+  abMT <- additional.info$CITESEQ2$`Antibody Capture`
+  abMT <- SCRNA.TPXToLog(SCRNA.RawToTPX(abMT, scale.factor = 1e6))
+  ann.c1 <- ann[sample == "CITESEQ2"]
+  
+  # UMAP
+  res <- data.table()
+  abx <- row.names(abMT)[1]
+  for(abx in row.names(abMT)){
+    pDT <- copy(ann.c1)
+    pDT$Signal <- abMT[abx, gsub("_CITESEQ2", "", ann.c1$rn)]
+    pDT$Antibody <- abx
+    res <- rbind(res, pDT)
+  }
+  res[,Signal.norm := scale(Signal), by="Antibody"]
+  ggplot(res, aes(x=UMAP1, y=UMAP2)) +
+    stat_summary_hex(bins = 100, aes(z=Signal.norm),fun=mean) +
+    scale_fill_gradient2(low="blue", high="red") +
+    facet_wrap(~Antibody) +
+    theme_bw(12)
+  ggsave(out("Antibodies_UMAP.pdf"), w=12+2, h=9+1)
+  
+  # Correlations
+  cMT <- corS(t(as.matrix(abMT)), use="pairwise.complete.obs")
+  diag(cMT) <- NA
+  dist <- as.dist(1-cMT)
+  cleanDev(); pdf(out("Antibodies_Correlation.pdf"), w=5,h=4)
+  pheatmap(cMT,
+           clustering_distance_rows = dist,
+           clustering_distance_cols = dist,
+           breaks=seq(-1,1, 0.01), color=COLORS.HM.FUNC(200),
+  )
+  dev.off()
+  
+  # Percentile plots
+  probx=0.9
+  res[,percentile := quantile(Signal.norm, probs=probx, na.rm=TRUE), by="Antibody"]
+  resN <- res[, sum(Signal.norm > percentile), by=c("Clusters", "Antibody")]
+  resN[,clSize := sum(V1), by="Clusters"]
+  stopifnot(all(resN[, length(unique(clSize)), by="Clusters"]$V1 == 1))
+  resN[,percentage := V1/clSize*100]
+  resN <- hierarch.ordering(resN, toOrder = "Clusters", orderBy = "Antibody", value.var = "percentage")
+  resN <- hierarch.ordering(resN, toOrder = "Antibody", orderBy = "Clusters", value.var = "percentage")
+  resN[is.na(percentage), percentage := 0]
+  ggplot(resN, aes(x=Clusters, y=Antibody, fill=percentage)) +
+    geom_tile() +
+    ggtitle("Percent of cell in Clusters\nthat are above 90th percentile of antibody signal") +
+    scale_fill_gradient(low="white", high="blue")
+  ggsave(out("Antibodies_Percentile.pdf"), w=5, h=4)
 }
-res[,Signal.norm := scale(Signal), by="Antibody"]
-ggplot(res, aes(x=UMAP1, y=UMAP2)) + 
-  stat_summary_hex(bins = 100, aes(z=Signal.norm),fun=mean) +
-  scale_fill_gradient2(low="blue", high="red") +
-  facet_wrap(~Antibody) +
-  theme_bw(12)
-ggsave(out("Antibodies_UMAP.pdf"), w=12+2, h=9+1)
-
-# Correlations
-cMT <- corS(t(as.matrix(abMT)), use="pairwise.complete.obs")
-diag(cMT) <- NA
-dist <- as.dist(1-cMT)
-cleanDev(); pdf(out("Antibodies_Correlation.pdf"), w=5,h=4)
-pheatmap(cMT,
-         clustering_distance_rows = dist,
-         clustering_distance_cols = dist,
-         breaks=seq(-1,1, 0.01), color=COLORS.HM.FUNC(200),
-)
-dev.off()
-
-# Percentile plots
-probx=0.9
-res[,percentile := quantile(Signal.norm, probs=probx, na.rm=TRUE), by="Antibody"]
-resN <- res[, sum(Signal.norm > percentile), by=c("Clusters", "Antibody")]
-resN[,clSize := sum(V1), by="Clusters"]
-stopifnot(all(resN[, length(unique(clSize)), by="Clusters"]$V1 == 1))
-resN[,percentage := V1/clSize*100]
-resN <- hierarch.ordering(resN, toOrder = "Clusters", orderBy = "Antibody", value.var = "percentage")
-resN <- hierarch.ordering(resN, toOrder = "Antibody", orderBy = "Clusters", value.var = "percentage")
-resN[is.na(percentage), percentage := 0]
-ggplot(resN, aes(x=Clusters, y=Antibody, fill=percentage)) + 
-  geom_tile() + 
-  ggtitle("Percent of cell in Clusters\nthat are above 90th percentile of antibody signal") + 
-  scale_fill_gradient(low="white", high="blue")
-ggsave(out("Antibodies_Percentile.pdf"), w=5, h=4)
-
 
 
 # GUIDES ------------------------------------------------------
@@ -367,7 +386,7 @@ for(sx in unique(pDT1$sample)){
   pDT2 <- pDT1[sample == sx]
   for(gx in unique(pDT2[mixscape_class != "NTC"]$mixscape_class)){
     for(cx in unique(pDT2$Clusters)){
-      message(gx, "-", cx)
+      #message(gx, "-", cx)
       mx <- as.matrix(with(pDT2[mixscape_class %in% c(gx, "NTC")], table(Clusters == cx, mixscape_class == gx)))
       #print(mx)
       if(dim(mx) == c(2,2)){
@@ -410,7 +429,7 @@ obj.de <- obj.de[Matrix::rowSums(counts(obj.de)) > 20,]
 
 # Order by sample
 obj.de <- obj.de[,order(obj.de$sample)]
-ggplot(data.table(sample=obj.de$sample, i=1:ncol(obj.de)), aes(x=i, y=sample)) + geom_point()
+# ggplot(data.table(sample=obj.de$sample, i=1:ncol(obj.de)), aes(x=i, y=sample)) + geom_point()
 
 # prepare annotation for DE
 obj.de.ann <- data.frame(
@@ -427,6 +446,7 @@ obj.de.ann$GuideDE <- factor(obj.de.ann$GuideDE, levels=c("NTC", setdiff(unique(
 obj.de <- obj.de[, row.names(obj.de.ann)]
 stopifnot(row.names(obj.de.ann) == colnames(obj.de))
 str(obj.de.ann)
+write.tsv(data.table(obj.de.ann, keep.rownames = TRUE), out("DEG_Annnotation.tsv"))
 
 # Run nebula
 neb.file <- out("DEG_Results_nebula.RData")
@@ -434,28 +454,34 @@ if(file.exists(neb.file)){
   (load(neb.file))
 } else {
   # Model matrix
-  mm <- model.matrix(data=obj.de.ann, ~ GuideDE * tissueDE + ClusterDE)
-  x <- data.table(obj.de.ann)
-  for(i in 1:ncol(x)) x[[i]] <- as.character(x[[i]])
-  gx <- x[GuideDE != "NTC"]$GuideDE[1]
-  
-  # fix coefficients
-  for(gx in unique(obj.de.ann$GuideDE)){
-    tx <- unique(x[GuideDE == gx]$tissueDE)
-    if("in vitro" %in% tx){
-      # Rename the main guide effect to "in vitro
-      colnames(mm) <- gsub(paste0("^(","GuideDE",gx,")$"), "\\1_in vitro", colnames(mm))
-    } else{
-      # Remove current main guide effect (for in vitro)
-      mm <- mm[,-which(colnames(mm) == paste0("GuideDE",gx))]
-      # add main effects for leukemia and in vivo
-      if("leukemia" %in% tx) colnames(mm)[which(colnames(mm) == paste0("GuideDE", gx, ":", "tissueDE", "leukemia"))] <- paste0("GuideDE",gx,"_leukemia")
-      if("in vivo" %in% tx)  colnames(mm)[which(colnames(mm) == paste0("GuideDE", gx, ":", "tissueDE", "in vivo"))] <- paste0("GuideDE",gx,"_in vivo")
+  if(baseDir.add != "combined"){ # for the combined one we look at tissue differences
+    mm <- model.matrix(data=obj.de.ann, ~ GuideDE + ClusterDE)
+    colnames(mm) <- gsub("^(GuideDE.+)$", paste0("\\1_", baseDir.add), colnames(mm))
+  } else {
+    mm <- model.matrix(data=obj.de.ann, ~ GuideDE * tissueDE + ClusterDE)
+    x <- data.table(obj.de.ann)
+    for(i in 1:ncol(x)) x[[i]] <- as.character(x[[i]])
+    gx <- x[GuideDE != "NTC"]$GuideDE[1]
+    
+    # fix coefficients
+    for(gx in unique(obj.de.ann$GuideDE)){
+      tx <- unique(x[GuideDE == gx]$tissueDE)
+      if("in vitro" %in% tx){
+        # Rename the main guide effect to "in vitro
+        colnames(mm) <- gsub(paste0("^(","GuideDE",gx,")$"), "\\1_in vitro", colnames(mm))
+      } else{
+        # Remove current main guide effect (for in vitro)
+        mm <- mm[,-which(colnames(mm) == paste0("GuideDE",gx))]
+        # add main effects for leukemia and in vivo
+        if("leukemia" %in% tx) colnames(mm)[which(colnames(mm) == paste0("GuideDE", gx, ":", "tissueDE", "leukemia"))] <- paste0("GuideDE",gx,"_leukemia")
+        if("in vivo" %in% tx)  colnames(mm)[which(colnames(mm) == paste0("GuideDE", gx, ":", "tissueDE", "in vivo"))] <- paste0("GuideDE",gx,"_in vivo")
+      }
     }
   }
+  
   mm <- mm[,colSums(mm) != 0]
   x <- as.matrix(unique(data.table(mm)))
-  pheatmap(x[,sort(colnames(x))], cluster_cols = F)
+  #pheatmap(x[,sort(colnames(x))], cluster_cols = F)
   
   # run nebula
   nebRes <- nebula(
@@ -481,47 +507,6 @@ if(file.exists(neb.file)){
 }
 
 
-
-
-
-# # Monocle -----------------------------------------------------------------
-# obj.de <- monocle.obj
-# 
-# #obj.de <- obj.de[,!grepl("ECCITE7", obj.de$sample)]
-# 
-# # Keep only KO and NTCs
-# obj.de <- obj.de[,obj.de$mixscape_class.global %in% c("KO", "NTC")]
-# 
-# # Remove lowly expressed genes
-# obj.de <- obj.de[Matrix::rowSums(counts(obj.de)) > 20,]
-# 
-# # Add cluster column and remove clusters with less than 30 cells
-# obj.de$ClusterDE <- as.character(obj.de@clusters$UMAP$clusters[row.names(colData(obj.de))])
-# table(obj.de$ClusterDE)
-# obj.de <- obj.de[,obj.de$ClusterDE %in% names(which(table(obj.de$ClusterDE) > 30))]
-# table(obj.de$ClusterDE)
-# 
-# # Add guides
-# obj.de$GuideDE <- gsub("_.+$", "", obj.de$guide)
-# obj.de$GuideDE <- factor(obj.de$GuideDE, levels=c("NTC", setdiff(unique(obj.de$GuideDE), "NTC")))
-# stopifnot(all(colnames(obj.de) == row.names(colData(obj.de))))
-# 
-# # Add tissue
-# obj.de$tissueDE <- factor(ann[match(colnames(obj.de), rn)]$tissue, levels=c("in vitro", "leukemia", "in vivo"))
-# 
-# 
-# #  . Fit model -------------------------------------------------------------
-# de.file <- out("DEG_Results.RData")
-# if(file.exists(de.file)){
-#   (load(de.file))
-# } else {
-#   x <- fit_models(obj.de, model_formula_str = "~GuideDE * tissueDE + ClusterDE", verbose=TRUE, cores=10)
-#   res <- data.table(coefficient_table(x), keep.rownames = TRUE)
-#   res <- res[,-c("model", "model_summary", "rn", "gene_short_name", "model_component"),with=F]
-#   save(res, file=de.file)
-# }
-
-
 #  . Export results -------------------------------------------------------
 resGuides <- res[grepl("GuideDE", term)][convergence >= -15]
 table(res$convergence)
@@ -536,48 +521,25 @@ resGuides[, estimate_raw := estimate]
 resGuides[, estimate := ifelse(p_value > 0.9, 0, estimate)]
 write.tsv(resGuides[q_value < 1][,-"term",with=F], file=out("DEG_Results.tsv"))
 
+#  . Vulcano / p-val distribution -----------------------------------------
+ggplot(resGuides, aes(x=estimate, y=-log10(p_value))) + 
+  theme_bw(12) +
+  geom_hex(bins=100) +
+  facet_wrap(~gsub("_", "\n", gsub("\\:tissueDE", "\nInteraction: ", term)), scales = "free", ncol = 5)
+ggsave(out("DEG_Vulcano.pdf"), w=15,h=15)
 
-# #  . Check approach by fitting model only in leukemia -------------------------------------------
-# obj.de.L <- obj.de[unique(resGuides$gene_id),obj.de$tissueDE == "leukemia"]
-# de.file.L <- out("DEG_Results_LeukemiaOnly.RData")
-# if(file.exists(de.file.L)){
-#   load(de.file.L)
-# } else {
-#   x <- fit_models(obj.de.L, model_formula_str = "~GuideDE + ClusterDE", verbose=TRUE, cores=10)
-#   resL <- data.table(coefficient_table(x), keep.rownames = TRUE)
-#   resL <- resL[,-c("model", "model_summary", "rn", "gene_short_name", "model_component"),with=F]
-#   save(resL, file=de.file.L)
-# }
-# 
-# x <- resGuides[q_value < 0.05][!is.na(tissue.ie)][tissue.ie == "leukemia"]
-# i <- 1
-# check.ie <- data.table()
-# for(i in 1:nrow(x)){
-#   genex <- x[i]$gene_id
-#   guidex <- x[i]$guide
-#   tissuex <- x[i]$tissue.ie
-#   
-#   resL[grepl("GuideDE", term)][gene_id == genex][grepl(guidex, term)]$estimate
-#   
-#   resGuides[gene_id == genex][guide == guidex][tissue.ie == tissuex]$estimate
-#   resGuides[gene_id == genex][guide == guidex][is.na(tissue.ie)]$estimate
-#   
-#   check.ie <- rbind(check.ie, 
-#                data.table(
-#                  gene=genex, guide=guidex, tissue=tissuex,
-#                  estimate.tissue=resL[grepl("GuideDE", term)][gene_id == genex][grepl(guidex, term)]$estimate,
-#                  estimate.vitro=resGuides[gene_id == genex][guide == guidex][is.na(tissue.ie)]$estimate,
-#                  estimate.ie=resGuides[gene_id == genex][guide == guidex][tissue.ie == tissuex]$estimate
-#                  ))
-# }
-# check.ie[, estimate.tissue.calc := estimate.vitro + estimate.ie]
-# ggplot(check.ie, aes(x=estimate.tissue.calc, y=estimate.tissue, color=guide, shape=tissue)) +
-#   theme_bw(12) +
-#   geom_point()
-# ggsave(out("DEG_CheckingInteractionEffects.pdf"), w=6,h=5)
-# 
-# with(ann[mixscape_class.global == "KO"], table(guide, tissue))
+ggplot(resGuides, aes(x=p_value)) + 
+  theme_bw(12) +
+  geom_histogram() +
+  facet_wrap(~gsub("_", "\n", gsub("\\:tissueDE", "\nInteraction: ", term)), scales = "free", ncol = 5)
+ggsave(out("DEG_PVal_histogram.pdf"), w=15,h=15)
 
+
+
+
+if(length(unique(resGuides$term)) < 2){
+  stop("Not proceeding as only one or no gene produced DEG results. Guides: ", paste(unique(resGuides$term), collapse=";"))
+}
 
 #  . Plot top genes -------------------------------------------------------
 # Estimate and P-value
@@ -593,48 +555,6 @@ ggplot(pDT, aes(x=guide, y=gene_id, size=pmin(5, -log10(q_value)), color=sign(es
   geom_point() +
   xRot()
 ggsave(out("DEG_examples.pdf"), w=10,h=30)
-
-# # Dotplots
-# ll <- with(resGuides[q_value < 0.05][order(-abs(estimate))][,head(.SD,n=10), by="term"], split(gene_id, paste(guide, tissue.ie)))
-# lx <- "Chd4"
-# for(lx in names(ll)){
-#   pDT <- DotPlotData(obj.de, markers=ll[[lx]], cols=c("GuideDE", "ClusterDE", "sample"))
-#   #pDT[GuideDE == lx & Gene == "Fyb2"]
-#   #0.075 * 40
-#   ggplot(pDT, aes(x=ClusterDE, y=sample, color=mean, size=percentage)) +
-#     theme_bw(12) +
-#     geom_point() +
-#     scale_size_continuous(range=c(0,5)) +
-#     scale_color_gradient(low="black", high="red") +
-#     facet_grid(Gene ~ GuideDE) +
-#     xRot() +
-#     ggtitle(lx)
-#   ggsave(out("DEG_examples_Dotplot_",lx,".pdf"), w=30,h=length(unique(pDT$Gene)) * length(unique(pDT$sample)) * 0.15 + 1)
-# }
-# 
-# # Checking one specific gene
-# colData(obj.de)$GroupDE <- paste(colData(obj.de)$GuideDE, colData(obj.de)$sample, colData(obj.de)$ClusterDE)
-# samples.ko <- ann[grepl("Chd4", guide) & mixscape_class.global != "NP"]$rn
-# samples.NTC <- ann[mixscape_class.global == "NTC"]$rn
-# plot_genes_violin(cds_subset = obj.de["Fyb2",c(samples.ko, samples.NTC)], group_cells_by = "GroupDE", normalize = TRUE, log_scale = FALSE, pseudocount = 0) + xRot()
-# ggsave(out("DEG_Fyb2.pdf"), w=12,h=4)
-# # counts(obj.de["Fyb2", ann[sample == "ECCITE4_Cas9" & grepl("Chd4", guide) & mixscape_class.global != "NP" & Clusters == 2]$rn])
-# # pDT[GuideDE == lx & Gene == "Fyb2"]
-
-
-#  . Vulcano / p-val distribution -----------------------------------------
-ggplot(resGuides, aes(x=estimate, y=-log10(p_value))) + 
-  theme_bw(12) +
-  geom_hex(bins=100) +
-  facet_wrap(~gsub("_", "\n", gsub("\\:tissueDE", "\nInteraction: ", term)), scales = "free", ncol = 5)
-ggsave(out("DEG_Vulcano.pdf"), w=15,h=15)
-
-ggplot(resGuides, aes(x=p_value)) + 
-  theme_bw(12) +
-  geom_histogram() +
-  facet_wrap(~gsub("_", "\n", gsub("\\:tissueDE", "\nInteraction: ", term)), scales = "free", ncol = 5)
-ggsave(out("DEG_PVal_histogram.pdf"), w=15,h=15)
-
 
 # LogFC MATRIX ------------------------------------------------------------
 resGuides.I <- merge(resGuides[interaction==TRUE], resGuides[interaction==FALSE & tissue == "in vitro", c("guide", "estimate", "gene_id")], by=c("guide", "gene_id"), all.x=TRUE, allow.cartesian=FALSE)
@@ -663,112 +583,124 @@ dev.off()
 
 
 # UMAP of DEG -----------------------------------------
-
-set.seed(1212)
-umap.res <- umap(umapMT)
-umap <- data.table(umap.res$layout, keep.rownames = TRUE)
-umap <- setNames(umap, c("Gene", "UMAP1", "UMAP2"))
-ggplot(umap, aes(x=UMAP1, y=UMAP2)) + geom_hex(bins=100) + theme_bw(12)
-ggsave(out("RegulatoryMap_UMAP.pdf"), w=6,h=5)
-
-# Cluster
-set.seed(1212)
-idx <- umap.res$knn$indexes
-g <- do.call(rbind, apply(idx[, 2:ncol(idx)], 2, function(col){data.table(row.names(idx)[col], row.names(idx)[idx[,1]])}))
-(g <- graph.edgelist(as.matrix(g),directed=FALSE))
-set.seed(1234)
-cl <- cluster_walktrap(g)
-clx <- setNames(cl$membership, V(g)$name)
-umap$Cluster <- clx[umap$Gene]
-
-ggplot(umap, aes(x=UMAP1, y=UMAP2, color=factor(Cluster))) + 
-  geom_point() + 
-  theme_bw(12) +
-  geom_label(data=umap[, .(UMAP1=median(UMAP1), UMAP2=median(UMAP2)), by="Cluster"], aes(label=Cluster))
-ggsave(out("RegulatoryMap_UMAP_Clusters.pdf"), w=6,h=5)
-
-# Export annotation
-write.tsv(umap, out("RegulatoryMap_UMAP.tsv"))
-
-# Plot estimates on UMAP
-pUMAP.de <- merge(umap, setNames(melt(data.table(umapMT, keep.rownames = TRUE), id.vars = "rn"), c("gene_id", "term", "estimate")), by.x="Gene", by.y="gene_id")
-summary.function <- function(x){ret <- mean(x);return(min(5, abs(ret)) * sign(ret))}
-dim.umap1 <- floor(max(abs(pUMAP.de$UMAP1))) + 0.5
-dim.umap2 <- floor(max(abs(pUMAP.de$UMAP2))) + 0.5
-pUMAP.de[, guide := gsub(" .+", "", term)]
-pUMAP.de[, tissue := gsub(".+? ", "", term)]
-tn <- length(unique(pUMAP.de$guide))
-ggplot(pUMAP.de, aes(x=UMAP1, y=UMAP2)) +
-  stat_summary_hex(
-    aes(z=estimate),
-    fun=summary.function) +
-  scale_fill_gradient2(high="#e31a1c",mid="#ffffff", low="#1f78b4") +
-  facet_grid(guide~tissue) + theme_bw(12) +
-  xlab("UMAP dimension 1") + ylab("UMAP dimension 2") +
-  xlim(-dim.umap1,dim.umap1) + ylim(-dim.umap2,dim.umap2)
-ggsave(out("RegulatoryMap_UMAP_Values.pdf"), w=2*3+2,h=tn * 2 + 1)
-
-# values by cluster
-pDT <- pUMAP.de[, mean(estimate), by=c("Cluster", "term")]
-pDT <- hierarch.ordering(pDT, toOrder = "Cluster", orderBy = "term", value.var = "V1")
-pDT <- hierarch.ordering(pDT, orderBy = "Cluster", toOrder = "term", value.var = "V1")
-ggplot(pDT, aes(x=factor(Cluster), y=term, fill=V1)) + 
-  theme_bw(12) + 
-  geom_tile() +
-  scale_fill_gradient2(high="#e31a1c",mid="#ffffff", low="#1f78b4") +
-  xlab("Gene modules (Gene-UMAP Clusters)")
-ggsave(out("RegulatoryMap_Clusters_Values.pdf"), w=10,h=tn * 0.2 + 1)
-
-
-# CF targets on UMAP
-# umap <- fread(out("RegulatoryMap_UMAP.tsv"))
-pDT <- data.table()
-for(cf in names(chip.targets)){
-  x <- copy(umap)
-  x[,Target := Gene %in% chip.targets[[cf]] + 0]
-  x$CF <- cf
-  pDT <- rbind(pDT, x)
+for(umap.type in c("all", "top")){
+  
+  umap.type.name <- paste0(umap.type, ".genes")
+  
+  set.seed(1212)
+  umap.file <- out("RegulatoryMap_UMAP_",umap.type.name,".tsv")
+  if(file.exists(umap.file)){
+    umap <- fread(umap.file)
+  } else {
+    gg <- if(umap.type == "top") unique(resGuides[q_value < 0.05 & abs(estimate) > 1]$gene_id) else row.names(umapMT)
+    umap.res <- umap(umapMT[gg,])
+    umap <- data.table(umap.res$layout, keep.rownames = TRUE)
+    umap <- setNames(umap, c("Gene", "UMAP1", "UMAP2"))
+    ggplot(umap, aes(x=UMAP1, y=UMAP2)) + geom_hex(bins=100) + theme_bw(12)
+    ggsave(out("RegulatoryMap_UMAP_",umap.type.name,".pdf"), w=6,h=5)
+    
+    # Cluster
+    set.seed(1212)
+    idx <- umap.res$knn$indexes
+    g <- do.call(rbind, apply(idx[, 2:ncol(idx)], 2, function(col){data.table(row.names(idx)[col], row.names(idx)[idx[,1]])}))
+    (g <- graph.edgelist(as.matrix(g),directed=FALSE))
+    set.seed(1234)
+    cl <- cluster_walktrap(g)
+    clx <- setNames(cl$membership, V(g)$name)
+    umap$Cluster <- clx[umap$Gene]
+    
+    ggplot(umap, aes(x=UMAP1, y=UMAP2, color=factor(Cluster))) + 
+      geom_point() + 
+      theme_bw(12) +
+      geom_label(data=umap[, .(UMAP1=median(UMAP1), UMAP2=median(UMAP2)), by="Cluster"], aes(label=Cluster))
+    ggsave(out("RegulatoryMap_UMAP_",umap.type.name,"_Clusters.pdf"), w=6,h=5)
+    
+    # Export annotation
+    write.tsv(umap, umap.file)
+  }
+  
+  
+  # Plot estimates on UMAP
+  pUMAP.de <- merge(umap, setNames(melt(data.table(umapMT, keep.rownames = TRUE), id.vars = "rn"), c("gene_id", "term", "estimate")), by.x="Gene", by.y="gene_id")
+  summary.function <- function(x){ret <- mean(x);return(min(5, abs(ret)) * sign(ret))}
+  dim.umap1 <- floor(max(abs(pUMAP.de$UMAP1))) + 0.5
+  dim.umap2 <- floor(max(abs(pUMAP.de$UMAP2))) + 0.5
+  pUMAP.de[, guide := gsub(" .+", "", term)]
+  pUMAP.de[, tissue := gsub(".+? ", "", term)]
+  tn <- length(unique(pUMAP.de$guide))
+  ggplot(pUMAP.de, aes(x=UMAP1, y=UMAP2)) +
+    stat_summary_hex(
+      aes(z=estimate),
+      fun=summary.function) +
+    scale_fill_gradient2(high="#e31a1c",mid="#ffffff", low="#1f78b4") +
+    facet_grid(guide~tissue) + theme_bw(12) +
+    xlab("UMAP dimension 1") + ylab("UMAP dimension 2") +
+    xlim(-dim.umap1,dim.umap1) + ylim(-dim.umap2,dim.umap2)
+  ggsave(out("RegulatoryMap_UMAP_",umap.type.name,"_Values.pdf"), w=2*3+2,h=tn * 2 + 1)
+  
+  # values by cluster
+  pDT <- pUMAP.de[, mean(estimate), by=c("Cluster", "term")]
+  pDT <- hierarch.ordering(pDT, toOrder = "Cluster", orderBy = "term", value.var = "V1")
+  pDT <- hierarch.ordering(pDT, orderBy = "Cluster", toOrder = "term", value.var = "V1")
+  ggplot(pDT, aes(x=factor(Cluster), y=term, fill=V1)) + 
+    theme_bw(12) + 
+    geom_tile() +
+    scale_fill_gradient2(high="#e31a1c",mid="#ffffff", low="#1f78b4") +
+    xlab("Gene modules (Gene-UMAP Clusters)")
+  ggsave(out("RegulatoryMap_UMAP_",umap.type.name,"_ClusterValues.pdf"), w=10,h=tn * 0.2 + 1)
+  
+  
+  # CF targets on UMAP
+  # umap <- fread(out("RegulatoryMap_UMAP.tsv"))
+  pDT <- data.table()
+  for(cf in names(chip.targets)){
+    x <- copy(umap)
+    x[,Target := Gene %in% chip.targets[[cf]] + 0]
+    x$CF <- cf
+    pDT <- rbind(pDT, x)
+  }
+  pDT[, tissue := gsub("_.+$", "", CF)] 
+  pDT[, factor := gsub("^.+?_", "", CF)]
+  # dimensions for umap
+  dim.umap1 <- floor(max(abs(pDT$UMAP1))) + 0.5
+  dim.umap2 <- floor(max(abs(pDT$UMAP2))) + 0.5
+  # UMAP percentage
+  hex.percent <- function(x){sum(x)/length(x) * 100}
+  ggplot(pDT, aes(x=UMAP1, y=UMAP2)) +
+    stat_summary_hex(
+      aes(z=Target),
+      fun=hex.percent) +
+    scale_fill_gradient(high="#e31a1c", low="#ffffff") +
+    facet_grid(factor~tissue) + theme_bw(12) +
+    xlab("UMAP dimension 1") + ylab("UMAP dimension 2") +
+    xlim(-dim.umap1,dim.umap1) + ylim(-dim.umap2,dim.umap2)
+  ggsave(out("RegulatoryMap_UMAP_",umap.type.name,"_CFtargets.pdf"), 
+         w=length(unique(pDT$tissue))*1+2,
+         h=length(unique(pDT$factor))*1+1)
+  
+  # UMAP normalized
+  df <- pDT[CF == pDT$CF[1]]
+  makeHexData <- function(df) {
+    h <- hexbin::hexbin(df$UMAP1, df$UMAP2, IDs = TRUE)
+    ret <- data.frame(hexbin::hcell2xy(h),
+                      percent = tapply(df$Target, h@cID, FUN = function(z) sum(z)/length(z)*100),
+                      cid = h@cell)
+    ret <- mutate(ret, norm = percent / max(ret$percent))
+    ret
+  }
+  pDT.hex <- do.call(rbind, lapply(unique(pDT$CF), function(cfx){
+    data.table(makeHexData(pDT[CF == cfx]), CF=cfx)
+  }))
+  pDT.hex[, tissue := gsub("_.+$", "", CF)] 
+  pDT.hex[, factor := gsub("^.+?_", "", CF)]
+  ggplot(pDT.hex) +
+    geom_hex(aes(x = x, y = y, fill = norm), stat = "identity") +
+    scale_fill_gradient(high="#e31a1c", low="#ffffff") +
+    facet_grid(factor~tissue) + theme_bw(12) +
+    xlab("UMAP dimension 1") + ylab("UMAP dimension 2") +
+    xlim(-dim.umap1,dim.umap1) + ylim(-dim.umap2,dim.umap2)
+  ggsave(out("RegulatoryMap_UMAP_",umap.type.name,"_CFtargets_normalized.pdf"), 
+         w=length(unique(pDT.hex$tissue))*1+2,
+         h=length(unique(pDT.hex$factor))*1+1)
 }
-pDT[, tissue := gsub("_.+$", "", CF)] 
-pDT[, factor := gsub("^.+?_", "", CF)]
-# dimensions for umap
-dim.umap1 <- floor(max(abs(pDT$UMAP1))) + 0.5
-dim.umap2 <- floor(max(abs(pDT$UMAP2))) + 0.5
-# UMAP percentage
-hex.percent <- function(x){sum(x)/length(x) * 100}
-ggplot(pDT, aes(x=UMAP1, y=UMAP2)) +
-  stat_summary_hex(
-    aes(z=Target),
-    fun=hex.percent) +
-  scale_fill_gradient(high="#e31a1c", low="#ffffff") +
-  facet_grid(factor~tissue) + theme_bw(12) +
-  xlab("UMAP dimension 1") + ylab("UMAP dimension 2") +
-  xlim(-dim.umap1,dim.umap1) + ylim(-dim.umap2,dim.umap2)
-ggsave(out("RegulatoryMap_UMAP_CFtargets.pdf"), 
-       w=length(unique(pDT$tissue))*1+2,
-       h=length(unique(pDT$factor))*1+1)
 
-# UMAP normalized
-df <- pDT[CF == pDT$CF[1]]
-makeHexData <- function(df) {
-  h <- hexbin::hexbin(df$UMAP1, df$UMAP2, IDs = TRUE)
-  ret <- data.frame(hexbin::hcell2xy(h),
-             percent = tapply(df$Target, h@cID, FUN = function(z) sum(z)/length(z)*100),
-             cid = h@cell)
-  ret <- mutate(ret, norm = percent / max(ret$percent))
-  ret
-}
-pDT.hex <- do.call(rbind, lapply(unique(pDT$CF), function(cfx){
-  data.table(makeHexData(pDT[CF == cfx]), CF=cfx)
-}))
-pDT.hex[, tissue := gsub("_.+$", "", CF)] 
-pDT.hex[, factor := gsub("^.+?_", "", CF)]
-ggplot(pDT.hex) +
-  geom_hex(aes(x = x, y = y, fill = norm), stat = "identity") +
-  scale_fill_gradient(high="#e31a1c", low="#ffffff") +
-  facet_grid(factor~tissue) + theme_bw(12) +
-  xlab("UMAP dimension 1") + ylab("UMAP dimension 2") +
-  xlim(-dim.umap1,dim.umap1) + ylim(-dim.umap2,dim.umap2)
-ggsave(out("RegulatoryMap_UMAP_CFtargets_normalized.pdf"), 
-       w=length(unique(pDT.hex$tissue))*1+2,
-       h=length(unique(pDT.hex$factor))*1+1)

@@ -1,0 +1,560 @@
+in vivo
+[1] "Setting GFS PATH"
+[1] "Setting DATA and others paths"
+Loading required package: data.table
+Loading required package: ggplot2
+Loading required package: pheatmap
+Loading required package: hdf5r
+Loading required package: dplyr
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:data.table’:
+
+    between, first, last
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+Loading required package: tidyr
+Loading required package: Seurat
+Attaching SeuratObject
+Loading required package: monocle3
+Loading required package: Biobase
+Loading required package: BiocGenerics
+Loading required package: parallel
+
+Attaching package: ‘BiocGenerics’
+
+The following objects are masked from ‘package:parallel’:
+
+    clusterApply, clusterApplyLB, clusterCall, clusterEvalQ,
+    clusterExport, clusterMap, parApply, parCapply, parLapply,
+    parLapplyLB, parRapply, parSapply, parSapplyLB
+
+The following objects are masked from ‘package:dplyr’:
+
+    combine, intersect, setdiff, union
+
+The following objects are masked from ‘package:stats’:
+
+    IQR, mad, sd, var, xtabs
+
+The following objects are masked from ‘package:base’:
+
+    anyDuplicated, append, as.data.frame, basename, cbind, colnames,
+    dirname, do.call, duplicated, eval, evalq, Filter, Find, get, grep,
+    grepl, intersect, is.unsorted, lapply, Map, mapply, match, mget,
+    order, paste, pmax, pmax.int, pmin, pmin.int, Position, rank,
+    rbind, Reduce, rownames, sapply, setdiff, sort, table, tapply,
+    union, unique, unsplit, which.max, which.min
+
+Welcome to Bioconductor
+
+    Vignettes contain introductory material; view with
+    'browseVignettes()'. To cite Bioconductor, see
+    'citation("Biobase")', and for packages 'citation("pkgname")'.
+
+Loading required package: SingleCellExperiment
+Loading required package: SummarizedExperiment
+Loading required package: MatrixGenerics
+Loading required package: matrixStats
+
+Attaching package: ‘matrixStats’
+
+The following objects are masked from ‘package:Biobase’:
+
+    anyMissing, rowMedians
+
+The following object is masked from ‘package:dplyr’:
+
+    count
+
+
+Attaching package: ‘MatrixGenerics’
+
+The following objects are masked from ‘package:matrixStats’:
+
+    colAlls, colAnyNAs, colAnys, colAvgsPerRowSet, colCollapse,
+    colCounts, colCummaxs, colCummins, colCumprods, colCumsums,
+    colDiffs, colIQRDiffs, colIQRs, colLogSumExps, colMadDiffs,
+    colMads, colMaxs, colMeans2, colMedians, colMins, colOrderStats,
+    colProds, colQuantiles, colRanges, colRanks, colSdDiffs, colSds,
+    colSums2, colTabulates, colVarDiffs, colVars, colWeightedMads,
+    colWeightedMeans, colWeightedMedians, colWeightedSds,
+    colWeightedVars, rowAlls, rowAnyNAs, rowAnys, rowAvgsPerColSet,
+    rowCollapse, rowCounts, rowCummaxs, rowCummins, rowCumprods,
+    rowCumsums, rowDiffs, rowIQRDiffs, rowIQRs, rowLogSumExps,
+    rowMadDiffs, rowMads, rowMaxs, rowMeans2, rowMedians, rowMins,
+    rowOrderStats, rowProds, rowQuantiles, rowRanges, rowRanks,
+    rowSdDiffs, rowSds, rowSums2, rowTabulates, rowVarDiffs, rowVars,
+    rowWeightedMads, rowWeightedMeans, rowWeightedMedians,
+    rowWeightedSds, rowWeightedVars
+
+The following object is masked from ‘package:Biobase’:
+
+    rowMedians
+
+Loading required package: GenomicRanges
+Loading required package: stats4
+Loading required package: S4Vectors
+
+Attaching package: ‘S4Vectors’
+
+The following object is masked from ‘package:tidyr’:
+
+    expand
+
+The following objects are masked from ‘package:dplyr’:
+
+    first, rename
+
+The following object is masked from ‘package:hdf5r’:
+
+    values
+
+The following objects are masked from ‘package:data.table’:
+
+    first, second
+
+The following object is masked from ‘package:base’:
+
+    expand.grid
+
+Loading required package: IRanges
+
+Attaching package: ‘IRanges’
+
+The following objects are masked from ‘package:dplyr’:
+
+    collapse, desc, slice
+
+The following object is masked from ‘package:data.table’:
+
+    shift
+
+Loading required package: GenomeInfoDb
+
+Attaching package: ‘SummarizedExperiment’
+
+The following object is masked from ‘package:SeuratObject’:
+
+    Assays
+
+The following object is masked from ‘package:Seurat’:
+
+    Assays
+
+
+Attaching package: ‘monocle3’
+
+The following objects are masked from ‘package:Biobase’:
+
+    exprs, fData, fData<-, pData, pData<-
+
+Loading required package: mixtools
+mixtools package, version 1.2.0, Released 2020-02-05
+This package is based upon work supported by the National Science Foundation under Grant No. SES-0518772.
+
+Loading required package: Matrix
+
+Attaching package: ‘Matrix’
+
+The following object is masked from ‘package:S4Vectors’:
+
+    expand
+
+The following objects are masked from ‘package:tidyr’:
+
+    expand, pack, unpack
+
+Loading required package: rhdf5
+
+Attaching package: ‘rhdf5’
+
+The following object is masked from ‘package:hdf5r’:
+
+    h5version
+
+Warning messages:
+1: package ‘hdf5r’ was built under R version 4.0.3 
+2: package ‘mixtools’ was built under R version 4.0.3 
+Loading required package: umap
+Loading required package: igraph
+
+Attaching package: ‘igraph’
+
+The following object is masked from ‘package:monocle3’:
+
+    clusters
+
+The following object is masked from ‘package:GenomicRanges’:
+
+    union
+
+The following object is masked from ‘package:IRanges’:
+
+    union
+
+The following object is masked from ‘package:S4Vectors’:
+
+    union
+
+The following objects are masked from ‘package:BiocGenerics’:
+
+    normalize, path, union
+
+The following object is masked from ‘package:tidyr’:
+
+    crossing
+
+The following objects are masked from ‘package:dplyr’:
+
+    as_data_frame, groups, union
+
+The following objects are masked from ‘package:stats’:
+
+    decompose, spectrum
+
+The following object is masked from ‘package:base’:
+
+    union
+
+Loading required package: nebula
+Setting output directory: /media/AGFORTELNY/PROJECTS/TfCf/Analysis//FULLINT_10_01_BasicAnalysis_in.vivo//
+[1] "monocle.obj"     "additional.info" "AGG.CSV"        
+
+Execution halted
+in vitro
+[1] "Setting GFS PATH"
+[1] "Setting DATA and others paths"
+Loading required package: data.table
+Loading required package: ggplot2
+Loading required package: pheatmap
+Loading required package: hdf5r
+Loading required package: dplyr
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:data.table’:
+
+    between, first, last
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+Loading required package: tidyr
+Loading required package: Seurat
+Attaching SeuratObject
+Loading required package: monocle3
+Loading required package: Biobase
+Loading required package: BiocGenerics
+Loading required package: parallel
+
+Attaching package: ‘BiocGenerics’
+
+The following objects are masked from ‘package:parallel’:
+
+    clusterApply, clusterApplyLB, clusterCall, clusterEvalQ,
+    clusterExport, clusterMap, parApply, parCapply, parLapply,
+    parLapplyLB, parRapply, parSapply, parSapplyLB
+
+The following objects are masked from ‘package:dplyr’:
+
+    combine, intersect, setdiff, union
+
+The following objects are masked from ‘package:stats’:
+
+    IQR, mad, sd, var, xtabs
+
+The following objects are masked from ‘package:base’:
+
+    anyDuplicated, append, as.data.frame, basename, cbind, colnames,
+    dirname, do.call, duplicated, eval, evalq, Filter, Find, get, grep,
+    grepl, intersect, is.unsorted, lapply, Map, mapply, match, mget,
+    order, paste, pmax, pmax.int, pmin, pmin.int, Position, rank,
+    rbind, Reduce, rownames, sapply, setdiff, sort, table, tapply,
+    union, unique, unsplit, which.max, which.min
+
+Welcome to Bioconductor
+
+    Vignettes contain introductory material; view with
+    'browseVignettes()'. To cite Bioconductor, see
+    'citation("Biobase")', and for packages 'citation("pkgname")'.
+
+Loading required package: SingleCellExperiment
+Loading required package: SummarizedExperiment
+Loading required package: MatrixGenerics
+Loading required package: matrixStats
+
+Attaching package: ‘matrixStats’
+
+The following objects are masked from ‘package:Biobase’:
+
+    anyMissing, rowMedians
+
+The following object is masked from ‘package:dplyr’:
+
+    count
+
+
+Attaching package: ‘MatrixGenerics’
+
+The following objects are masked from ‘package:matrixStats’:
+
+    colAlls, colAnyNAs, colAnys, colAvgsPerRowSet, colCollapse,
+    colCounts, colCummaxs, colCummins, colCumprods, colCumsums,
+    colDiffs, colIQRDiffs, colIQRs, colLogSumExps, colMadDiffs,
+    colMads, colMaxs, colMeans2, colMedians, colMins, colOrderStats,
+    colProds, colQuantiles, colRanges, colRanks, colSdDiffs, colSds,
+    colSums2, colTabulates, colVarDiffs, colVars, colWeightedMads,
+    colWeightedMeans, colWeightedMedians, colWeightedSds,
+    colWeightedVars, rowAlls, rowAnyNAs, rowAnys, rowAvgsPerColSet,
+    rowCollapse, rowCounts, rowCummaxs, rowCummins, rowCumprods,
+    rowCumsums, rowDiffs, rowIQRDiffs, rowIQRs, rowLogSumExps,
+    rowMadDiffs, rowMads, rowMaxs, rowMeans2, rowMedians, rowMins,
+    rowOrderStats, rowProds, rowQuantiles, rowRanges, rowRanks,
+    rowSdDiffs, rowSds, rowSums2, rowTabulates, rowVarDiffs, rowVars,
+    rowWeightedMads, rowWeightedMeans, rowWeightedMedians,
+    rowWeightedSds, rowWeightedVars
+
+The following object is masked from ‘package:Biobase’:
+
+    rowMedians
+
+Loading required package: GenomicRanges
+Loading required package: stats4
+Loading required package: S4Vectors
+
+Attaching package: ‘S4Vectors’
+
+The following object is masked from ‘package:tidyr’:
+
+    expand
+
+The following objects are masked from ‘package:dplyr’:
+
+    first, rename
+
+The following object is masked from ‘package:hdf5r’:
+
+    values
+
+The following objects are masked from ‘package:data.table’:
+
+    first, second
+
+The following object is masked from ‘package:base’:
+
+    expand.grid
+
+Loading required package: IRanges
+
+Attaching package: ‘IRanges’
+
+The following objects are masked from ‘package:dplyr’:
+
+    collapse, desc, slice
+
+The following object is masked from ‘package:data.table’:
+
+    shift
+
+Loading required package: GenomeInfoDb
+
+Attaching package: ‘SummarizedExperiment’
+
+The following object is masked from ‘package:SeuratObject’:
+
+    Assays
+
+The following object is masked from ‘package:Seurat’:
+
+    Assays
+
+
+Attaching package: ‘monocle3’
+
+The following objects are masked from ‘package:Biobase’:
+
+    exprs, fData, fData<-, pData, pData<-
+
+Loading required package: mixtools
+mixtools package, version 1.2.0, Released 2020-02-05
+This package is based upon work supported by the National Science Foundation under Grant No. SES-0518772.
+
+Loading required package: Matrix
+
+Attaching package: ‘Matrix’
+
+The following object is masked from ‘package:S4Vectors’:
+
+    expand
+
+The following objects are masked from ‘package:tidyr’:
+
+    expand, pack, unpack
+
+Loading required package: rhdf5
+
+Attaching package: ‘rhdf5’
+
+The following object is masked from ‘package:hdf5r’:
+
+    h5version
+
+Warning messages:
+1: package ‘hdf5r’ was built under R version 4.0.3 
+2: package ‘mixtools’ was built under R version 4.0.3 
+Loading required package: umap
+Loading required package: igraph
+
+Attaching package: ‘igraph’
+
+The following object is masked from ‘package:monocle3’:
+
+    clusters
+
+The following object is masked from ‘package:GenomicRanges’:
+
+    union
+
+The following object is masked from ‘package:IRanges’:
+
+    union
+
+The following object is masked from ‘package:S4Vectors’:
+
+    union
+
+The following objects are masked from ‘package:BiocGenerics’:
+
+    normalize, path, union
+
+The following object is masked from ‘package:tidyr’:
+
+    crossing
+
+The following objects are masked from ‘package:dplyr’:
+
+    as_data_frame, groups, union
+
+The following objects are masked from ‘package:stats’:
+
+    decompose, spectrum
+
+The following object is masked from ‘package:base’:
+
+    union
+
+Loading required package: nebula
+Setting output directory: /media/AGFORTELNY/PROJECTS/TfCf/Analysis//FULLINT_10_01_BasicAnalysis_in.vitro//
+[1] "monocle.obj"     "additional.info" "AGG.CSV"        
+Remove noise by PCA ...
+Running Uniform Manifold Approximation and Projection
+09:06:08 UMAP embedding parameters a = 1.577 b = 0.8951
+09:06:08 Read 21267 rows and found 50 numeric columns
+09:06:08 Building Annoy index with metric = cosine, n_trees = 50
+0%   10   20   30   40   50   60   70   80   90   100%
+[----|----|----|----|----|----|----|----|----|----|
+**************************************************|
+09:06:14 Writing NN index file to temp file /tmp/RtmpaIOKoj/filea5f064b6430c
+09:06:14 Searching Annoy index using 1 thread, search_k = 1500
+09:06:19 Annoy recall = 100%
+09:06:21 Commencing smooth kNN distance calibration using 1 thread
+09:06:23 Initializing from normalized Laplacian + noise
+09:06:23 Commencing optimization for 200 epochs, with 471438 positive edges
+0%   10   20   30   40   50   60   70   80   90   100%
+[----|----|----|----|----|----|----|----|----|----|
+**************************************************|
+09:06:35 Optimization finished
+Aligning cells from different batches using Batchelor. 
+Please remember to cite:
+	 Haghverdi L, Lun ATL, Morgan MD, Marioni JC (2018). 'Batch effects in single-cell RNA-sequencing data are corrected by matching mutual nearest neighbors.' Nat. Biotechnol., 36(5), 421-427. doi: 10.1038/nbt.4091
+Running Uniform Manifold Approximation and Projection
+09:06:47 UMAP embedding parameters a = 1.577 b = 0.8951
+09:06:47 Read 21267 rows and found 50 numeric columns
+09:06:47 Building Annoy index with metric = cosine, n_trees = 50
+0%   10   20   30   40   50   60   70   80   90   100%
+[----|----|----|----|----|----|----|----|----|----|
+**************************************************|
+09:06:53 Writing NN index file to temp file /tmp/RtmpaIOKoj/filea5f04db5abe8
+09:06:53 Searching Annoy index using 1 thread, search_k = 1500
+09:06:58 Annoy recall = 100%
+09:06:59 Commencing smooth kNN distance calibration using 1 thread
+09:07:01 Initializing from normalized Laplacian + noise
+09:07:01 Commencing optimization for 200 epochs, with 475004 positive edges
+0%   10   20   30   40   50   60   70   80   90   100%
+[----|----|----|----|----|----|----|----|----|----|
+**************************************************|
+09:07:13 Optimization finished
+[1] "cytoRes"
+[1] "chip.targets"
+[1] "percent.mt"
+[1] "nFeature_RNA"
+[1] "nCount_RNA"
+Warning message:
+The `add` argument of `group_by()` is deprecated as of dplyr 1.0.0.
+Please use the `.add` argument instead.
+This warning is displayed once every 8 hours.
+Call `lifecycle::last_warnings()` to see where this warning was generated. 
+Scale for 'size' is already present. Adding another scale for 'size', which
+will replace the existing scale.
+Warning messages:
+1: In if (ordering_type == "cluster_row_col") { :
+  the condition has length > 1 and only the first element will be used
+2: In if (axis_order == "marker_group") { :
+  the condition has length > 1 and only the first element will be used
+[1] "blueprint_label.fine"
+[1] "blueprint_label.main"
+[1] "dmap_label.fine"
+[1] "dmap_label.main"
+[1] "hpca_label.fine"
+[1] "hpca_label.main"
+[1] "immgen_label.fine"
+[1] "immgen_label.main"
+[1] "marrow10x_label.main"
+[1] "marrowPlate_label.main"
+[1] "monaco_label.fine"
+[1] "monaco_label.main"
+[1] "mouseRNA_label.fine"
+[1] "mouseRNA_label.main"
+There were 26 warnings (use warnings() to see them)
+[1] "Chd4"    "Kmt2a"   "Kmt2d"   "Men1"    "NTC"     "Setd1b"  "Smarcd1"
+[8] "Smarcd2" "Wdr82"  
+'data.frame':	2266 obs. of  3 variables:
+ $ GuideDE  : Factor w/ 9 levels "NTC","Wdr82",..: 2 3 1 4 4 1 1 4 5 6 ...
+ $ ClusterDE: chr  "2" "1" "1" "1" ...
+ $ tissueDE : Factor w/ 3 levels "in vitro","leukemia",..: 1 1 1 1 1 1 1 1 1 1 ...
+Remove  0  genes having low expression.
+Analyzing  10061  genes with  2  subjects and  2266  cells.
+
+  -10     1 
+ 1400 99210 
+`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+[1] TRUE
+null device 
+          1 
+[1] TRUE
+null device 
+          1 
+Warning messages:
+1: Removed 136 rows containing non-finite values (stat_summary_hex). 
+2: Removed 24 rows containing missing values (geom_hex). 
+3: Removed 442 rows containing non-finite values (stat_summary_hex). 
+4: Removed 78 rows containing missing values (geom_hex). 
+5: Removed 26 rows containing missing values (geom_hex). 
+6: Removed 112 rows containing non-finite values (stat_summary_hex). 
+7: Removed 364 rows containing non-finite values (stat_summary_hex). 
+8: Removed 156 rows containing missing values (geom_hex). 

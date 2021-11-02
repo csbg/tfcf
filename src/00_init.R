@@ -158,7 +158,9 @@ sapply(PATHS$POOLED$DATA, file.exists)
 
 PATHS$FULLINT <- list()
 PATHS$FULLINT$Monocle <- dirout_load("FULLINT_01_01_Integration")("MonocleObject.RData")
-#PATHS$FULLINT$Monocle <- dirout_load("FULLINT_01_01_Integration")("MonocleObject_2021_10_08_ECCITE6.RData")
+PATHS$FULLINT$DEG <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("DEG_Results_nebula.RData")
+PATHS$FULLINT$DEG.clean <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("DEG_Results.tsv")
+PATHS$FULLINT$DEG.ann <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("DEG_Annnotation.tsv")
 
 
 
@@ -231,3 +233,4 @@ sapply(PATHS$ECCITE2$DATA, file.exists)
 COLOR.Genotypes = c(WT="#33a02c", Cas9="#6a3d9a")
 COLORS.HM.FUNC <- colorRampPalette(c("#6a3d9a", "#a6cee3", "white", "#fdbf6f", "#e31a1c"))
 
+scale_fill_hexbin <- function(...){scale_fill_gradientn(colours=c("#a6cee3", "#fdbf6f", "#ff7f00", "#e31a1c"), ...)}
