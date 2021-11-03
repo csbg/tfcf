@@ -3,7 +3,8 @@ out <- dirout("FULLINT_01_01_Integration/")
 
 
 # Read cellranger analysis results --------------------------------------------
-AGG.CSV <- fread(paste(Sys.getenv("DATA"), "FULLINT_00_Aggr", "outs", "aggregation.csv", sep="/"))
+#AGG.CSV <- fread(paste(Sys.getenv("DATA"), "FULLINT_00_Aggr", "outs", "aggregation.csv", sep="/"))
+AGG.CSV <- fread("metadata/FULLINT_00_Aggr.csv")
 AGG.CSV$i <- 1:nrow(AGG.CSV)
 
 SANN <- fread("metadata/annotation.tsv", sep="\t")
@@ -112,7 +113,7 @@ if(file.exists(monocle.file)){
         ggsave(out("QC_", qcx, "_", dsx, ".pdf"), w=6,h=4)
       }
       # Subset and process
-      seurat.obj <- subset(seurat.obj, subset = nFeature_RNA > cutoffs$nFeature_RNA & nCount_RNA > cutoffs$nCount_RNA & percent.mt < cutoffs$percent.mt)
+      if(!grepl("ECCITE8", dsx)) seurat.obj <- subset(seurat.obj, subset = nFeature_RNA > cutoffs$nFeature_RNA & nCount_RNA > cutoffs$nCount_RNA & percent.mt < cutoffs$percent.mt)
       seurat.obj <- NormalizeData(seurat.obj, verbose = FALSE)
       seurat.obj <- CellCycleScoring(seurat.obj, s.features = cc.genes$s.genes,g2m.features = cc.genes$g2m.genes,set.ident = TRUE)
       
@@ -180,7 +181,7 @@ if(file.exists(monocle.file)){
         guides.clean[grepl("^NTC_", orig.guides)] <- "NTC"
         guides.clean[guides.clean %in% names(which(table(guides.clean) < 5))] <- NA
 
-        if(sum(!is.na(guides.clean)) > 5){
+        if(sum(!is.na(guides.clean)) > 5 & "NTC" %in% guides.clean){
           seurat.obj@meta.data$guide <- guides.clean
 
           # Mixscape
@@ -189,7 +190,13 @@ if(file.exists(monocle.file)){
           eccite <- FindVariableFeatures(eccite, selection.method = "vst", nfeatures = 2000, verbose = FALSE)
           #eccite <- subset(eccite, features=eccite@assays$RNA@var.features)
           eccite <- ScaleData(eccite, vars.to.regress = c("S.Score", "G2M.Score"), verbose = FALSE)
-          eccite <- RunPCA(eccite, npcs = 30, verbose = FALSE)
+          tryCatch(expr = {
+            eccite <- RunPCA(eccite, npcs = 30, verbose = FALSE)
+          }, error=function(e){
+            message("RunPCA failed, running with only 10 PCs next")
+            eccite <- RunPCA(eccite, npcs = 10, verbose = FALSE)
+          })
+          
 
           # CalcPerturbSig
           for(nn in seq(from = 20,to = 5, by = -5)){
@@ -254,10 +261,16 @@ if(file.exists(monocle.file)){
       reduction_method = "UMAP",
       preprocess_method = "Aligned",
       verbose = TRUE)
-
+  
   # Add tissue information
   colData(monocle.obj)$tissue <- SANN[match(gsub("_.+", "", colData(monocle.obj)$sample), sample)]$tissue
-
+  monocle.obj$tissue[grepl("ECCITE8_OP", monocle.obj$sample)] <- "in vitro"
+  table(monocle.obj$sample, monocle.obj$tissue)
+  
+  # Clustering
+  set.seed(12121)
+  monocle.obj = cluster_cells(monocle.obj, resolution=1e-5)
+  
   # Store full dataset
   save(monocle.obj, additional.info, AGG.CSV, file=monocle.file)
 }

@@ -47,8 +47,12 @@ if(baseDir.add != "combined"){
         reduction_method = "UMAP",
         preprocess_method = "Aligned",
         verbose = TRUE)
+    set.seed(12121)
+    monocle.obj = cluster_cells(monocle.obj, resolution=1e-5)
+    
     additional.info <- additional.info[unique(monocle.obj$sample)]
     AGG.CSV <- AGG.CSV[sample_id %in% monocle.obj$sample]
+    
     save(monocle.obj, additional.info, AGG.CSV, file=monocle.file)
   }
 }
@@ -70,10 +74,7 @@ tryCatch({
 # ChIP Targets
 (load(dirout_load("CHIP_20_01_Peaks_julen")("ChIP.Targets.RData")))
 
-# CLUSTERING ------------------------------------------------------
-set.seed(12121)
-monocle.obj = cluster_cells(monocle.obj, resolution=1e-5)
-
+# ANNOTATION ------------------------------------------------------
 sann <- fread("metadata/annotation.tsv", sep="\t")
 
 # Collect ANNOTATION --------------------------------------------------------------

@@ -22,8 +22,18 @@ echo "ECCITE6,$DATA/ECCITE6_onlyRNA/outs/molecule_info.h5" >> $id.csv
 echo "ECCITE7_Lib1Rep1,$DATA/ECCITE7_Lib1Rep1_onlyRNA/outs/molecule_info.h5" >> $id.csv
 echo "ECCITE7_Lib1Rep2,$DATA/ECCITE7_Lib1Rep2_onlyRNA/outs/molecule_info.h5" >> $id.csv
 echo "ECCITE7_Lib2,$DATA/ECCITE7_Lib2_onlyRNA/outs/molecule_info.h5" >> $id.csv
+echo "ECCITE8_IRR_d14,$DATA/ECCITE8_IRR_d14/outs/molecule_info.h5" >> $id.csv
+echo "ECCITE8_OP1_d7,$DATA/ECCITE8_OP1_d7/outs/molecule_info.h5" >> $id.csv
+echo "ECCITE8_OP1_d9,$DATA/ECCITE8_OP1_d9/outs/molecule_info.h5" >> $id.csv
+echo "ECCITE8_OP2_d7,$DATA/ECCITE8_OP2_d7/outs/molecule_info.h5" >> $id.csv
+echo "ECCITE8_OP2_d9,$DATA/ECCITE8_OP2_d9/outs/molecule_info.h5" >> $id.csv
+echo "ECCITE8_OP3_d7,$DATA/ECCITE8_OP3_d7/outs/molecule_info.h5" >> $id.csv
+echo "ECCITE8_OP3_d9,$DATA/ECCITE8_OP3_d9/outs/molecule_info.h5" >> $id.csv
+echo "ECCITE8_Toxin_d14,$DATA/ECCITE8_Toxin_d14/outs/molecule_info.h5" >> $id.csv
 
 cat $id.csv
+
+mv $id.csv $CODE/metadata/
 
 $HOME/code/cellranger-6.0.1/cellranger aggr --id=$id --csv=$id.csv --normalize=none &> $id.log
 

@@ -1,4 +1,3 @@
-in vivo
 [1] "Setting GFS PATH"
 [1] "Setting DATA and others paths"
 Loading required package: data.table
@@ -184,377 +183,1047 @@ The following object is masked from ‘package:hdf5r’:
 Warning messages:
 1: package ‘hdf5r’ was built under R version 4.0.3 
 2: package ‘mixtools’ was built under R version 4.0.3 
-Loading required package: umap
-Loading required package: igraph
-
-Attaching package: ‘igraph’
-
-The following object is masked from ‘package:monocle3’:
-
-    clusters
-
-The following object is masked from ‘package:GenomicRanges’:
-
-    union
-
-The following object is masked from ‘package:IRanges’:
-
-    union
-
-The following object is masked from ‘package:S4Vectors’:
-
-    union
-
-The following objects are masked from ‘package:BiocGenerics’:
-
-    normalize, path, union
-
-The following object is masked from ‘package:tidyr’:
-
-    crossing
-
-The following objects are masked from ‘package:dplyr’:
-
-    as_data_frame, groups, union
-
-The following objects are masked from ‘package:stats’:
-
-    decompose, spectrum
-
-The following object is masked from ‘package:base’:
-
-    union
-
-Loading required package: nebula
-Setting output directory: /media/AGFORTELNY/PROJECTS/TfCf/Analysis//FULLINT_10_01_BasicAnalysis_in.vivo//
-[1] "monocle.obj"     "additional.info" "AGG.CSV"        
-
-Execution halted
-in vitro
-[1] "Setting GFS PATH"
-[1] "Setting DATA and others paths"
-Loading required package: data.table
-Loading required package: ggplot2
-Loading required package: pheatmap
-Loading required package: hdf5r
-Loading required package: dplyr
-
-Attaching package: ‘dplyr’
-
-The following objects are masked from ‘package:data.table’:
-
-    between, first, last
-
-The following objects are masked from ‘package:stats’:
-
-    filter, lag
-
-The following objects are masked from ‘package:base’:
-
-    intersect, setdiff, setequal, union
-
-Loading required package: tidyr
-Loading required package: Seurat
-Attaching SeuratObject
-Loading required package: monocle3
-Loading required package: Biobase
-Loading required package: BiocGenerics
-Loading required package: parallel
-
-Attaching package: ‘BiocGenerics’
-
-The following objects are masked from ‘package:parallel’:
-
-    clusterApply, clusterApplyLB, clusterCall, clusterEvalQ,
-    clusterExport, clusterMap, parApply, parCapply, parLapply,
-    parLapplyLB, parRapply, parSapply, parSapplyLB
-
-The following objects are masked from ‘package:dplyr’:
-
-    combine, intersect, setdiff, union
-
-The following objects are masked from ‘package:stats’:
-
-    IQR, mad, sd, var, xtabs
-
-The following objects are masked from ‘package:base’:
-
-    anyDuplicated, append, as.data.frame, basename, cbind, colnames,
-    dirname, do.call, duplicated, eval, evalq, Filter, Find, get, grep,
-    grepl, intersect, is.unsorted, lapply, Map, mapply, match, mget,
-    order, paste, pmax, pmax.int, pmin, pmin.int, Position, rank,
-    rbind, Reduce, rownames, sapply, setdiff, sort, table, tapply,
-    union, unique, unsplit, which.max, which.min
-
-Welcome to Bioconductor
-
-    Vignettes contain introductory material; view with
-    'browseVignettes()'. To cite Bioconductor, see
-    'citation("Biobase")', and for packages 'citation("pkgname")'.
-
-Loading required package: SingleCellExperiment
-Loading required package: SummarizedExperiment
-Loading required package: MatrixGenerics
-Loading required package: matrixStats
-
-Attaching package: ‘matrixStats’
-
-The following objects are masked from ‘package:Biobase’:
-
-    anyMissing, rowMedians
-
-The following object is masked from ‘package:dplyr’:
-
-    count
-
-
-Attaching package: ‘MatrixGenerics’
-
-The following objects are masked from ‘package:matrixStats’:
-
-    colAlls, colAnyNAs, colAnys, colAvgsPerRowSet, colCollapse,
-    colCounts, colCummaxs, colCummins, colCumprods, colCumsums,
-    colDiffs, colIQRDiffs, colIQRs, colLogSumExps, colMadDiffs,
-    colMads, colMaxs, colMeans2, colMedians, colMins, colOrderStats,
-    colProds, colQuantiles, colRanges, colRanks, colSdDiffs, colSds,
-    colSums2, colTabulates, colVarDiffs, colVars, colWeightedMads,
-    colWeightedMeans, colWeightedMedians, colWeightedSds,
-    colWeightedVars, rowAlls, rowAnyNAs, rowAnys, rowAvgsPerColSet,
-    rowCollapse, rowCounts, rowCummaxs, rowCummins, rowCumprods,
-    rowCumsums, rowDiffs, rowIQRDiffs, rowIQRs, rowLogSumExps,
-    rowMadDiffs, rowMads, rowMaxs, rowMeans2, rowMedians, rowMins,
-    rowOrderStats, rowProds, rowQuantiles, rowRanges, rowRanks,
-    rowSdDiffs, rowSds, rowSums2, rowTabulates, rowVarDiffs, rowVars,
-    rowWeightedMads, rowWeightedMeans, rowWeightedMedians,
-    rowWeightedSds, rowWeightedVars
-
-The following object is masked from ‘package:Biobase’:
-
-    rowMedians
-
-Loading required package: GenomicRanges
-Loading required package: stats4
-Loading required package: S4Vectors
-
-Attaching package: ‘S4Vectors’
-
-The following object is masked from ‘package:tidyr’:
-
-    expand
-
-The following objects are masked from ‘package:dplyr’:
-
-    first, rename
-
-The following object is masked from ‘package:hdf5r’:
-
-    values
-
-The following objects are masked from ‘package:data.table’:
-
-    first, second
-
-The following object is masked from ‘package:base’:
-
-    expand.grid
-
-Loading required package: IRanges
-
-Attaching package: ‘IRanges’
-
-The following objects are masked from ‘package:dplyr’:
-
-    collapse, desc, slice
-
-The following object is masked from ‘package:data.table’:
-
-    shift
-
-Loading required package: GenomeInfoDb
-
-Attaching package: ‘SummarizedExperiment’
-
-The following object is masked from ‘package:SeuratObject’:
-
-    Assays
-
-The following object is masked from ‘package:Seurat’:
-
-    Assays
-
-
-Attaching package: ‘monocle3’
-
-The following objects are masked from ‘package:Biobase’:
-
-    exprs, fData, fData<-, pData, pData<-
-
-Loading required package: mixtools
-mixtools package, version 1.2.0, Released 2020-02-05
-This package is based upon work supported by the National Science Foundation under Grant No. SES-0518772.
-
-Loading required package: Matrix
-
-Attaching package: ‘Matrix’
-
-The following object is masked from ‘package:S4Vectors’:
-
-    expand
-
-The following objects are masked from ‘package:tidyr’:
-
-    expand, pack, unpack
-
-Loading required package: rhdf5
-
-Attaching package: ‘rhdf5’
-
-The following object is masked from ‘package:hdf5r’:
-
-    h5version
-
-Warning messages:
-1: package ‘hdf5r’ was built under R version 4.0.3 
-2: package ‘mixtools’ was built under R version 4.0.3 
-Loading required package: umap
-Loading required package: igraph
-
-Attaching package: ‘igraph’
-
-The following object is masked from ‘package:monocle3’:
-
-    clusters
-
-The following object is masked from ‘package:GenomicRanges’:
-
-    union
-
-The following object is masked from ‘package:IRanges’:
-
-    union
-
-The following object is masked from ‘package:S4Vectors’:
-
-    union
-
-The following objects are masked from ‘package:BiocGenerics’:
-
-    normalize, path, union
-
-The following object is masked from ‘package:tidyr’:
-
-    crossing
-
-The following objects are masked from ‘package:dplyr’:
-
-    as_data_frame, groups, union
-
-The following objects are masked from ‘package:stats’:
-
-    decompose, spectrum
-
-The following object is masked from ‘package:base’:
-
-    union
-
-Loading required package: nebula
-Setting output directory: /media/AGFORTELNY/PROJECTS/TfCf/Analysis//FULLINT_10_01_BasicAnalysis_in.vitro//
-[1] "monocle.obj"     "additional.info" "AGG.CSV"        
+Setting output directory: /media/AGFORTELNY/PROJECTS/TfCf/Analysis//FULLINT_01_01_Integration//
+ chr [1:23] "CITESEQ1" "CITESEQ2" "ECCITE1" "ECCITE2" "ECCITE3_high_14d" ...
+[1] "Processing datasets"
+[1] "------------------------------"
+[1] "CITESEQ1"
+[1] "---------------"
+[1] "Loading processed dataset"
+[1] "------------------------------"
+[1] "CITESEQ2"
+[1] "---------------"
+[1] "Loading processed dataset"
+[1] "------------------------------"
+[1] "ECCITE1"
+[1] "---------------"
+[1] "Loading processed dataset"
+[1] "------------------------------"
+[1] "ECCITE2"
+[1] "---------------"
+[1] "Loading processed dataset"
+[1] "------------------------------"
+[1] "ECCITE3_high_14d"
+[1] "---------------"
+[1] "Loading processed dataset"
+[1] "------------------------------"
+[1] "ECCITE3_high_7d"
+[1] "---------------"
+[1] "Loading processed dataset"
+[1] "------------------------------"
+[1] "ECCITE3_low_14d"
+[1] "---------------"
+[1] "Loading processed dataset"
+[1] "------------------------------"
+[1] "ECCITE3_low_7d"
+[1] "---------------"
+[1] "Loading processed dataset"
+[1] "------------------------------"
+[1] "ECCITE4_Cas9"
+[1] "---------------"
+[1] "Loading processed dataset"
+[1] "------------------------------"
+[1] "ECCITE4_WT"
+[1] "---------------"
+[1] "Loading processed dataset"
+[1] "------------------------------"
+[1] "ECCITE5"
+[1] "---------------"
+[1] "Loading processed dataset"
+[1] "------------------------------"
+[1] "ECCITE6"
+[1] "---------------"
+[1] "Loading processed dataset"
+[1] "------------------------------"
+[1] "ECCITE7_Lib1Rep1"
+[1] "---------------"
+[1] "Loading processed dataset"
+[1] "------------------------------"
+[1] "ECCITE7_Lib1Rep2"
+[1] "---------------"
+[1] "Loading processed dataset"
+[1] "------------------------------"
+[1] "ECCITE7_Lib2"
+[1] "---------------"
+[1] "Loading processed dataset"
+[1] "------------------------------"
+[1] "ECCITE8_IRR_d14"
+[1] "---------------"
+[1] "Processing dataset"
+Genome matrix has multiple modalities, returning a list of matrices for this genome
+Warning: The following features are not present in the object: MCM5, PCNA, TYMS, FEN1, MCM2, MCM4, RRM1, UNG, GINS2, MCM6, CDCA7, DTL, PRIM1, UHRF1, MLF1IP, HELLS, RFC2, RPA2, NASP, RAD51AP1, GMNN, WDR76, SLBP, CCNE2, UBR7, POLD3, MSH2, ATAD2, RAD51, RRM2, CDC45, CDC6, EXO1, TIPIN, DSCC1, BLM, CASP8AP2, USP1, CLSPN, POLA1, CHAF1B, BRIP1, E2F8, not searching for symbol synonyms
+Warning: The following features are not present in the object: HMGB2, CDK1, NUSAP1, UBE2C, BIRC5, TPX2, TOP2A, NDC80, CKS2, NUF2, CKS1B, MKI67, TMPO, CENPF, TACC3, FAM64A, SMC4, CCNB2, CKAP2L, CKAP2, AURKB, BUB1, KIF11, ANP32E, TUBB4B, GTSE1, KIF20B, HJURP, CDCA3, HN1, CDC20, TTK, CDC25C, KIF2C, RANGAP1, NCAPD2, DLGAP5, CDCA2, CDCA8, ECT2, KIF23, HMMR, AURKA, PSRC1, ANLN, LBR, CKAP5, CENPE, CTCF, NEK2, G2E3, GAS2L3, CBX5, CENPA, not searching for symbol synonyms
+[1] "CRISPR Guide Capture"
+
+   Brd9_AS_70306    Brd9_BR_48005 Gltscr1_AS_53231 Gltscr1_BR_62866 
+             128              669              650               99 
+  Kmt2a_AS_44476   Kmt2a_BR_53968   Kmt2d_AS_44463   Kmt2d_BR_72116 
+              93               21              694               91 
+   Men1_AS_40513    Men1_AS_40514         NTC_0005         NTC_0006 
+             324                1              456              690 
+  Phf10_AS_27365   Phf10_AS_27367 Smarcb1_BR_16140 Smarcd1_AS_15166 
+              86             1982                4             1530 
+Smarcd1_BR_45407 Smarcd2_AS_15163   Wdr82_BR_43556   Wdr82_BR_43559 
+             289              616               69               78 
+Processing rep1
+Processing rep1
+Processing rep1
+Processing rep1
+Centering data matrix
+  |                                                                              |                                                                      |   0%  |                                                                              |===================================                                   |  50%  |                                                                              |======================================================================| 100%
+Processing Gltscr1_AS_53231
+Finding new perturbation gene set
+Processing Smarcd2_AS_15163
+Finding new perturbation gene set
+Processing Smarcd1_AS_15166
+Finding new perturbation gene set
+Processing Brd9_AS_70306
+Finding new perturbation gene set
+Processing Wdr82_BR_43556
+Finding new perturbation gene set
+Processing Kmt2d_AS_44463
+Finding new perturbation gene set
+Processing Brd9_BR_48005
+Finding new perturbation gene set
+Processing Men1_AS_40513
+Finding new perturbation gene set
+Processing Phf10_AS_27367
+Finding new perturbation gene set
+Processing Kmt2d_BR_72116
+Finding new perturbation gene set
+Processing Smarcd1_BR_45407
+Finding new perturbation gene set
+Processing Kmt2a_AS_44476
+Finding new perturbation gene set
+Processing Wdr82_BR_43559
+Finding new perturbation gene set
+Processing Phf10_AS_27365
+Finding new perturbation gene set
+Processing Men1_AS_40514
+Finding new perturbation gene set
+Processing Smarcb1_BR_16140
+Finding new perturbation gene set
+Processing Gltscr1_BR_62866
+Finding new perturbation gene set
+Processing Kmt2a_BR_53968
+Finding new perturbation gene set
+Processing Smarcb1_AS_15177
+Finding new perturbation gene set
+Computing perturbation signature for missing features.
+Classifying cells for: 
+  Fewer than 5 DE genes for Gltscr1_AS_53231. Assigning cells as NP.
+  Smarcd2_AS_15163
+number of iterations= 197 
+number of iterations= 145 
+number of iterations= 142 
+number of iterations= 142 
+number of iterations= 138 
+number of iterations= 138 
+number of iterations= 137 
+number of iterations= 137 
+number of iterations= 135 
+number of iterations= 136 
+  Smarcd1_AS_15166
+number of iterations= 140 
+number of iterations= 57 
+number of iterations= 56 
+number of iterations= 56 
+number of iterations= 55 
+  Fewer than 5 DE genes for Brd9_AS_70306. Assigning cells as NP.
+  Wdr82_BR_43556
+number of iterations= 44 
+number of iterations= 32 
+  Fewer than 5 DE genes for Kmt2d_AS_44463. Assigning cells as NP.
+  Brd9_BR_48005
+number of iterations= 255 
+number of iterations= 134 
+number of iterations= 154 
+number of iterations= 152 
+number of iterations= 152 
+number of iterations= 150 
+number of iterations= 148 
+number of iterations= 147 
+number of iterations= 148 
+number of iterations= 147 
+  Men1_AS_40513
+number of iterations= 36 
+number of iterations= 21 
+number of iterations= 20 
+number of iterations= 20 
+  Fewer than 5 DE genes for Phf10_AS_27367. Assigning cells as NP.
+  Fewer than 5 DE genes for Kmt2d_BR_72116. Assigning cells as NP.
+  Fewer than 5 DE genes for Smarcd1_BR_45407. Assigning cells as NP.
+  Kmt2a_AS_44476
+number of iterations= 24 
+number of iterations= 13 
+  Wdr82_BR_43559
+number of iterations= 33 
+number of iterations= 27 
+number of iterations= 26 
+  Fewer than 5 DE genes for Phf10_AS_27365. Assigning cells as NP.
+  Fewer than 5 DE genes for Men1_AS_40514. Assigning cells as NP.
+  Fewer than 5 DE genes for Smarcb1_BR_16140. Assigning cells as NP.
+  Fewer than 5 DE genes for Gltscr1_BR_62866. Assigning cells as NP.
+  Fewer than 5 DE genes for Kmt2a_BR_53968. Assigning cells as NP.
+  Fewer than 5 DE genes for Smarcb1_AS_15177. Assigning cells as NP.
+[1] "------------------------------"
+[1] "ECCITE8_OP1_d7"
+[1] "---------------"
+[1] "Processing dataset"
+Genome matrix has multiple modalities, returning a list of matrices for this genome
+Warning: The following features are not present in the object: MCM5, PCNA, TYMS, FEN1, MCM2, MCM4, RRM1, UNG, GINS2, MCM6, CDCA7, DTL, PRIM1, UHRF1, MLF1IP, HELLS, RFC2, RPA2, NASP, RAD51AP1, GMNN, WDR76, SLBP, CCNE2, UBR7, POLD3, MSH2, ATAD2, RAD51, RRM2, CDC45, CDC6, EXO1, TIPIN, DSCC1, BLM, CASP8AP2, USP1, CLSPN, POLA1, CHAF1B, BRIP1, E2F8, not searching for symbol synonyms
+Warning: The following features are not present in the object: HMGB2, CDK1, NUSAP1, UBE2C, BIRC5, TPX2, TOP2A, NDC80, CKS2, NUF2, CKS1B, MKI67, TMPO, CENPF, TACC3, FAM64A, SMC4, CCNB2, CKAP2L, CKAP2, AURKB, BUB1, KIF11, ANP32E, TUBB4B, GTSE1, KIF20B, HJURP, CDCA3, HN1, CDC20, TTK, CDC25C, KIF2C, RANGAP1, NCAPD2, DLGAP5, CDCA2, CDCA8, ECT2, KIF23, HMMR, AURKA, PSRC1, ANLN, LBR, CKAP5, CENPE, CTCF, NEK2, G2E3, GAS2L3, CBX5, CENPA, not searching for symbol synonyms
+[1] "CRISPR Guide Capture"
+
+Atf7ip_BR_23438 Atf7ip_BR_23441    Cbx3_B_68895    Cbx3_B_68896   Chd4_AS_66308 
+            159              88             163              49              29 
+  Chd4_AS_66310  Hdac1_BR_74137  Hdac1_BR_74139   Hdac3_BR_7433   Hdac3_BR_7434 
+             64             169             244             114             190 
+  Mbd2_AS_41068   Mbd2_BR_10401   Mbd3_AS_41065        NTC_0008        NTC_0010 
+            180              69             794             530             306 
+ Rbbp4_AS_22098  Rbbp4_BR_14486  Rcor1_AS_21750  Rcor1_AS_21752  Setdb1_B_17753 
+            361             296              91             255             200 
+ Setdb1_B_17754 
+            149 
+Processing rep1
+Processing rep1
+Processing rep1
+Processing rep1
+Centering data matrix
+  |                                                                              |                                                                      |   0%  |                                                                              |===================================                                   |  50%  |                                                                              |======================================================================| 100%
+Processing Hdac3_BR_7433
+Finding new perturbation gene set
+Processing Mbd2_AS_41068
+Finding new perturbation gene set
+Processing Setdb1_B_17754
+Finding new perturbation gene set
+Processing Rbbp4_AS_22098
+Finding new perturbation gene set
+Processing Hdac1_BR_74139
+Finding new perturbation gene set
+Processing Hdac1_BR_74137
+Finding new perturbation gene set
+Processing Mbd3_AS_41065
+Finding new perturbation gene set
+Processing Chd4_AS_66308
+Finding new perturbation gene set
+Processing Mbd2_BR_10401
+Finding new perturbation gene set
+Processing Rcor1_AS_21752
+Finding new perturbation gene set
+Processing Setdb1_B_17753
+Finding new perturbation gene set
+Processing Atf7ip_BR_23441
+Finding new perturbation gene set
+Processing Chd4_AS_66310
+Finding new perturbation gene set
+Processing Rbbp4_BR_14486
+Finding new perturbation gene set
+Processing Rcor1_AS_21750
+Finding new perturbation gene set
+Processing Cbx3_B_68895
+Finding new perturbation gene set
+Processing Hdac3_BR_7434
+Finding new perturbation gene set
+Processing Atf7ip_BR_23438
+Finding new perturbation gene set
+Processing Cbx3_B_68896
+Finding new perturbation gene set
+Computing perturbation signature for missing features.
+Classifying cells for: 
+  Hdac3_BR_7433
+WARNING! NOT CONVERGENT! 
+number of iterations= 5000 
+number of iterations= 1064 
+number of iterations= 443 
+number of iterations= 376 
+number of iterations= 359 
+  Fewer than 5 DE genes for Mbd2_AS_41068. Assigning cells as NP.
+  Fewer than 5 DE genes for Setdb1_B_17754. Assigning cells as NP.
+  Fewer than 5 DE genes for Rbbp4_AS_22098. Assigning cells as NP.
+  Fewer than 5 DE genes for Hdac1_BR_74139. Assigning cells as NP.
+  Fewer than 5 DE genes for Hdac1_BR_74137. Assigning cells as NP.
+  Fewer than 5 DE genes for Mbd3_AS_41065. Assigning cells as NP.
+  Fewer than 5 DE genes for Chd4_AS_66308. Assigning cells as NP.
+  Fewer than 5 DE genes for Mbd2_BR_10401. Assigning cells as NP.
+  Fewer than 5 DE genes for Rcor1_AS_21752. Assigning cells as NP.
+  Fewer than 5 DE genes for Setdb1_B_17753. Assigning cells as NP.
+  Fewer than 5 DE genes for Atf7ip_BR_23441. Assigning cells as NP.
+  Fewer than 5 DE genes for Chd4_AS_66310. Assigning cells as NP.
+  Fewer than 5 DE genes for Rbbp4_BR_14486. Assigning cells as NP.
+  Fewer than 5 DE genes for Rcor1_AS_21750. Assigning cells as NP.
+  Fewer than 5 DE genes for Cbx3_B_68895. Assigning cells as NP.
+  Hdac3_BR_7434
+number of iterations= 4834 
+WARNING! NOT CONVERGENT! 
+number of iterations= 5000 
+number of iterations= 325 
+number of iterations= 278 
+number of iterations= 176 
+number of iterations= 156 
+number of iterations= 154 
+number of iterations= 151 
+number of iterations= 150 
+number of iterations= 154 
+  Fewer than 5 DE genes for Atf7ip_BR_23438. Assigning cells as NP.
+  Fewer than 5 DE genes for Cbx3_B_68896. Assigning cells as NP.
+[1] "------------------------------"
+[1] "ECCITE8_OP1_d9"
+[1] "---------------"
+[1] "Processing dataset"
+Genome matrix has multiple modalities, returning a list of matrices for this genome
+Warning: The following features are not present in the object: MCM5, PCNA, TYMS, FEN1, MCM2, MCM4, RRM1, UNG, GINS2, MCM6, CDCA7, DTL, PRIM1, UHRF1, MLF1IP, HELLS, RFC2, RPA2, NASP, RAD51AP1, GMNN, WDR76, SLBP, CCNE2, UBR7, POLD3, MSH2, ATAD2, RAD51, RRM2, CDC45, CDC6, EXO1, TIPIN, DSCC1, BLM, CASP8AP2, USP1, CLSPN, POLA1, CHAF1B, BRIP1, E2F8, not searching for symbol synonyms
+Warning: The following features are not present in the object: HMGB2, CDK1, NUSAP1, UBE2C, BIRC5, TPX2, TOP2A, NDC80, CKS2, NUF2, CKS1B, MKI67, TMPO, CENPF, TACC3, FAM64A, SMC4, CCNB2, CKAP2L, CKAP2, AURKB, BUB1, KIF11, ANP32E, TUBB4B, GTSE1, KIF20B, HJURP, CDCA3, HN1, CDC20, TTK, CDC25C, KIF2C, RANGAP1, NCAPD2, DLGAP5, CDCA2, CDCA8, ECT2, KIF23, HMMR, AURKA, PSRC1, ANLN, LBR, CKAP5, CENPE, CTCF, NEK2, G2E3, GAS2L3, CBX5, CENPA, not searching for symbol synonyms
+[1] "CRISPR Guide Capture"
+
+Atf7ip_BR_23438 Atf7ip_BR_23441    Cbx3_B_68895    Cbx3_B_68896   Chd4_AS_66308 
+            316             145             251              62              91 
+  Chd4_AS_66310  Hdac1_BR_74137  Hdac1_BR_74139   Hdac3_BR_7433   Hdac3_BR_7434 
+             45             322             463             134             224 
+  Mbd2_AS_41068   Mbd2_BR_10401   Mbd3_AS_41065        NTC_0008        NTC_0010 
+            445             194            1740            1108             628 
+ Rbbp4_AS_22098  Rbbp4_BR_14486  Rcor1_AS_21750  Rcor1_AS_21752  Setdb1_B_17753 
+            788             734             185             430             336 
+ Setdb1_B_17754 
+            267 
+Processing rep1
+Processing rep1
+Processing rep1
+Processing rep1
+Centering data matrix
+  |                                                                              |                                                                      |   0%  |                                                                              |===================================                                   |  50%  |                                                                              |======================================================================| 100%
+Processing Rcor1_AS_21752
+Finding new perturbation gene set
+Processing Rbbp4_BR_14486
+Finding new perturbation gene set
+Processing Cbx3_B_68895
+Finding new perturbation gene set
+Processing Mbd2_BR_10401
+Finding new perturbation gene set
+Processing Mbd3_AS_41065
+Finding new perturbation gene set
+Processing Hdac1_BR_74137
+Finding new perturbation gene set
+Processing Setdb1_B_17753
+Finding new perturbation gene set
+Processing Hdac1_BR_74139
+Finding new perturbation gene set
+Processing Mbd2_AS_41068
+Finding new perturbation gene set
+Processing Cbx3_B_68896
+Finding new perturbation gene set
+Processing Rbbp4_AS_22098
+Finding new perturbation gene set
+Processing Rcor1_AS_21750
+Finding new perturbation gene set
+Processing Hdac3_BR_7433
+Finding new perturbation gene set
+Processing Chd4_AS_66308
+Finding new perturbation gene set
+Processing Atf7ip_BR_23438
+Finding new perturbation gene set
+Processing Setdb1_B_17754
+Finding new perturbation gene set
+Processing Hdac3_BR_7434
+Finding new perturbation gene set
+Processing Chd4_AS_66310
+Finding new perturbation gene set
+Processing Atf7ip_BR_23441
+Finding new perturbation gene set
+Computing perturbation signature for missing features.
+Classifying cells for: 
+  Rcor1_AS_21752
+number of iterations= 381 
+number of iterations= 264 
+number of iterations= 203 
+number of iterations= 128 
+number of iterations= 116 
+number of iterations= 127 
+number of iterations= 133 
+number of iterations= 218 
+number of iterations= 137 
+number of iterations= 1549 
+  Rbbp4_BR_14486
+number of iterations= 489 
+number of iterations= 485 
+number of iterations= 412 
+number of iterations= 394 
+number of iterations= 381 
+number of iterations= 364 
+number of iterations= 371 
+number of iterations= 378 
+number of iterations= 376 
+number of iterations= 376 
+  Fewer than 5 DE genes for Cbx3_B_68895. Assigning cells as NP.
+  Mbd2_BR_10401
+number of iterations= 227 
+number of iterations= 61 
+number of iterations= 18 
+number of iterations= 17 
+number of iterations= 17 
+  Fewer than 5 DE genes for Mbd3_AS_41065. Assigning cells as NP.
+  Fewer than 5 DE genes for Hdac1_BR_74137. Assigning cells as NP.
+  Setdb1_B_17753
+number of iterations= 24 
+number of iterations= 13 
+number of iterations= 13 
+number of iterations= 12 
+number of iterations= 11 
+number of iterations= 10 
+number of iterations= 10 
+number of iterations= 11 
+number of iterations= 10 
+number of iterations= 11 
+  Fewer than 5 DE genes for Hdac1_BR_74139. Assigning cells as NP.
+  Mbd2_AS_41068
+WARNING! NOT CONVERGENT! 
+number of iterations= 5000 
+WARNING! NOT CONVERGENT! 
+number of iterations= 5000 
+WARNING! NOT CONVERGENT! 
+number of iterations= 5000 
+WARNING! NOT CONVERGENT! 
+number of iterations= 5000 
+WARNING! NOT CONVERGENT! 
+number of iterations= 5000 
+WARNING! NOT CONVERGENT! 
+number of iterations= 5000 
+WARNING! NOT CONVERGENT! 
+number of iterations= 5000 
+WARNING! NOT CONVERGENT! 
+number of iterations= 5000 
+WARNING! NOT CONVERGENT! 
+number of iterations= 5000 
+WARNING! NOT CONVERGENT! 
+number of iterations= 5000 
+  Fewer than 5 DE genes for Cbx3_B_68896. Assigning cells as NP.
+  Rbbp4_AS_22098
+number of iterations= 369 
+number of iterations= 157 
+number of iterations= 148 
+number of iterations= 144 
+number of iterations= 143 
+number of iterations= 142 
+number of iterations= 141 
+number of iterations= 140 
+number of iterations= 140 
+number of iterations= 138 
+  Rcor1_AS_21750
+number of iterations= 73 
+number of iterations= 56 
+number of iterations= 53 
+number of iterations= 57 
+number of iterations= 53 
+number of iterations= 55 
+number of iterations= 53 
+number of iterations= 55 
+number of iterations= 53 
+number of iterations= 55 
+  Hdac3_BR_7433
+WARNING! NOT CONVERGENT! 
+number of iterations= 5000 
+number of iterations= 1667 
+number of iterations= 1199 
+number of iterations= 809 
+number of iterations= 672 
+number of iterations= 610 
+number of iterations= 543 
+number of iterations= 471 
+number of iterations= 456 
+number of iterations= 434 
+  Chd4_AS_66308
+number of iterations= 407 
+number of iterations= 147 
+number of iterations= 158 
+number of iterations= 893 
+number of iterations= 157 
+number of iterations= 341 
+number of iterations= 151 
+number of iterations= 350 
+number of iterations= 154 
+number of iterations= 344 
+  Fewer than 5 DE genes for Atf7ip_BR_23438. Assigning cells as NP.
+  Setdb1_B_17754
+number of iterations= 24 
+number of iterations= 17 
+number of iterations= 15 
+number of iterations= 15 
+number of iterations= 14 
+number of iterations= 14 
+number of iterations= 14 
+number of iterations= 14 
+number of iterations= 14 
+number of iterations= 15 
+  Hdac3_BR_7434
+WARNING! NOT CONVERGENT! 
+number of iterations= 5000 
+number of iterations= 262 
+number of iterations= 72 
+number of iterations= 78 
+number of iterations= 71 
+number of iterations= 82 
+number of iterations= 72 
+number of iterations= 82 
+number of iterations= 72 
+number of iterations= 82 
+  Fewer than 5 DE genes for Chd4_AS_66310. Assigning cells as NP.
+  Fewer than 5 DE genes for Atf7ip_BR_23441. Assigning cells as NP.
+[1] "------------------------------"
+[1] "ECCITE8_OP2_d7"
+[1] "---------------"
+[1] "Processing dataset"
+Genome matrix has multiple modalities, returning a list of matrices for this genome
+Warning: The following features are not present in the object: MCM5, PCNA, TYMS, FEN1, MCM2, MCM4, RRM1, UNG, GINS2, MCM6, CDCA7, DTL, PRIM1, UHRF1, MLF1IP, HELLS, RFC2, RPA2, NASP, RAD51AP1, GMNN, WDR76, SLBP, CCNE2, UBR7, POLD3, MSH2, ATAD2, RAD51, RRM2, CDC45, CDC6, EXO1, TIPIN, DSCC1, BLM, CASP8AP2, USP1, CLSPN, POLA1, CHAF1B, BRIP1, E2F8, not searching for symbol synonyms
+Warning: The following features are not present in the object: HMGB2, CDK1, NUSAP1, UBE2C, BIRC5, TPX2, TOP2A, NDC80, CKS2, NUF2, CKS1B, MKI67, TMPO, CENPF, TACC3, FAM64A, SMC4, CCNB2, CKAP2L, CKAP2, AURKB, BUB1, KIF11, ANP32E, TUBB4B, GTSE1, KIF20B, HJURP, CDCA3, HN1, CDC20, TTK, CDC25C, KIF2C, RANGAP1, NCAPD2, DLGAP5, CDCA2, CDCA8, ECT2, KIF23, HMMR, AURKA, PSRC1, ANLN, LBR, CKAP5, CENPE, CTCF, NEK2, G2E3, GAS2L3, CBX5, CENPA, not searching for symbol synonyms
+[1] "CRISPR Guide Capture"
+
+   Brd9_AS_70306    Brd9_BR_48005 Gltscr1_AS_53231 Gltscr1_BR_62866 
+              32              180              157               55 
+  Kmt2a_AS_44476   Kmt2a_BR_53968   Kmt2d_AS_44463   Kmt2d_BR_72116 
+              44              158              256               88 
+   Men1_AS_40513    Men1_AS_40514         NTC_0005         NTC_0006 
+             219              121              161              286 
+  Phf10_AS_27365   Phf10_AS_27367 Smarcb1_AS_15177 Smarcb1_BR_16140 
+              92              329               33               35 
+Smarcd1_AS_15166 Smarcd1_BR_45407 Smarcd2_AS_15163   Wdr82_BR_43556 
+             264              136              188               22 
+  Wdr82_BR_43559 
+              89 
+Processing rep1
+Processing rep1
+Processing rep1
+Processing rep1
+Centering data matrix
+  |                                                                              |                                                                      |   0%  |                                                                              |===================================                                   |  50%  |                                                                              |======================================================================| 100%
+Processing Smarcd1_AS_15166
+Finding new perturbation gene set
+Processing Smarcd1_BR_45407
+Finding new perturbation gene set
+Processing Men1_AS_40513
+Finding new perturbation gene set
+Processing Kmt2d_AS_44463
+Finding new perturbation gene set
+Processing Gltscr1_BR_62866
+Finding new perturbation gene set
+Processing Men1_AS_40514
+Finding new perturbation gene set
+Processing Phf10_AS_27367
+Finding new perturbation gene set
+Processing Gltscr1_AS_53231
+Finding new perturbation gene set
+Processing Brd9_BR_48005
+Finding new perturbation gene set
+Processing Smarcd2_AS_15163
+Finding new perturbation gene set
+Processing Smarcb1_AS_15177
+Finding new perturbation gene set
+Processing Wdr82_BR_43556
+Finding new perturbation gene set
+Processing Phf10_AS_27365
+Finding new perturbation gene set
+Processing Kmt2a_AS_44476
+Finding new perturbation gene set
+Processing Kmt2d_BR_72116
+Finding new perturbation gene set
+Processing Smarcb1_BR_16140
+Finding new perturbation gene set
+Processing Brd9_AS_70306
+Finding new perturbation gene set
+Processing Kmt2a_BR_53968
+Finding new perturbation gene set
+Processing Wdr82_BR_43559
+Finding new perturbation gene set
+Computing perturbation signature for missing features.
+Classifying cells for: 
+  Fewer than 5 DE genes for Smarcd1_AS_15166. Assigning cells as NP.
+  Fewer than 5 DE genes for Smarcd1_BR_45407. Assigning cells as NP.
+  Fewer than 5 DE genes for Men1_AS_40513. Assigning cells as NP.
+  Fewer than 5 DE genes for Kmt2d_AS_44463. Assigning cells as NP.
+  Fewer than 5 DE genes for Gltscr1_BR_62866. Assigning cells as NP.
+  Fewer than 5 DE genes for Men1_AS_40514. Assigning cells as NP.
+  Fewer than 5 DE genes for Phf10_AS_27367. Assigning cells as NP.
+  Fewer than 5 DE genes for Gltscr1_AS_53231. Assigning cells as NP.
+  Fewer than 5 DE genes for Brd9_BR_48005. Assigning cells as NP.
+  Fewer than 5 DE genes for Smarcd2_AS_15163. Assigning cells as NP.
+  Fewer than 5 DE genes for Smarcb1_AS_15177. Assigning cells as NP.
+  Fewer than 5 DE genes for Wdr82_BR_43556. Assigning cells as NP.
+  Fewer than 5 DE genes for Phf10_AS_27365. Assigning cells as NP.
+  Fewer than 5 DE genes for Kmt2a_AS_44476. Assigning cells as NP.
+  Fewer than 5 DE genes for Kmt2d_BR_72116. Assigning cells as NP.
+  Fewer than 5 DE genes for Smarcb1_BR_16140. Assigning cells as NP.
+  Fewer than 5 DE genes for Brd9_AS_70306. Assigning cells as NP.
+  Fewer than 5 DE genes for Kmt2a_BR_53968. Assigning cells as NP.
+  Wdr82_BR_43559
+number of iterations= 82 
+number of iterations= 46 
+number of iterations= 45 
+number of iterations= 47 
+number of iterations= 45 
+number of iterations= 47 
+number of iterations= 45 
+number of iterations= 47 
+number of iterations= 45 
+number of iterations= 47 
+[1] "------------------------------"
+[1] "ECCITE8_OP2_d9"
+[1] "---------------"
+[1] "Processing dataset"
+Genome matrix has multiple modalities, returning a list of matrices for this genome
+Warning: The following features are not present in the object: MCM5, PCNA, TYMS, FEN1, MCM2, MCM4, RRM1, UNG, GINS2, MCM6, CDCA7, DTL, PRIM1, UHRF1, MLF1IP, HELLS, RFC2, RPA2, NASP, RAD51AP1, GMNN, WDR76, SLBP, CCNE2, UBR7, POLD3, MSH2, ATAD2, RAD51, RRM2, CDC45, CDC6, EXO1, TIPIN, DSCC1, BLM, CASP8AP2, USP1, CLSPN, POLA1, CHAF1B, BRIP1, E2F8, not searching for symbol synonyms
+Warning: The following features are not present in the object: HMGB2, CDK1, NUSAP1, UBE2C, BIRC5, TPX2, TOP2A, NDC80, CKS2, NUF2, CKS1B, MKI67, TMPO, CENPF, TACC3, FAM64A, SMC4, CCNB2, CKAP2L, CKAP2, AURKB, BUB1, KIF11, ANP32E, TUBB4B, GTSE1, KIF20B, HJURP, CDCA3, HN1, CDC20, TTK, CDC25C, KIF2C, RANGAP1, NCAPD2, DLGAP5, CDCA2, CDCA8, ECT2, KIF23, HMMR, AURKA, PSRC1, ANLN, LBR, CKAP5, CENPE, CTCF, NEK2, G2E3, GAS2L3, CBX5, CENPA, not searching for symbol synonyms
+[1] "CRISPR Guide Capture"
+
+   Brd9_AS_70306    Brd9_BR_48005 Gltscr1_AS_53231 Gltscr1_BR_62866 
+             184              456              526              206 
+  Kmt2a_AS_44476   Kmt2a_BR_53968   Kmt2d_AS_44463   Kmt2d_BR_72116 
+             137              413              369              294 
+   Men1_AS_40513    Men1_AS_40514         NTC_0005         NTC_0006 
+             754              436              446             1184 
+  Phf10_AS_27365   Phf10_AS_27367 Smarcb1_AS_15177 Smarcb1_BR_16140 
+             259              847               19               31 
+Smarcd1_AS_15166 Smarcd1_BR_45407 Smarcd2_AS_15163   Wdr82_BR_43556 
+             608              469              351               13 
+  Wdr82_BR_43559 
+              28 
+Processing rep1
+Processing rep1
+Processing rep1
+Processing rep1
+Centering data matrix
+  |                                                                              |                                                                      |   0%  |                                                                              |===================================                                   |  50%  |                                                                              |======================================================================| 100%
+Processing Gltscr1_AS_53231
+Finding new perturbation gene set
+Processing Brd9_AS_70306
+Finding new perturbation gene set
+Processing Kmt2a_AS_44476
+Finding new perturbation gene set
+Processing Smarcd1_BR_45407
+Finding new perturbation gene set
+Processing Men1_AS_40514
+Finding new perturbation gene set
+Processing Men1_AS_40513
+Finding new perturbation gene set
+Processing Smarcd1_AS_15166
+Finding new perturbation gene set
+Processing Phf10_AS_27367
+Finding new perturbation gene set
+Processing Wdr82_BR_43559
+Finding new perturbation gene set
+Processing Kmt2d_AS_44463
+Finding new perturbation gene set
+Processing Smarcd2_AS_15163
+Finding new perturbation gene set
+Processing Brd9_BR_48005
+Finding new perturbation gene set
+Processing Kmt2a_BR_53968
+Finding new perturbation gene set
+Processing Gltscr1_BR_62866
+Finding new perturbation gene set
+Processing Phf10_AS_27365
+Finding new perturbation gene set
+Processing Kmt2d_BR_72116
+Finding new perturbation gene set
+Processing Smarcb1_BR_16140
+Finding new perturbation gene set
+Processing Smarcb1_AS_15177
+Finding new perturbation gene set
+Processing Wdr82_BR_43556
+Finding new perturbation gene set
+Computing perturbation signature for missing features.
+Classifying cells for: 
+  Fewer than 5 DE genes for Gltscr1_AS_53231. Assigning cells as NP.
+  Fewer than 5 DE genes for Brd9_AS_70306. Assigning cells as NP.
+  Fewer than 5 DE genes for Kmt2a_AS_44476. Assigning cells as NP.
+  Smarcd1_BR_45407
+number of iterations= 175 
+number of iterations= 83 
+number of iterations= 99 
+number of iterations= 107 
+number of iterations= 113 
+  Men1_AS_40514
+number of iterations= 20 
+number of iterations= 14 
+number of iterations= 14 
+number of iterations= 13 
+number of iterations= 13 
+number of iterations= 13 
+number of iterations= 14 
+number of iterations= 13 
+number of iterations= 14 
+number of iterations= 13 
+  Men1_AS_40513
+number of iterations= 38 
+number of iterations= 31 
+number of iterations= 31 
+number of iterations= 32 
+number of iterations= 31 
+number of iterations= 32 
+number of iterations= 31 
+number of iterations= 32 
+number of iterations= 31 
+number of iterations= 31 
+  Smarcd1_AS_15166
+number of iterations= 186 
+number of iterations= 70 
+number of iterations= 85 
+number of iterations= 99 
+number of iterations= 108 
+number of iterations= 120 
+number of iterations= 127 
+number of iterations= 139 
+number of iterations= 143 
+number of iterations= 142 
+  Fewer than 5 DE genes for Phf10_AS_27367. Assigning cells as NP.
+  Fewer than 5 DE genes for Wdr82_BR_43559. Assigning cells as NP.
+  Kmt2d_AS_44463
+number of iterations= 1351 
+number of iterations= 104 
+number of iterations= 89 
+number of iterations= 82 
+number of iterations= 79 
+  Fewer than 5 DE genes for Smarcd2_AS_15163. Assigning cells as NP.
+  Fewer than 5 DE genes for Brd9_BR_48005. Assigning cells as NP.
+  Kmt2a_BR_53968
+WARNING! NOT CONVERGENT! 
+number of iterations= 5000 
+number of iterations= 207 
+number of iterations= 131 
+number of iterations= 65 
+number of iterations= 73 
+number of iterations= 61 
+number of iterations= 74 
+number of iterations= 58 
+number of iterations= 64 
+number of iterations= 66 
+  Fewer than 5 DE genes for Gltscr1_BR_62866. Assigning cells as NP.
+  Fewer than 5 DE genes for Phf10_AS_27365. Assigning cells as NP.
+  Kmt2d_BR_72116
+number of iterations= 237 
+number of iterations= 135 
+number of iterations= 162 
+number of iterations= 169 
+  Fewer than 5 DE genes for Smarcb1_BR_16140. Assigning cells as NP.
+  Fewer than 5 DE genes for Smarcb1_AS_15177. Assigning cells as NP.
+  Fewer than 5 DE genes for Wdr82_BR_43556. Assigning cells as NP.
+[1] "------------------------------"
+[1] "ECCITE8_OP3_d7"
+[1] "---------------"
+[1] "Processing dataset"
+Genome matrix has multiple modalities, returning a list of matrices for this genome
+Warning: The following features are not present in the object: MCM5, PCNA, TYMS, FEN1, MCM2, MCM4, RRM1, UNG, GINS2, MCM6, CDCA7, DTL, PRIM1, UHRF1, MLF1IP, HELLS, RFC2, RPA2, NASP, RAD51AP1, GMNN, WDR76, SLBP, CCNE2, UBR7, POLD3, MSH2, ATAD2, RAD51, RRM2, CDC45, CDC6, EXO1, TIPIN, DSCC1, BLM, CASP8AP2, USP1, CLSPN, POLA1, CHAF1B, BRIP1, E2F8, not searching for symbol synonyms
+Warning: The following features are not present in the object: HMGB2, CDK1, NUSAP1, UBE2C, BIRC5, TPX2, TOP2A, NDC80, CKS2, NUF2, CKS1B, MKI67, TMPO, CENPF, TACC3, FAM64A, SMC4, CCNB2, CKAP2L, CKAP2, AURKB, BUB1, KIF11, ANP32E, TUBB4B, GTSE1, KIF20B, HJURP, CDCA3, HN1, CDC20, TTK, CDC25C, KIF2C, RANGAP1, NCAPD2, DLGAP5, CDCA2, CDCA8, ECT2, KIF23, HMMR, AURKA, PSRC1, ANLN, LBR, CKAP5, CENPE, CTCF, NEK2, G2E3, GAS2L3, CBX5, CENPA, not searching for symbol synonyms
+[1] "CRISPR Guide Capture"
+
+ Carm1_B_69142  Carm1_B_69143 Chmp2a_B_66196 Chmp2a_B_66198  Ehmt1_B_59111 
+          1017            585             47             49            182 
+ Ehmt1_B_59112  Ehmt2_B_59106  Ehmt2_B_59108       NTC_0003       NTC_0004 
+             7           1204            265            430             34 
+ Prmt1_B_24468  Prmt1_B_24470 Prmt5_B_244511  Prmt5_B_24454 Setdb2_B_17748 
+           534            219            506             96            140 
+Setdb2_B_17750   Smc2_B_15141   Smc2_B_15144   Smc3_B_15137   Smc3_B_15138 
+           288             12              4             28              5 
+  Smc4_B_15133   Smc4_B_15134 
+           104             13 
+Processing rep1
+Processing rep1
+Processing rep1
+Processing rep1
+Centering data matrix
+  |                                                                              |                                                                      |   0%  |                                                                              |===================================                                   |  50%  |                                                                              |======================================================================| 100%
+Processing Prmt1_B_24468
+Finding new perturbation gene set
+Processing Ehmt1_B_59111
+Finding new perturbation gene set
+Processing Prmt5_B_24454
+Finding new perturbation gene set
+Processing Ehmt2_B_59106
+Finding new perturbation gene set
+Processing Carm1_B_69143
+Finding new perturbation gene set
+Processing Prmt5_B_244511
+Finding new perturbation gene set
+Processing Smc4_B_15133
+Finding new perturbation gene set
+Processing Prmt1_B_24470
+Finding new perturbation gene set
+Processing Setdb2_B_17748
+Finding new perturbation gene set
+Processing Smc2_B_15141
+Finding new perturbation gene set
+Processing Smc2_B_15144
+Finding new perturbation gene set
+Processing Ehmt2_B_59108
+Finding new perturbation gene set
+Processing Carm1_B_69142
+Finding new perturbation gene set
+Processing Setdb2_B_17750
+Finding new perturbation gene set
+Processing Ehmt1_B_59112
+Finding new perturbation gene set
+Processing Smc3_B_15138
+Finding new perturbation gene set
+Processing Chmp2a_B_66196
+Finding new perturbation gene set
+Processing Smc4_B_15134
+Finding new perturbation gene set
+Processing Smc3_B_15137
+Finding new perturbation gene set
+Processing Chmp2a_B_66198
+Finding new perturbation gene set
+Computing perturbation signature for missing features.
+Classifying cells for: 
+  Prmt1_B_24468
+number of iterations= 347 
+number of iterations= 243 
+number of iterations= 214 
+number of iterations= 201 
+number of iterations= 182 
+number of iterations= 175 
+number of iterations= 170 
+number of iterations= 168 
+number of iterations= 164 
+  Fewer than 5 DE genes for Ehmt1_B_59111. Assigning cells as NP.
+  Fewer than 5 DE genes for Prmt5_B_24454. Assigning cells as NP.
+  Fewer than 5 DE genes for Ehmt2_B_59106. Assigning cells as NP.
+  Fewer than 5 DE genes for Carm1_B_69143. Assigning cells as NP.
+  Fewer than 5 DE genes for Prmt5_B_244511. Assigning cells as NP.
+  Fewer than 5 DE genes for Smc4_B_15133. Assigning cells as NP.
+  Prmt1_B_24470
+number of iterations= 269 
+number of iterations= 194 
+number of iterations= 147 
+number of iterations= 144 
+number of iterations= 144 
+number of iterations= 144 
+  Fewer than 5 DE genes for Setdb2_B_17748. Assigning cells as NP.
+  Fewer than 5 DE genes for Smc2_B_15141. Assigning cells as NP.
+  Fewer than 5 DE genes for Smc2_B_15144. Assigning cells as NP.
+  Fewer than 5 DE genes for Ehmt2_B_59108. Assigning cells as NP.
+  Fewer than 5 DE genes for Carm1_B_69142. Assigning cells as NP.
+  Fewer than 5 DE genes for Setdb2_B_17750. Assigning cells as NP.
+  Fewer than 5 DE genes for Ehmt1_B_59112. Assigning cells as NP.
+  Fewer than 5 DE genes for Smc3_B_15138. Assigning cells as NP.
+  Fewer than 5 DE genes for Chmp2a_B_66196. Assigning cells as NP.
+  Fewer than 5 DE genes for Smc4_B_15134. Assigning cells as NP.
+  Fewer than 5 DE genes for Smc3_B_15137. Assigning cells as NP.
+  Fewer than 5 DE genes for Chmp2a_B_66198. Assigning cells as NP.
+[1] "------------------------------"
+[1] "ECCITE8_OP3_d9"
+[1] "---------------"
+[1] "Processing dataset"
+Genome matrix has multiple modalities, returning a list of matrices for this genome
+Warning: The following features are not present in the object: MCM5, PCNA, TYMS, FEN1, MCM2, MCM4, RRM1, UNG, GINS2, MCM6, CDCA7, DTL, PRIM1, UHRF1, MLF1IP, HELLS, RFC2, RPA2, NASP, RAD51AP1, GMNN, WDR76, SLBP, CCNE2, UBR7, POLD3, MSH2, ATAD2, RAD51, RRM2, CDC45, CDC6, EXO1, TIPIN, DSCC1, BLM, CASP8AP2, USP1, CLSPN, POLA1, CHAF1B, BRIP1, E2F8, not searching for symbol synonyms
+Warning: The following features are not present in the object: HMGB2, CDK1, NUSAP1, UBE2C, BIRC5, TPX2, TOP2A, NDC80, CKS2, NUF2, CKS1B, MKI67, TMPO, CENPF, TACC3, FAM64A, SMC4, CCNB2, CKAP2L, CKAP2, AURKB, BUB1, KIF11, ANP32E, TUBB4B, GTSE1, KIF20B, HJURP, CDCA3, HN1, CDC20, TTK, CDC25C, KIF2C, RANGAP1, NCAPD2, DLGAP5, CDCA2, CDCA8, ECT2, KIF23, HMMR, AURKA, PSRC1, ANLN, LBR, CKAP5, CENPE, CTCF, NEK2, G2E3, GAS2L3, CBX5, CENPA, not searching for symbol synonyms
+[1] "CRISPR Guide Capture"
+
+ Carm1_B_69142  Carm1_B_69143 Chmp2a_B_66196 Chmp2a_B_66198  Ehmt1_B_59111 
+          2174           1454             41             57            185 
+ Ehmt1_B_59112  Ehmt2_B_59106  Ehmt2_B_59108       NTC_0003       NTC_0004 
+            25           1532            275            726            132 
+ Prmt1_B_24468  Prmt1_B_24470 Prmt5_B_244511  Prmt5_B_24454 Setdb2_B_17748 
+           461            274            614            110            197 
+Setdb2_B_17750   Smc2_B_15141   Smc2_B_15144   Smc3_B_15137   Smc3_B_15138 
+           530             17             15             35              2 
+  Smc4_B_15133   Smc4_B_15134 
+            87             51 
+Processing rep1
+Processing rep1
+Processing rep1
+Processing rep1
+Centering data matrix
+  |                                                                              |                                                                      |   0%  |                                                                              |===================================                                   |  50%  |                                                                              |======================================================================| 100%
+Processing Prmt5_B_244511
+Finding new perturbation gene set
+Processing Ehmt1_B_59112
+Finding new perturbation gene set
+Processing Carm1_B_69142
+Finding new perturbation gene set
+Processing Carm1_B_69143
+Finding new perturbation gene set
+Processing Ehmt2_B_59106
+Finding new perturbation gene set
+Processing Smc2_B_15144
+Finding new perturbation gene set
+Processing Ehmt1_B_59111
+Finding new perturbation gene set
+Processing Setdb2_B_17748
+Finding new perturbation gene set
+Processing Prmt1_B_24468
+Finding new perturbation gene set
+Processing Setdb2_B_17750
+Finding new perturbation gene set
+Processing Ehmt2_B_59108
+Finding new perturbation gene set
+Processing Chmp2a_B_66198
+Finding new perturbation gene set
+Processing Smc4_B_15133
+Finding new perturbation gene set
+Processing Smc2_B_15141
+Finding new perturbation gene set
+Processing Prmt1_B_24470
+Finding new perturbation gene set
+Processing Prmt5_B_24454
+Finding new perturbation gene set
+Processing Smc4_B_15134
+Finding new perturbation gene set
+Processing Chmp2a_B_66196
+Finding new perturbation gene set
+Processing Smc3_B_15137
+Finding new perturbation gene set
+Processing Smc3_B_15138
+Finding new perturbation gene set
+Computing perturbation signature for missing features.
+Classifying cells for: 
+  Fewer than 5 DE genes for Prmt5_B_244511. Assigning cells as NP.
+  Ehmt1_B_59112
+number of iterations= 643 
+number of iterations= 170 
+number of iterations= 207 
+number of iterations= 219 
+number of iterations= 227 
+number of iterations= 247 
+number of iterations= 223 
+number of iterations= 247 
+number of iterations= 223 
+number of iterations= 247 
+  Carm1_B_69142
+number of iterations= 2154 
+number of iterations= 116 
+number of iterations= 100 
+number of iterations= 102 
+number of iterations= 105 
+number of iterations= 107 
+number of iterations= 109 
+number of iterations= 112 
+number of iterations= 115 
+number of iterations= 113 
+  Carm1_B_69143
+number of iterations= 540 
+number of iterations= 310 
+number of iterations= 300 
+number of iterations= 297 
+number of iterations= 296 
+number of iterations= 291 
+number of iterations= 286 
+number of iterations= 278 
+number of iterations= 271 
+number of iterations= 271 
+  Fewer than 5 DE genes for Ehmt2_B_59106. Assigning cells as NP.
+  Smc2_B_15144
+number of iterations= 164 
+number of iterations= 53 
+number of iterations= 49 
+number of iterations= 45 
+  Fewer than 5 DE genes for Ehmt1_B_59111. Assigning cells as NP.
+  Fewer than 5 DE genes for Setdb2_B_17748. Assigning cells as NP.
+  Prmt1_B_24468
+number of iterations= 3720 
+number of iterations= 202 
+number of iterations= 156 
+number of iterations= 154 
+number of iterations= 153 
+  Fewer than 5 DE genes for Setdb2_B_17750. Assigning cells as NP.
+  Fewer than 5 DE genes for Ehmt2_B_59108. Assigning cells as NP.
+  Fewer than 5 DE genes for Chmp2a_B_66198. Assigning cells as NP.
+  Fewer than 5 DE genes for Smc4_B_15133. Assigning cells as NP.
+  Fewer than 5 DE genes for Smc2_B_15141. Assigning cells as NP.
+  Prmt1_B_24470
+number of iterations= 2635 
+number of iterations= 120 
+number of iterations= 174 
+number of iterations= 179 
+number of iterations= 182 
+number of iterations= 179 
+number of iterations= 181 
+  Fewer than 5 DE genes for Prmt5_B_24454. Assigning cells as NP.
+  Fewer than 5 DE genes for Smc4_B_15134. Assigning cells as NP.
+  Fewer than 5 DE genes for Chmp2a_B_66196. Assigning cells as NP.
+  Fewer than 5 DE genes for Smc3_B_15137. Assigning cells as NP.
+  Fewer than 5 DE genes for Smc3_B_15138. Assigning cells as NP.
+[1] "------------------------------"
+[1] "ECCITE8_Toxin_d14"
+[1] "---------------"
+[1] "Processing dataset"
+Genome matrix has multiple modalities, returning a list of matrices for this genome
+Warning: The following features are not present in the object: MCM5, PCNA, TYMS, FEN1, MCM2, MCM4, RRM1, UNG, GINS2, MCM6, CDCA7, DTL, PRIM1, UHRF1, MLF1IP, HELLS, RFC2, RPA2, NASP, RAD51AP1, GMNN, WDR76, SLBP, CCNE2, UBR7, POLD3, MSH2, ATAD2, RAD51, RRM2, CDC45, CDC6, EXO1, TIPIN, DSCC1, BLM, CASP8AP2, USP1, CLSPN, POLA1, CHAF1B, BRIP1, E2F8, not searching for symbol synonyms
+Warning: The following features are not present in the object: HMGB2, CDK1, NUSAP1, UBE2C, BIRC5, TPX2, TOP2A, NDC80, CKS2, NUF2, CKS1B, MKI67, TMPO, CENPF, TACC3, FAM64A, SMC4, CCNB2, CKAP2L, CKAP2, AURKB, BUB1, KIF11, ANP32E, TUBB4B, GTSE1, KIF20B, HJURP, CDCA3, HN1, CDC20, TTK, CDC25C, KIF2C, RANGAP1, NCAPD2, DLGAP5, CDCA2, CDCA8, ECT2, KIF23, HMMR, AURKA, PSRC1, ANLN, LBR, CKAP5, CENPE, CTCF, NEK2, G2E3, GAS2L3, CBX5, CENPA, not searching for symbol synonyms
+[1] "CRISPR Guide Capture"
+
+   Brd9_AS_70306    Brd9_BR_48005 Gltscr1_AS_53231 Gltscr1_BR_62866 
+              15              214              381              125 
+  Kmt2a_AS_44476   Kmt2a_BR_53968   Kmt2d_AS_44463   Kmt2d_BR_72116 
+               3               10              136               32 
+   Men1_AS_40513    Men1_AS_40514         NTC_0005         NTC_0006 
+             277               29              209              523 
+  Phf10_AS_27365   Phf10_AS_27367 Smarcb1_AS_15177 Smarcb1_BR_16140 
+              88              786                2               18 
+Smarcd1_AS_15166 Smarcd1_BR_45407 Smarcd2_AS_15163   Wdr82_BR_43556 
+             148               70              620               16 
+  Wdr82_BR_43559 
+              44 
+Processing rep1
+Processing rep1
+Processing rep1
+Processing rep1
+Centering data matrix
+  |                                                                              |                                                                      |   0%  |                                                                              |===================================                                   |  50%  |                                                                              |======================================================================| 100%
+Processing Kmt2d_AS_44463
+Finding new perturbation gene set
+Processing Phf10_AS_27367
+Finding new perturbation gene set
+Processing Smarcd2_AS_15163
+Finding new perturbation gene set
+Processing Men1_AS_40513
+Finding new perturbation gene set
+Processing Brd9_BR_48005
+Finding new perturbation gene set
+Processing Gltscr1_AS_53231
+Finding new perturbation gene set
+Processing Smarcd1_BR_45407
+Finding new perturbation gene set
+Processing Gltscr1_BR_62866
+Finding new perturbation gene set
+Processing Phf10_AS_27365
+Finding new perturbation gene set
+Processing Men1_AS_40514
+Finding new perturbation gene set
+Processing Kmt2d_BR_72116
+Finding new perturbation gene set
+Processing Smarcb1_BR_16140
+Finding new perturbation gene set
+Processing Brd9_AS_70306
+Finding new perturbation gene set
+Processing Smarcd1_AS_15166
+Finding new perturbation gene set
+Processing Wdr82_BR_43559
+Finding new perturbation gene set
+Processing Kmt2a_BR_53968
+Finding new perturbation gene set
+Processing Wdr82_BR_43556
+Finding new perturbation gene set
+Computing perturbation signature for missing features.
+Classifying cells for: 
+  Fewer than 5 DE genes for Kmt2d_AS_44463. Assigning cells as NP.
+  Fewer than 5 DE genes for Phf10_AS_27367. Assigning cells as NP.
+  Smarcd2_AS_15163
+number of iterations= 533 
+number of iterations= 764 
+number of iterations= 1019 
+number of iterations= 1003 
+number of iterations= 960 
+number of iterations= 936 
+  Fewer than 5 DE genes for Men1_AS_40513. Assigning cells as NP.
+  Fewer than 5 DE genes for Brd9_BR_48005. Assigning cells as NP.
+  Fewer than 5 DE genes for Gltscr1_AS_53231. Assigning cells as NP.
+  Fewer than 5 DE genes for Smarcd1_BR_45407. Assigning cells as NP.
+  Fewer than 5 DE genes for Gltscr1_BR_62866. Assigning cells as NP.
+  Fewer than 5 DE genes for Phf10_AS_27365. Assigning cells as NP.
+  Fewer than 5 DE genes for Men1_AS_40514. Assigning cells as NP.
+  Fewer than 5 DE genes for Kmt2d_BR_72116. Assigning cells as NP.
+  Fewer than 5 DE genes for Smarcb1_BR_16140. Assigning cells as NP.
+  Fewer than 5 DE genes for Brd9_AS_70306. Assigning cells as NP.
+  Fewer than 5 DE genes for Smarcd1_AS_15166. Assigning cells as NP.
+  Fewer than 5 DE genes for Wdr82_BR_43559. Assigning cells as NP.
+  Fewer than 5 DE genes for Kmt2a_BR_53968. Assigning cells as NP.
+  Fewer than 5 DE genes for Wdr82_BR_43556. Assigning cells as NP.
 Remove noise by PCA ...
-Running Uniform Manifold Approximation and Projection
-09:06:08 UMAP embedding parameters a = 1.577 b = 0.8951
-09:06:08 Read 21267 rows and found 50 numeric columns
-09:06:08 Building Annoy index with metric = cosine, n_trees = 50
-0%   10   20   30   40   50   60   70   80   90   100%
-[----|----|----|----|----|----|----|----|----|----|
-**************************************************|
-09:06:14 Writing NN index file to temp file /tmp/RtmpaIOKoj/filea5f064b6430c
-09:06:14 Searching Annoy index using 1 thread, search_k = 1500
-09:06:19 Annoy recall = 100%
-09:06:21 Commencing smooth kNN distance calibration using 1 thread
-09:06:23 Initializing from normalized Laplacian + noise
-09:06:23 Commencing optimization for 200 epochs, with 471438 positive edges
-0%   10   20   30   40   50   60   70   80   90   100%
-[----|----|----|----|----|----|----|----|----|----|
-**************************************************|
-09:06:35 Optimization finished
-Aligning cells from different batches using Batchelor. 
-Please remember to cite:
-	 Haghverdi L, Lun ATL, Morgan MD, Marioni JC (2018). 'Batch effects in single-cell RNA-sequencing data are corrected by matching mutual nearest neighbors.' Nat. Biotechnol., 36(5), 421-427. doi: 10.1038/nbt.4091
-Running Uniform Manifold Approximation and Projection
-09:06:47 UMAP embedding parameters a = 1.577 b = 0.8951
-09:06:47 Read 21267 rows and found 50 numeric columns
-09:06:47 Building Annoy index with metric = cosine, n_trees = 50
-0%   10   20   30   40   50   60   70   80   90   100%
-[----|----|----|----|----|----|----|----|----|----|
-**************************************************|
-09:06:53 Writing NN index file to temp file /tmp/RtmpaIOKoj/filea5f04db5abe8
-09:06:53 Searching Annoy index using 1 thread, search_k = 1500
-09:06:58 Annoy recall = 100%
-09:06:59 Commencing smooth kNN distance calibration using 1 thread
-09:07:01 Initializing from normalized Laplacian + noise
-09:07:01 Commencing optimization for 200 epochs, with 475004 positive edges
-0%   10   20   30   40   50   60   70   80   90   100%
-[----|----|----|----|----|----|----|----|----|----|
-**************************************************|
-09:07:13 Optimization finished
-[1] "cytoRes"
-[1] "chip.targets"
-[1] "percent.mt"
-[1] "nFeature_RNA"
-[1] "nCount_RNA"
-Warning message:
-The `add` argument of `group_by()` is deprecated as of dplyr 1.0.0.
-Please use the `.add` argument instead.
-This warning is displayed once every 8 hours.
-Call `lifecycle::last_warnings()` to see where this warning was generated. 
-Scale for 'size' is already present. Adding another scale for 'size', which
-will replace the existing scale.
-Warning messages:
-1: In if (ordering_type == "cluster_row_col") { :
-  the condition has length > 1 and only the first element will be used
-2: In if (axis_order == "marker_group") { :
-  the condition has length > 1 and only the first element will be used
-[1] "blueprint_label.fine"
-[1] "blueprint_label.main"
-[1] "dmap_label.fine"
-[1] "dmap_label.main"
-[1] "hpca_label.fine"
-[1] "hpca_label.main"
-[1] "immgen_label.fine"
-[1] "immgen_label.main"
-[1] "marrow10x_label.main"
-[1] "marrowPlate_label.main"
-[1] "monaco_label.fine"
-[1] "monaco_label.main"
-[1] "mouseRNA_label.fine"
-[1] "mouseRNA_label.main"
-There were 26 warnings (use warnings() to see them)
-[1] "Chd4"    "Kmt2a"   "Kmt2d"   "Men1"    "NTC"     "Setd1b"  "Smarcd1"
-[8] "Smarcd2" "Wdr82"  
-'data.frame':	2266 obs. of  3 variables:
- $ GuideDE  : Factor w/ 9 levels "NTC","Wdr82",..: 2 3 1 4 4 1 1 4 5 6 ...
- $ ClusterDE: chr  "2" "1" "1" "1" ...
- $ tissueDE : Factor w/ 3 levels "in vitro","leukemia",..: 1 1 1 1 1 1 1 1 1 1 ...
-Remove  0  genes having low expression.
-Analyzing  10061  genes with  2  subjects and  2266  cells.
-
-  -10     1 
- 1400 99210 
-`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
-`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
-[1] TRUE
-null device 
-          1 
-[1] TRUE
-null device 
-          1 
-Warning messages:
-1: Removed 136 rows containing non-finite values (stat_summary_hex). 
-2: Removed 24 rows containing missing values (geom_hex). 
-3: Removed 442 rows containing non-finite values (stat_summary_hex). 
-4: Removed 78 rows containing missing values (geom_hex). 
-5: Removed 26 rows containing missing values (geom_hex). 
-6: Removed 112 rows containing non-finite values (stat_summary_hex). 
-7: Removed 364 rows containing non-finite values (stat_summary_hex). 
-8: Removed 156 rows containing missing values (geom_hex). 
