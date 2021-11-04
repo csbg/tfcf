@@ -256,7 +256,12 @@ if(file.exists(monocle.file)){
     reduce_dimension(preprocess_method = "PCA", verbose = TRUE)
   set.seed(42)
   monocle.obj <-
-    align_cds(monocle.obj, alignment_group = "sample", verbose = TRUE) %>%
+    align_cds(
+      monocle.obj, 
+      alignment_group = "sample", 
+      residual_model_formula_str = "~Phase",
+      verbose = TRUE
+      ) %>%
     reduce_dimension(
       reduction_method = "UMAP",
       preprocess_method = "Aligned",
