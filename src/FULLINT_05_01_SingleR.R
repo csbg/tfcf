@@ -6,7 +6,7 @@ library(SingleR)
 library(celldex)
 library(tidyverse)
 library(CytoTRACE)
-
+library(doMC)
 
 # LOAD DATA ---------------------------------------------------------------
 # Human/mouse map
@@ -145,7 +145,10 @@ for(dx in unique(res$dataset)){
 
 # SingleR analysis --------------------------------------------------------
 ref <- names(reference_cell_types)[1]
-for(ref in names(reference_cell_types)){
+#for(ref in names(reference_cell_types)){
+doMC::registerDoMC(cores=8)
+foreach(ref = names(reference_cell_types)) %dopar% {
+
   print(ref)
   
   # Figure out organism
@@ -195,6 +198,7 @@ for(ref in names(reference_cell_types)){
       write_csv(df, out("cell_types_", results$ref, "_", results$labels, ".csv"))
     }
   }
+  TRUE
 }
 
 
