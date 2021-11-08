@@ -179,6 +179,16 @@ ggplot(pDT, aes(y=tissue,x=factor(as.numeric(Clusters)), size=percentS, color=pe
 ggsave(out("Tissues_Clusters.pdf"), w=8,h=length(unique(pDT$tissue)) * 1+1)
 
 
+# Cell cycle --------------------------------------------------------------
+ggplot(ann, aes(x=UMAP1, y=UMAP2)) + 
+  theme_bw(12) +
+  geom_hex(bins=100) +
+  scale_fill_hexbin() +
+  facet_grid(. ~ Phase)
+ggsave(out("CellCycle_UMAP.pdf"), w=16,h=5)
+
+
+
 # CLUSTERS ----------------------------------------------------
 # UMAP
 ggplot(ann, aes(x=UMAP1, y=UMAP2)) + 
@@ -209,10 +219,15 @@ p <- plot_cells(monocle.obj,
            )
 ggsave(out("Markers_UMAP.jpg"), w=30,h=30)
 
+# gg.order <- t(as.matrix(counts(monocle.obj[marker.genes$Name,])))
+# gg.order <- corS(mm)
+# gg.order <- hclust(as.dist(1-cMT))
+# gg.order <- gg.order$labels[gg.order$order]
+
 p <- plot_cells_umap_hex_NF(monocle.obj,genes = sort(marker.genes$Name))
 ggsave(out("Markers_UMAP_hex.pdf"), w=30,h=30, plot=p)
 
-p <- plot_cells_umap_hex_NF(monocle.obj,genes = sort(marker.genes$Name), scale=TRUE)
+p <- plot_cells_umap_hex_NF(monocle.obj, scale=TRUE, genes = sort(marker.genes$Name))
 ggsave(out("Markers_UMAP_hex_scale.pdf"), w=30,h=30, plot=p)
 
 
@@ -236,7 +251,12 @@ for(srx in names(singleR.res)){
     facet_wrap(~value, ncol=5) +
     theme_bw(12) +
     ggtitle(srx)
-  ggsave(out("SingleR_", srx, "_UMAP_Predicted",".pdf"), w=5*3+2, h=ceiling(length(unique(pDT.pc$value))/5)*3+1, plot=p)
+  ggsave(
+    out("SingleR_", srx, "_UMAP_Predicted",".pdf"), 
+    w=5*3+2, 
+    h=ceiling(length(unique(pDT.pc$value))/5)*3+1, 
+    limitsize = FALSE,
+    plot=p)
   
   # Clusters - Predictions
   pDT.ann <- merge(singleR.resX[,c("pruned_labels", "cell")],ann, by.x="cell", by.y="rn")
@@ -251,12 +271,12 @@ for(srx in names(singleR.res)){
     ggtitle(srx)
   ggsave(out("SingleR_", srx, "_Clusters_", "PercPredicted", ".pdf"),          
          h=length(unique(pDT.ann$pruned_labels)) * 0.3+1,
-         w=length(unique(pDT.ann$Clusters)) * 0.3 * 3+2)
+         w=length(unique(pDT.ann$Clusters)) * 0.3 * 3+2,
+         limitsize = FALSE)
   
   pDT.ann$dataset <- srx
   singleR.sum <- rbind(singleR.sum, pDT.ann)
 }
-
 singleR.sum[,id := paste(dataset, pruned_labels, tissue)]
 pDT <- merge(singleR.sum[,max(percent), by=c("id")][V1 > 20][,c("id")], singleR.sum, by=c("id"))
 pDT <- hierarch.ordering(pDT, toOrder = "Clusters", orderBy = "pruned_labels", value.var = "percent", aggregate = TRUE)
@@ -269,7 +289,8 @@ ggplot(pDT, aes(y=Clusters, x=pruned_labels, fill=percent)) +
   xRot()
 ggsave(out("SingleR_0_Clusters_", "PercPredicted", ".pdf"),          
        w=nrow(pDT[,.N, by=c("dataset", "pruned_labels")]) * 0.2+2,
-       h=length(unique(pDT$Clusters)) * 0.2 * 3+1)
+       h=length(unique(pDT$Clusters)) * 0.2 * 3+1,
+       limitsize = FALSE)
 
 
 
