@@ -10,6 +10,7 @@ source("src/FUNC_Monocle_PLUS.R")
 args = commandArgs(trailingOnly=TRUE)
 # args[1] <- "leukemia"
 # args[1] <- "in vivo"
+# args[1] <- "in vitro"
 
 # Define output directory based on the tissue
 baseDir <- "FULLINT_10_01_BasicAnalysis"
@@ -27,15 +28,19 @@ out <- dirout(paste0(baseDir, "_", make.names(baseDir.add), "/"))
 
 # LOAD DATA ---------------------------------------------------------------
 # load single cell data
-(load(PATHS$FULLINT$Monocle))
-fData(monocle.obj)$gene_short_name <- row.names(fData(monocle.obj))
-
 # Subset data and reprocess based on the tissue (command line argument)
-if(baseDir.add != "combined"){
+if(baseDir.add == "combined"){
+  print("Loading full dataset")
+  load(PATHS$FULLINT$Monocle)
+}else{
   monocle.file <- out("MonocleObject.RData")
   if(file.exists(monocle.file)){
+    print("Loading processed partial dataset")
     load(monocle.file)
   } else {
+    print("Processing partial dataset for tissue:")
+    print(args[1])
+    load(PATHS$FULLINT$Monocle)
     monocle.obj <- monocle.obj[,monocle.obj$tissue == args[1]]
     monocle.obj <-
       preprocess_cds(monocle.obj, verbose = TRUE) %>%
@@ -56,6 +61,8 @@ if(baseDir.add != "combined"){
     save(monocle.obj, additional.info, AGG.CSV, file=monocle.file)
   }
 }
+fData(monocle.obj)$gene_short_name <- row.names(fData(monocle.obj))
+
 
 # Markers
 marker.genes <- fread("metadata/markers.csv")
@@ -83,7 +90,7 @@ ann$Clusters <- as.character(monocle.obj@clusters$UMAP$clusters[ann$rn])
 umap <- setNames(data.table(reducedDims(monocle.obj)$UMAP, keep.rownames = TRUE), c("rn", "UMAP1", "UMAP2"))
 ann <- merge(ann, umap, by="rn", all=TRUE)
 if("cytoRes" %in% ls()) ann$CytoTRACE <- cytoRes$CytoTRACE[ann$rn]
-ann$tissue <- sann[match(gsub("_.+", "", ann$sample), sample),]$tissue
+#ann$tissue <- sann[match(gsub("_.+", "", ann$sample), sample),]$tissue
 write.tsv(ann, out("Annotation.tsv"))
 
 
@@ -425,16 +432,16 @@ res <- hierarch.ordering(res, toOrder = "grp", orderBy = "Clusters", value.var =
 res <- hierarch.ordering(res, toOrder = "Clusters", orderBy = "grp", value.var = "log2OR")
 ggplot(res, aes(
   x=Clusters,
-  y=mixscape_class, 
+  y=sample, 
   color=log2OR, 
   size=pmin(-log10(padj), 5))) + 
   geom_point(shape=16) +
   scale_color_gradient2(name="log2OR", low="blue", high="red") +
   scale_size_continuous(name="padj") + 
-  facet_grid(sample ~ ., space = "free", scales = "free") +
+  facet_grid(mixscape_class ~ ., space = "free", scales = "free") +
   theme_bw(12) +
   theme(strip.text.y = element_text(angle=0))
-ggsave(out("Guides_Fisher.pdf"), w=10, h=10)
+ggsave(out("Guides_Fisher.pdf"), w=10, h=length(unique(res$grp)) * 0.25 + 1, limitsize = FALSE)
 
 
 

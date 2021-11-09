@@ -28,7 +28,7 @@ fx <- ff[1]
 for(fx in ff){
   print(fx)
   
-  h5 <- list.files(paste0(fx), recursive = TRUE, pattern = "^filtered_feature_bc_matrix.h5$", full.names = TRUE)
+  h5 <- list.files(paste0(fx), recursive = TRUE, pattern = "^raw_feature_bc_matrix.h5$", full.names = TRUE)
   
   message(h5)
   
