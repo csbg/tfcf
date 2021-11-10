@@ -43,3 +43,6 @@ vignettes/*.pdf
 *.DS_Store
 
 renv/*
+
+
+pipeline.sh.log
