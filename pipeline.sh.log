@@ -157,3 +157,73 @@ The following objects are masked from ‘package:Biobase’:
     exprs, fData, fData<-, pData, pData<-
 
 Loading required package: mixtools
+mixtools package, version 1.2.0, Released 2020-02-05
+This package is based upon work supported by the National Science Foundation under Grant No. SES-0518772.
+
+Loading required package: Matrix
+
+Attaching package: ‘Matrix’
+
+The following object is masked from ‘package:S4Vectors’:
+
+    expand
+
+The following objects are masked from ‘package:tidyr’:
+
+    expand, pack, unpack
+
+Loading required package: rhdf5
+
+Attaching package: ‘rhdf5’
+
+The following object is masked from ‘package:hdf5r’:
+
+    h5version
+
+Warning messages:
+1: package ‘hdf5r’ was built under R version 4.0.3 
+2: package ‘mixtools’ was built under R version 4.0.3 
+Loading required package: umap
+Loading required package: igraph
+
+Attaching package: ‘igraph’
+
+The following object is masked from ‘package:monocle3’:
+
+    clusters
+
+The following object is masked from ‘package:GenomicRanges’:
+
+    union
+
+The following object is masked from ‘package:IRanges’:
+
+    union
+
+The following object is masked from ‘package:S4Vectors’:
+
+    union
+
+The following objects are masked from ‘package:BiocGenerics’:
+
+    normalize, path, union
+
+The following object is masked from ‘package:tidyr’:
+
+    crossing
+
+The following objects are masked from ‘package:dplyr’:
+
+    as_data_frame, groups, union
+
+The following objects are masked from ‘package:stats’:
+
+    decompose, spectrum
+
+The following object is masked from ‘package:base’:
+
+    union
+
+Loading required package: nebula
+Setting output directory: /media/AGFORTELNY/PROJECTS/TfCf/Analysis//FULLINT_10_01_BasicAnalysis_combined//
+[1] "Loading full dataset"
