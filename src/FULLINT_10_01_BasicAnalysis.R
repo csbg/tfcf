@@ -91,12 +91,16 @@ umap <- setNames(data.table(reducedDims(monocle.obj)$UMAP, keep.rownames = TRUE)
 ann <- merge(ann, umap, by="rn", all=TRUE)
 if("cytoRes" %in% ls()) ann$CytoTRACE <- cytoRes$CytoTRACE[ann$rn]
 #ann$tissue <- sann[match(gsub("_.+", "", ann$sample), sample),]$tissue
-write.tsv(ann, out("Annotation.tsv"))
 
 
 # SETUP ENDS HERE ---------------------------------------------------------
 
 
+
+
+
+# Output annotation -------------------------------------------------------
+write.tsv(ann, out("Annotation.tsv"))
 
 
 # ADDITIONAL QC  --------------------------------------------------------
@@ -408,7 +412,8 @@ for(sx in unique(ann[!is.na(mixscape_class)]$sample)){
   ggsave(out("Guides_UMAP_", sx, ".pdf"), w=7*4,h=ceiling(grps/7)*4+1)
 }
 
-# . Guides per cluster ------------------------------------------------------
+
+# . Guides per cluster - MIXSCAPE ------------------------------------------------------
 res <- data.table()
 pDT1 <- ann[!is.na(mixscape_class)][mixscape_class.global != "NP"]
 for(sx in unique(pDT1$sample)){
@@ -420,7 +425,7 @@ for(sx in unique(pDT1$sample)){
       #print(mx)
       if(dim(mx) == c(2,2)){
         fish <- fisher.test(mx)
-        res <- rbind(res, data.table(Clusters=cx, mixscape_class=gx, p=fish$p.value, OR=fish$estimate, sample=sx))
+        res <- rbind(res, data.table(Clusters=cx, mixscape_class=gx, p=fish$p.value, OR=fish$estimate, sample=sx, total.cells=sum(mx)))
       }
     }
   }
@@ -429,7 +434,7 @@ res[,padj := p.adjust(p, method="BH")]
 res[, log2OR := log2(pmin(5, OR + min(res[OR != 0]$OR)))]
 res[,grp := paste(mixscape_class, sample)]
 res <- hierarch.ordering(res, toOrder = "grp", orderBy = "Clusters", value.var = "log2OR")
-res <- hierarch.ordering(res, toOrder = "Clusters", orderBy = "grp", value.var = "log2OR")
+#res <- hierarch.ordering(res, toOrder = "Clusters", orderBy = "grp", value.var = "log2OR")
 ggplot(res, aes(
   x=Clusters,
   y=sample, 
@@ -441,8 +446,45 @@ ggplot(res, aes(
   facet_grid(mixscape_class ~ ., space = "free", scales = "free") +
   theme_bw(12) +
   theme(strip.text.y = element_text(angle=0))
-ggsave(out("Guides_Fisher.pdf"), w=10, h=length(unique(res$grp)) * 0.25 + 1, limitsize = FALSE)
+ggsave(out("Guides_Fisher_Mixscape.pdf"), w=10, h=length(unique(res$grp)) * 0.25 + 1, limitsize = FALSE)
+write.tsv(res[,-c("grp"), with=F], out("Guides_Fisher_Mixscape.tsv"))
 
+
+# . Guides per cluster ------------------------------------------------------
+res <- data.table()
+pDT1 <- ann[!is.na(guide)]
+for(sx in unique(pDT1$sample)){
+  pDT2 <- pDT1[sample == sx]
+  for(gx in unique(pDT2[mixscape_class != "NTC"]$guide)){
+    for(cx in unique(pDT2$Clusters)){
+      #message(gx, "-", cx)
+      mx <- as.matrix(with(pDT2[guide %in% c(gx, "NTC")], table(Clusters == cx, guide == gx)))
+      #print(mx)
+      if(dim(mx) == c(2,2)){
+        fish <- fisher.test(mx)
+        res <- rbind(res, data.table(Clusters=cx, guide=gx, p=fish$p.value, OR=fish$estimate, sample=sx, total.cells=sum(mx)))
+      }
+    }
+  }
+}
+res[,padj := p.adjust(p, method="BH")]
+res[, log2OR := log2(pmin(5, OR + min(res[OR != 0]$OR)))]
+res[,grp := paste(guide, sample)]
+res <- hierarch.ordering(res, toOrder = "grp", orderBy = "Clusters", value.var = "log2OR")
+#res <- hierarch.ordering(res, toOrder = "Clusters", orderBy = "grp", value.var = "log2OR")
+ggplot(res, aes(
+  x=Clusters,
+  y=sample,
+  color=log2OR, 
+  size=pmin(-log10(padj), 5))) + 
+  geom_point(shape=16) +
+  scale_color_gradient2(name="log2OR", low="blue", high="red") +
+  scale_size_continuous(name="padj") + 
+  facet_grid(guide ~ ., space = "free", scales = "free") +
+  theme_bw(12) +
+  theme(strip.text.y = element_text(angle=0))
+ggsave(out("Guides_Fisher_noMixscape.pdf"), w=10, h=length(unique(res$grp)) * 0.25 + 1, limitsize = FALSE)
+write.tsv(res[,-c("grp"), with=F], out("Guides_Fisher_noMixscape.tsv"))
 
 
 # DE for GUIDES -----------------------------------------
