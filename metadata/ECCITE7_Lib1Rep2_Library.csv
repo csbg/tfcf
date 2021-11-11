@@ -1,3 +1,5 @@
 fastqs,sample,library_type
 /usr/local/AGFORTELNY//PROJECTS/TfCf/RawData/ECCITE7/,SITTG8,Gene Expression
 /usr/local/AGFORTELNY//PROJECTS/TfCf/RawData/ECCITE7/,SINTC9,CRISPR Guide Capture
+/usr/local/AGFORTELNY//PROJECTS/TfCf/NewData/ECCITE7_2/,SITTG8,Gene Expression
+/usr/local/AGFORTELNY//PROJECTS/TfCf/NewData/ECCITE7_2/,SINTC9,CRISPR Guide Capture

@@ -173,7 +173,8 @@ foreach(ref = names(reference_cell_types)) %dopar% {
       results <- SingleR(
         test = count_matrix,
         ref = reference_cell_types[[ref]],
-        labels = colData(reference_cell_types[[ref]])[, labelx]
+        labels = colData(reference_cell_types[[ref]])[, labelx],
+        de.method = "wilcox"
       )
       
       results <- list(
