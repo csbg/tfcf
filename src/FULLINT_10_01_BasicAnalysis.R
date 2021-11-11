@@ -4,6 +4,7 @@ source("src/00_init.R")
 require(umap)
 require(igraph)
 require(nebula)
+require(fgsea)
 source("src/FUNC_Monocle_PLUS.R")
 
 # Figure out command line arguments (which tissue to analyze)
@@ -91,6 +92,11 @@ umap <- setNames(data.table(reducedDims(monocle.obj)$UMAP, keep.rownames = TRUE)
 ann <- merge(ann, umap, by="rn", all=TRUE)
 if("cytoRes" %in% ls()) ann$CytoTRACE <- cytoRes$CytoTRACE[ann$rn]
 #ann$tissue <- sann[match(gsub("_.+", "", ann$sample), sample),]$tissue
+
+
+
+# define files ------------------------------------------------------------
+neb.file <- out("DEG_Results_nebula.RData")
 
 
 # SETUP ENDS HERE ---------------------------------------------------------
@@ -520,7 +526,6 @@ str(obj.de.ann)
 write.tsv(data.table(obj.de.ann, keep.rownames = TRUE), out("DEG_Annnotation.tsv"))
 
 # Run nebula
-neb.file <- out("DEG_Results_nebula.RData")
 if(file.exists(neb.file)){
   (load(neb.file))
 } else {
@@ -590,7 +595,8 @@ resGuides[, guide := gsub("_.+$", "", guide)]
 resGuides <- resGuides[!is.na(estimate)]
 resGuides[, estimate_raw := estimate]
 resGuides[, estimate := ifelse(p_value > 0.9, 0, estimate)]
-write.tsv(resGuides[q_value < 1][,-"term",with=F], file=out("DEG_Results.tsv"))
+write.tsv(resGuides[q_value < 1][,-"term",with=F], file=out("DEG_Results_Export.tsv"))
+write.tsv(resGuides, file=out("DEG_Results_all.tsv"))
 
 #  . Vulcano / p-val distribution -----------------------------------------
 ggplot(resGuides, aes(x=estimate, y=-log10(p_value))) + 
@@ -604,8 +610,6 @@ ggplot(resGuides, aes(x=p_value)) +
   geom_histogram() +
   facet_wrap(~gsub("_", "\n", gsub("\\:tissueDE", "\nInteraction: ", term)), scales = "free", ncol = 5)
 ggsave(out("DEG_PVal_histogram.pdf"), w=15,h=15)
-
-
 
 
 if(length(unique(resGuides$term)) < 2){
@@ -627,15 +631,81 @@ ggplot(pDT, aes(x=guide, y=gene_id, size=pmin(5, -log10(q_value)), color=sign(es
   xRot()
 ggsave(out("DEG_examples.pdf"), w=10,h=30)
 
-# LogFC MATRIX ------------------------------------------------------------
+
+
+# UMAP and correlations of DEG --------------------------------------------
+resGuides <- fread(out("DEG_Results_all.tsv"))
+
+
+# . LogFC MATRIX ------------------------------------------------------------
 resGuides.I <- merge(resGuides[interaction==TRUE], resGuides[interaction==FALSE & tissue == "in vitro", c("guide", "estimate", "gene_id")], by=c("guide", "gene_id"), all.x=TRUE, allow.cartesian=FALSE)
 resGuides.I[,estimate := estimate.y + estimate.x]
-x <- rbind(resGuides.I[,c("guide", "estimate", "gene_id", "tissue")], resGuides[interaction==FALSE], fill=TRUE)
-x[,id := paste(guide, tissue)]
-umapMT <- toMT(x, row = "gene_id", col = "id", val = "estimate")
+resGuides.I <- rbind(resGuides.I[,c("guide", "estimate", "gene_id", "tissue")], resGuides[interaction==FALSE], fill=TRUE)
+resGuides.I[,id := paste(guide, tissue)]
+umapMT <- toMT(resGuides.I, row = "gene_id", col = "id", val = "estimate")
 
 
-# COR of DEG --------------------------------------------------------------
+# . CF ChIP-seq targets -----------------------------------------------------
+
+# Look for ChIP targets based on logFC
+chip.distributions <- data.table()
+for(fx in names(chip.targets)){
+  x <- copy(resGuides.I)
+  x[,ChIP := fx]
+  x[,ChIP.target := gene_id %in% chip.targets[[fx]]]
+  chip.distributions <- rbind(chip.distributions, x)
+}
+chip.distributions[,ChIP.guide := gsub("^.+_", "", ChIP)]
+pDT <- chip.distributions[ChIP.guide == guide]
+pDT[,id := paste("Targets:\n", sub(" ", "\n", id))]
+pDT[,ChIP := paste("ChIP:\n", sub("_", "\n", ChIP))]
+p <- ggplot(pDT, aes(x=ChIP, color=ChIP.target, y=estimate)) +
+  theme_bw(12) +
+  geom_violin() +
+  facet_wrap(~ id, scales = "free") +
+  xRot()
+ggsave(out("DEG_ChIP.pdf"), w=15,h=15, plot=p)
+
+# Calculate enrichment
+idx <- "Kmt2a in vitro"
+chip.gsea.file <- out("DEG_ChIP_GSEA.tsv")
+if(file.exists(chip.gsea.file)){
+  chip.gsea.res <- fread(chip.gsea.file)
+} else {
+  chip.gsea.res <- data.table()
+  for(idx in unique(resGuides.I$id)){
+    rnaDT <- resGuides.I[id == idx]
+    quantile(rnaDT$estimate)
+    chipL <- chip.targets[grepl(rnaDT$guide[1], names(chip.targets))]
+    res <- fgsea(chipL, stats=setNames(rnaDT$estimate, rnaDT$gene_id))
+    res$list <- idx
+    chip.gsea.res <- rbind(chip.gsea.res, res)
+  }
+  chip.gsea.res$leadingEdge <- NULL #sapply(chip.gsea.res$leadingEdge, function(x) paste(x, collapse = ","))
+  write.tsv(chip.gsea.res, chip.gsea.file)
+}
+ggplot(chip.gsea.res, aes(x=pathway, y=list, size=pmin(5, -log10(padj)), color=NES))+ 
+  theme_bw(12) +
+  scale_color_gradient2(low="blue", high="red") +
+  geom_point() + 
+  xRot()
+ggsave(out("DEG_ChIP_GSEA.pdf"), w=9,h=6)
+
+# Correlation
+chip.fc <- copy(chip.targets.fc)
+chip.fc[,ChIP.guide := gsub("^.+_", "", ChIP)]
+chip.fc <- merge(resGuides.I, chip.fc, by.x=c("guide", "gene_id"), by.y=c("ChIP.guide", "Gene"))
+chip.fc[,id := paste("Targets:\n", sub(" ", "\n", id))]
+chip.fc[,ChIP := paste("ChIP:\n", sub("_", "\n", ChIP))]
+chip.fc$FC <- unlist(chip.fc$FC)
+p <- ggplot(chip.fc, aes(y=FC,x=estimate)) + 
+  theme_bw() +
+  stat_binhex(aes(fill=log10(..count..))) +
+  facet_wrap(~ id + ChIP, scales = "free")
+ggsave(out("DEG_ChIP_Correlation.pdf"), w=30,h=30, plot=p)
+
+
+# . COR of DEG --------------------------------------------------------------
 cMT <- corS(umapMT)
 gn <- ncol(umapMT)
 dd <- as.dist(1-cMT)
@@ -653,7 +723,7 @@ dev.off()
 
 
 
-# UMAP of DEG -----------------------------------------
+# . UMAP of DEG -----------------------------------------
 for(umap.type in c("all", "top")){
   
   umap.type.name <- paste0(umap.type, ".genes")
