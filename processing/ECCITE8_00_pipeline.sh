@@ -26,8 +26,8 @@ for id in ECCITE8_IRR_OP1_d28_rep1 ECCITE8_IRR_OP1_d28_rep2; do
 	id2=$(echo $id | sed "s/ECCITE8_//g")
 	touch $file
 	echo "fastqs,sample,library_type" > $file
-	echo "/usr/local/AGFORTELNY//PROJECTS/TfCf/NewData/ECCITE8_2/demux_fastq/,3mRNA_$id2,Gene Expression" >> $file
-	echo "/usr/local/AGFORTELNY//PROJECTS/TfCf/NewData/ECCITE8_2/demux_fastq/,CRISPR_$id2,CRISPR Guide Capture" >> $file
+	echo "/usr/local/AGFORTELNY//PROJECTS/TfCf/NewData/ECCITE8_2/demux_fastq/,3mRNA_${id2}_28102021,Gene Expression" >> $file
+	echo "/usr/local/AGFORTELNY//PROJECTS/TfCf/NewData/ECCITE8_2/demux_fastq/,CRISPR_${id2}_28102021,CRISPR Guide Capture" >> $file
 done
 
 

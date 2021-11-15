@@ -34,7 +34,7 @@ row.names(count_matrix_human) <- hm2$Human.gene.name
 # Reference data ----------------------------------------------------------
 reference_cell_types <- list(
   # two general purpose datasets
-  hpca = HumanPrimaryCellAtlasData(),
+  # hpca = HumanPrimaryCellAtlasData(),
   blueprint = BlueprintEncodeData(),
   
   # # comprehensive CD4+ subsets; only one B cell subset, no dendritic cells
@@ -47,7 +47,7 @@ reference_cell_types <- list(
   monaco = MonacoImmuneData(),
   
   # ImmGen
-  immgen=ImmGenData(),
+  # immgen=ImmGenData(),
   
   # DB ImmuneCells
   # immuneCellExDB=DatabaseImmuneCellExpressionData(),

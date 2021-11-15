@@ -638,11 +638,17 @@ resGuides <- fread(out("DEG_Results_all.tsv"))
 
 
 # . LogFC MATRIX ------------------------------------------------------------
-resGuides.I <- merge(resGuides[interaction==TRUE], resGuides[interaction==FALSE & tissue == "in vitro", c("guide", "estimate", "gene_id")], by=c("guide", "gene_id"), all.x=TRUE, allow.cartesian=FALSE)
+resGuides.I <- merge(resGuides[interaction==TRUE], resGuides[interaction==FALSE, c("guide", "estimate", "gene_id"),with=F], by=c("guide", "gene_id"), all.x=TRUE, allow.cartesian=FALSE)
+stopifnot(sum(is.na(resGuides.I$estimate.x)) == 0)
+stopifnot(sum(is.na(resGuides.I$estimate.y)) == 0)
 resGuides.I[,estimate := estimate.y + estimate.x]
-resGuides.I <- rbind(resGuides.I[,c("guide", "estimate", "gene_id", "tissue")], resGuides[interaction==FALSE], fill=TRUE)
+resGuides.I <- rbind(
+  resGuides.I[,c("guide", "estimate", "gene_id", "tissue"),with=F], 
+  resGuides[interaction==FALSE,c("guide", "estimate", "gene_id", "tissue"),with=F],
+  fill=TRUE)
 resGuides.I[,id := paste(guide, tissue)]
 umapMT <- toMT(resGuides.I, row = "gene_id", col = "id", val = "estimate")
+write.table(umapMT, sep=",", row.names = TRUE, col.names = TRUE, quote = FALSE, file=out("DEG_Results_logFCMT.csv"))
 
 
 # . CF ChIP-seq targets -----------------------------------------------------
