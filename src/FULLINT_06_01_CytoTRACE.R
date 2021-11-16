@@ -15,30 +15,57 @@ require(ccaPP)
 require(CytoTRACE)
 require(scran)
 
-# Get most variable genes
-vg <- monocle.obj %>%
-  scran::modelGeneVar(assay.type = "counts") %>% 
-  scran::getTopHVGs(n = 10000)
+monocle.obj.original <- monocle.obj
 
-# Calculate rowsums
-counts <- counts(monocle.obj)
-rowsumsMT <- Matrix::rowSums(counts)
+sx <- monocle.obj$sample[1]
+cytoResDT <- data.table()
+for(sx in unique(monocle.obj.original$sample)){
+  print("-------")
+  print(sx)
+  monocle.obj <- monocle.obj.original[,monocle.obj.original$sample == sx]
+  
+  # Get most variable genes
+  vg <- monocle.obj %>%
+    scran::modelGeneVar(assay.type = "counts") %>% 
+    scran::getTopHVGs(n = 10000)
+  
+  # Calculate rowsums
+  counts <- counts(monocle.obj)
+  rowsumsMT <- Matrix::rowSums(counts)
+  
+  # Get top 10 000 genes (most variable first, then by rowsums)
+  gg <- unique(c(vg, names(sort(rowsumsMT, decreasing = TRUE))))[1:1e4]
+  
+  counts <- counts[gg,]
+  counts <- counts[Matrix::rowSums(counts) > 20,]
+  # str(as.matrix(counts))
+  #batch <- colData(monocle.obj)[,"sample"]
+  #names(batch) <- row.names(colData(monocle.obj))
+  data <- as.matrix(counts)
+  #stopifnot(all(!is.na(batch)))
+  #stopifnot(ncol(data) == length(batch))
+  #stopifnot(all(colnames(data) == names(batch)))
+  stopifnot(!any(duplicated(row.names(data))))
+  stopifnot(!any(duplicated(colnames(data))))
+  #stopifnot(!any(duplicated(names(batch))))
+  
+  cytoRes <- CytoTRACE(mat = data, ncores = 10)
+  cytoRes$exprMatrix <- NULL
+  
+  ret <- data.table(rn=names(cytoRes$CytoTRACE))
+  cytoGenes <- list()
+  for(mx in names(cytoRes)){
+    if(length(cytoRes[[mx]]) != nrow(ret)){
+      # cytoGenes[[sx]] <- cytoRes$cytoGenes
+      next
+    }
+    print(mx)
+    stopifnot(names(cytoRes[[mx]]) == ret$rn)
+    ret[[mx]] <- cytoRes[[mx]]
+  }
+  cytoResDT <- rbind(cytoResDT, ret)
 
-# Get top 10 000 genes (most variable first, then by rowsums)
-gg <- unique(c(vg, names(sort(rowsumsMT, decreasing = TRUE))))[1:1e4]
+}
+save(cytoResDT, file=out("CytoTRACE.RData"))
 
-counts <- counts[gg,]
-# str(as.matrix(counts))
-batch <- colData(monocle.obj)[,"sample"]
-names(batch) <- row.names(colData(monocle.obj))
-data <- as.matrix(counts)
-stopifnot(all(!is.na(batch)))
-stopifnot(ncol(data) == length(batch))
-stopifnot(all(colnames(data) == names(batch)))
-stopifnot(!any(duplicated(row.names(data))))
-stopifnot(!any(duplicated(colnames(data))))
-stopifnot(!any(duplicated(names(batch))))
 
-cytoRes <- CytoTRACE(mat = data, batch = batch, ncores = 10)
-cytoRes$exprMatrix <- NULL
-save(cytoRes, file=out("CytoTRACE.RData"))

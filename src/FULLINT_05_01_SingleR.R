@@ -6,7 +6,7 @@ library(SingleR)
 library(celldex)
 library(tidyverse)
 library(CytoTRACE)
-
+library(doMC)
 
 # LOAD DATA ---------------------------------------------------------------
 # Human/mouse map
@@ -34,7 +34,7 @@ row.names(count_matrix_human) <- hm2$Human.gene.name
 # Reference data ----------------------------------------------------------
 reference_cell_types <- list(
   # two general purpose datasets
-  hpca = HumanPrimaryCellAtlasData(),
+  # hpca = HumanPrimaryCellAtlasData(),
   blueprint = BlueprintEncodeData(),
   
   # # comprehensive CD4+ subsets; only one B cell subset, no dendritic cells
@@ -47,7 +47,7 @@ reference_cell_types <- list(
   monaco = MonacoImmuneData(),
   
   # ImmGen
-  immgen=ImmGenData(),
+  # immgen=ImmGenData(),
   
   # DB ImmuneCells
   # immuneCellExDB=DatabaseImmuneCellExpressionData(),
@@ -145,7 +145,10 @@ for(dx in unique(res$dataset)){
 
 # SingleR analysis --------------------------------------------------------
 ref <- names(reference_cell_types)[1]
-for(ref in names(reference_cell_types)){
+#for(ref in names(reference_cell_types)){
+doMC::registerDoMC(cores=8)
+foreach(ref = names(reference_cell_types)) %dopar% {
+
   print(ref)
   
   # Figure out organism
@@ -170,7 +173,8 @@ for(ref in names(reference_cell_types)){
       results <- SingleR(
         test = count_matrix,
         ref = reference_cell_types[[ref]],
-        labels = colData(reference_cell_types[[ref]])[, labelx]
+        labels = colData(reference_cell_types[[ref]])[, labelx],
+        de.method = "wilcox"
       )
       
       results <- list(
@@ -195,6 +199,7 @@ for(ref in names(reference_cell_types)){
       write_csv(df, out("cell_types_", results$ref, "_", results$labels, ".csv"))
     }
   }
+  TRUE
 }
 
 

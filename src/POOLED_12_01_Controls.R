@@ -7,27 +7,19 @@ require(ggrepel)
 require(latex2exp)
 
 # Load data ---------------------------------------------------------------
-m <- as.matrix(read.csv(PATHS$POOLED$DATA$matrix))
-str(m)
-ann <- fread(PATHS$POOLED$DATA$annotation)
-ann[grepl("^LSK", System) & Population == "LSK", Population := System]
-table(ann$Population, ann$System)
-stopifnot(all(ann$sample == colnames(m)))
-ann[, id := paste(Genotype, Population, Library, sep="_")]
-ann[, group := paste(Genotype, Library, sep="_")]
+# m <- as.matrix(read.csv(PATHS$POOLED$DATA$matrix))
+# str(m)
+# ann <- fread(PATHS$POOLED$DATA$annotation)
+# ann[grepl("^LSK", System) & Population == "LSK", Population := System]
+# table(ann$Population, ann$System)
+# stopifnot(all(ann$sample == colnames(m)))
+# ann[, id := paste(Genotype, Population, Library, sep="_")]
+# ann[, group := paste(Genotype, Library, sep="_")]
+m2 <- as.matrix(read.csv(PATHS$POOLED$DATA$matrix.aggregated))
+ann <- fread(PATHS$POOLED$DATA$annotation.aggregated)
 
 
-# Aggregate data ----------------------------------------------------------
-m2 <- sapply(with(ann, split(sample, id)), function(sx){
-  apply(m[,sx, drop=F], 1, function(row){
-    if(all(is.na(row))){
-      NA
-    } else {
-      sum(row, na.rm=TRUE)
-    }
-  })
-})
-
+# normalize ---------------------------------------------------------------
 m2.cpm <- t(t(m2) / colSums(m2, na.rm = TRUE)) * 1e6
 stopifnot(all(colSums(m2.cpm,na.rm = TRUE) == 1e6))
 pheatmap(cor(m2.cpm, m2, use="pairwise.complete.obs"), cluster_rows = F, cluster_cols = F)

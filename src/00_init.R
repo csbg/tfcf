@@ -43,6 +43,7 @@ require(mixtools)
 
 source(paste(Sys.getenv("CODEBASE"), "resources", "RFunctions", "Basics.R", sep="/"))
 source(paste(Sys.getenv("CODEBASE"), "resources", "RFunctions", "scRNA_Basics.R", sep="/"))
+source(paste(Sys.getenv("CODEBASE"), "resources", "RFunctions", "GSEA_hitlist.R", sep="/"))
 
 
 # RENV LOCKFILE -----------------------------------------------------------
@@ -52,8 +53,10 @@ if(!dir.exists("lockfiles/")) dir.create("lockfiles/")
 
 
 # Enrichr DBs -------------------------------------------------------------
-ENRICHR.DBS <- c("KEGG_2019_Mouse", "NCI-Nature_2016", "WikiPathways_2019_Mouse", "Reactome_2016",
-                 "TRANSFAC_and_JASPAR_PWMs", "ENCODE_and_ChEA_Consensus_TFs_from_ChIP-X", "ENCODE_TF_ChIP-seq_2015", "ChEA_2016", "TRRUST_Transcription_Factors_2019"
+ENRICHR.DBS <- c("KEGG_2019_Mouse", "WikiPathways_2019_Mouse",
+                 "MSigDB_Hallmark_2020", "MSigDB_Oncogenic_Signatures",
+                 "NCI-60_Cancer_Cell_Lines", "Cancer_Cell_Line_Encyclopedia",
+                 "TRANSFAC_and_JASPAR_PWMs", "ENCODE_and_ChEA_Consensus_TFs_from_ChIP-X", "TRRUST_Transcription_Factors_2019"
                  )
 
 # FUNCTIONS ---------------------------------------------------------------
@@ -82,6 +85,8 @@ getMainDatasets <- function(){
   ff <- ff[grepl("^ECCITE", ff) | grepl("^CITESEQ", ff)]
   ff <- ff[!grepl("ECCITE4_INT", ff)]
   ff <- ff[!grepl("ECCITE1_", ff)]
+  ff <- ff[!grepl("LINES", ff)]
+  #ff <- ff[!grepl("ECCITE8", ff)]
   list(folders=ff, dir=Sys.getenv("DATA"))
 }
 
@@ -141,21 +146,30 @@ cleanComparisons <- function(x, order=TRUE, ggtext=FALSE, dm="clean"){
 PATHS <- list()
 
 PATHS$RESOURCES <- list(
-  HM.MAP = dirout_load("PPI_00_getData/")("BioMart_Human_Mouse_2021_07_27.txt")
+  HM.MAP = dirout_load("PPI_00_getData/")("BioMart_Human_Mouse_2021_07_27.txt"),
+  Enrichr.mouse = dirout_load("EXT_02_EnrichR_Genesets")("Genesets_Mouse.RData")
 )
+
+PATHS$CHIP <- list()
+PATHS$CHIP$Targets <- dirout_load("CHIP_20_01_Peaks_julen")("ChIP.Targets.RData")
 
 PATHS$POOLED <- list()
 PATHS$POOLED$DATA <- list(
   matrix=dirout_load("POOLED_01_CollectData")("Matrix.csv"),
-  annotation=dirout_load("POOLED_01_CollectData")("Annotation.tsv")
+  annotation=dirout_load("POOLED_01_CollectData")("Annotation.tsv"),
+  matrix.aggregated=dirout_load("POOLED_09_CleanData")("Matrix_aggregated.csv"),
+  annotation.aggregated=dirout_load("POOLED_09_CleanData")("Annotation_aggregated.tsv")
 )
 sapply(PATHS$POOLED$DATA, file.exists)
 
 
 PATHS$FULLINT <- list()
 PATHS$FULLINT$Monocle <- dirout_load("FULLINT_01_01_Integration")("MonocleObject.RData")
-#PATHS$FULLINT$Monocle <- dirout_load("FULLINT_01_01_Integration")("MonocleObject_2021_10_08_ECCITE6.RData")
-
+PATHS$FULLINT$DEG <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("DEG_Results_nebula.RData")
+PATHS$FULLINT$DEG.clean <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("DEG_Results_all.tsv")
+PATHS$FULLINT$DEG.ann <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("DEG_Annnotation.tsv")
+PATHS$FULLINT$DEG.logFCMT <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("DEG_Results_logFCMT.csv")
+PATHS$FULLINT$DEG.UMAP <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("RegulatoryMap_UMAP_all.genes.tsv")
 
 
 PATHS$CITESEQ1 <- list()
@@ -227,3 +241,4 @@ sapply(PATHS$ECCITE2$DATA, file.exists)
 COLOR.Genotypes = c(WT="#33a02c", Cas9="#6a3d9a")
 COLORS.HM.FUNC <- colorRampPalette(c("#6a3d9a", "#a6cee3", "white", "#fdbf6f", "#e31a1c"))
 
+scale_fill_hexbin <- function(...){scale_fill_gradientn(colours=c("#a6cee3", "#fdbf6f", "#ff7f00", "#e31a1c"), ...)}

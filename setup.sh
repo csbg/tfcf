@@ -14,4 +14,6 @@ export ANALYSIS="$GFS/PROJECTS/TfCf/Analysis/"
 #pip install CITE-seq-Count==1.4.4
 
 
-export PATH=/home/people/nfortelny/aws/files/v2/2.2.10/bin/:$PATH
+# export PATH=/home/people/nfortelny/aws/files/v2/2.2.10/bin/:$PATH
+
+export PATH=$HOME/aws/aws-cli/v2/2.3.0/bin/:$PATH
