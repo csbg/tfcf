@@ -15,7 +15,7 @@ m <- as.matrix(read.csv(PATHS$POOLED$DATA$matrix))
 (GENES.OF.INTEREST <- unique(gsub("_\\d+$", "", row.names(m))))
 
 # HUMAN - MOUSE mapping ---------------------------------------------------
-# Run on July 27, 2021
+# Run on July 27, 2021. BioMART Ensembl
 # Dataset
 # - Mouse genes (GRCm39)
 # Filters
