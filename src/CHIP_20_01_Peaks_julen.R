@@ -3,13 +3,14 @@ source("src/00_init.R")
 # Settings ----------------------------------------------------------------
 out <- dirout("CHIP_20_01_Peaks_julen/")
 
-ff <- list.files(paste(Sys.getenv("DATA"), "ChIP_Peaks_Julen", sep="/"), recursive = TRUE, full.names = TRUE)
+ff <- list.files(paste(Sys.getenv("DATA"), "ChIP_Peaks_Julen","v2", sep="/"), recursive = TRUE, full.names = TRUE)
 
 fx <- "Brd9"
 res <- list()
 res.fc <- data.table()
-for(fx in gsub("_.+", "", basename(grep("extended.txt$", ff, value = TRUE)))){
-  peaks <- fread(ff[grepl(fx, ff) & grepl("extended.txt$", ff)], check.names = FALSE)
+for(fx in gsub("_.+", "", basename(grep("extended.motif.fc.txt$", ff, value = TRUE)))){
+  message(fx)
+  peaks <- fread(ff[grepl(fx, ff) & grepl("extended.motif.fc.txt$", ff)], check.names = FALSE)
   colnames(peaks) <- make.names(gsub("\\+", "plus", colnames(peaks)))
   # motifs <- fread(ff[grepl(fx, ff) & grepl("motifsInPeak", ff)])
   

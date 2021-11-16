@@ -150,6 +150,9 @@ PATHS$RESOURCES <- list(
   Enrichr.mouse = dirout_load("EXT_02_EnrichR_Genesets")("Genesets_Mouse.RData")
 )
 
+PATHS$CHIP <- list()
+PATHS$CHIP$Targets <- dirout_load("CHIP_20_01_Peaks_julen")("ChIP.Targets.RData")
+
 PATHS$POOLED <- list()
 PATHS$POOLED$DATA <- list(
   matrix=dirout_load("POOLED_01_CollectData")("Matrix.csv"),
