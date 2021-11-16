@@ -43,6 +43,7 @@ require(mixtools)
 
 source(paste(Sys.getenv("CODEBASE"), "resources", "RFunctions", "Basics.R", sep="/"))
 source(paste(Sys.getenv("CODEBASE"), "resources", "RFunctions", "scRNA_Basics.R", sep="/"))
+source(paste(Sys.getenv("CODEBASE"), "resources", "RFunctions", "GSEA_hitlist.R", sep="/"))
 
 
 # RENV LOCKFILE -----------------------------------------------------------
@@ -52,8 +53,10 @@ if(!dir.exists("lockfiles/")) dir.create("lockfiles/")
 
 
 # Enrichr DBs -------------------------------------------------------------
-ENRICHR.DBS <- c("KEGG_2019_Mouse", "NCI-Nature_2016", "WikiPathways_2019_Mouse", "Reactome_2016",
-                 "TRANSFAC_and_JASPAR_PWMs", "ENCODE_and_ChEA_Consensus_TFs_from_ChIP-X", "ENCODE_TF_ChIP-seq_2015", "ChEA_2016", "TRRUST_Transcription_Factors_2019"
+ENRICHR.DBS <- c("KEGG_2019_Mouse", "WikiPathways_2019_Mouse",
+                 "MSigDB_Hallmark_2020", "MSigDB_Oncogenic_Signatures",
+                 "NCI-60_Cancer_Cell_Lines", "Cancer_Cell_Line_Encyclopedia",
+                 "TRANSFAC_and_JASPAR_PWMs", "ENCODE_and_ChEA_Consensus_TFs_from_ChIP-X", "TRRUST_Transcription_Factors_2019"
                  )
 
 # FUNCTIONS ---------------------------------------------------------------
@@ -143,7 +146,8 @@ cleanComparisons <- function(x, order=TRUE, ggtext=FALSE, dm="clean"){
 PATHS <- list()
 
 PATHS$RESOURCES <- list(
-  HM.MAP = dirout_load("PPI_00_getData/")("BioMart_Human_Mouse_2021_07_27.txt")
+  HM.MAP = dirout_load("PPI_00_getData/")("BioMart_Human_Mouse_2021_07_27.txt"),
+  Enrichr.mouse = dirout_load("EXT_02_EnrichR_Genesets")("Genesets_Mouse.RData")
 )
 
 PATHS$POOLED <- list()
@@ -162,6 +166,7 @@ PATHS$FULLINT$DEG <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("DEG_Re
 PATHS$FULLINT$DEG.clean <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("DEG_Results_all.tsv")
 PATHS$FULLINT$DEG.ann <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("DEG_Annnotation.tsv")
 PATHS$FULLINT$DEG.logFCMT <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("DEG_Results_logFCMT.csv")
+PATHS$FULLINT$DEG.UMAP <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("RegulatoryMap_UMAP_all.genes.tsv")
 
 
 PATHS$CITESEQ1 <- list()

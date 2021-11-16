@@ -4,7 +4,9 @@ out <- dirout("FULLINT_10_02_DEG")
 require(monocle3)
 require(fgsea)
 source("src/FUNC_Monocle_PLUS.R")
-
+require(doMC)
+require(foreach)
+require(doParallel)
 
 # Load full Monocle object and differential expression analysis -----------
 (load(PATHS$FULLINT$Monocle))
@@ -13,6 +15,9 @@ res.clean <- fread(PATHS$FULLINT$DEG.clean)
 ann <- fread(PATHS$FULLINT$DEG.ann)
 logFCMT <- as.matrix(read.csv(PATHS$FULLINT$DEG.logFCMT))
 cds <- monocle.obj[,ann$rn]
+rm(list="monocle.obj")
+load(PATHS$RESOURCES$Enrichr.mouse)
+umap <- fread(PATHS$FULLINT$DEG.UMAP)
 
 
 # Plots some genes (only in vitro) -------------------------------------------
@@ -96,4 +101,71 @@ ggsave(out("InteractionCoefficients_Corr.pdf"), w=6,h=4)
 
 
 # Enrichments -------------------------------------------------------------
-fgsea
+fgsea.file <- out("GSEA.tsv")
+if(file.exists(fgsea.file)){
+  fgsea <- fread(fgsea.file)
+} else {
+  fgsea.hitlists <- setNames(lapply(colnames(logFCMT), function(cx){
+    setNames(logFCMT[,cx], row.names(logFCMT))
+  }), colnames(logFCMT))
+  dbx <- names(enr.terms)[1]
+  hl <- names(fgsea.hitlists)[1]
+  registerDoMC(cores=8)
+  fgsea <- foreach(hl = names(fgsea.hitlists)) %dopar% {
+    ret <- data.table()
+    for(dbx in names(enr.terms)){
+      fgsea.res <- fgsea(
+        pathways=enr.terms[[dbx]],
+        stats=fgsea.hitlists[[hl]],
+        BPPARAM=BiocParallel::SnowParam(1, "SOCK")
+      )
+      fgsea.res$leadingEdge <- sapply(fgsea.res$leadingEdge, function(gx) paste(gx, collapse = ","))
+      fgsea.res$hitlist <- hl
+      fgsea.res$db <- dbx
+      ret <- rbind(ret, fgsea.res)
+    }
+    return(ret)
+  }
+  fgsea <- do.call(rbind, fgsea)
+  write.tsv(fgsea, fgsea.file)
+}
+
+# Plots
+dbx <- fgsea$db[1]
+for(dbx in unique(fgsea$db)){
+  pDT <- fgsea[db == dbx]
+  pDT <- pDT[pathway %in% unique(pDT[padj < 0.05][order(-abs(NES))]$pathway)[1:30]]
+  pDT[, guide := gsub("\\..+$", "", hitlist)]
+  ggplot(pDT, aes(x=hitlist, y=pathway, size=pmin(5, -log10(padj)), color=NES)) + 
+    theme_bw(12) +
+    facet_grid(. ~ guide, space = "free", scales = "free") +
+    scale_color_gradient2(low="blue", high="red") +
+    geom_point() +
+    xRot()
+  ggsave(out("GSEA_", dbx, ".pdf"), w=15,h=10)
+}
+
+
+
+# Enrichment in gene clusters ---------------------------------------------
+fish.genes <- with(umap, split(Gene, Cluster))
+fish.res <- fisher.test.enrichment(geneSets = enr.terms, gene.list = fish.genes, cores=10)
+fish.res[, padj := p.adjust(pval, method="BH")]
+fish.res[, db := database]
+fish.res[, pathway := geneset]
+fish.res[, log2OR := log2(pmin(10, pmax(1/10, oddsRatio)))]
+write.tsv(fish.res, out("UMAP_GSEA.tsv"))
+
+# Plots
+dbx <- fish.res$db[1]
+for(dbx in unique(fgsea$db)){
+  pDT <- fish.res[db == dbx]
+  pDT <- pDT[pathway %in% unique(pDT[padj < 0.05][order(-abs(log2OR))]$pathway)[1:30]]
+  ggplot(pDT, aes(x=factor(as.numeric(list)), y=pathway, size=pmin(5, -log10(padj)), color=log2OR)) + 
+    theme_bw(12) +
+    #facet_grid(. ~ guide, space = "free", scales = "free") +
+    scale_color_gradient2(low="blue", high="red") +
+    geom_point() +
+    xRot()
+  ggsave(out("UMAP_GSEA_", dbx, ".pdf"), w=10,h=10)
+}
