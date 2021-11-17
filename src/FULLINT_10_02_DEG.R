@@ -12,6 +12,13 @@ require(doParallel)
 (load(PATHS$FULLINT$Monocle))
 (load(PATHS$FULLINT$DEG))
 res.clean <- fread(PATHS$FULLINT$DEG.clean)
+res.clean.t <- list(
+  combined = copy(res.clean),
+  leukemia = fread(PATHS$FULLINT$DEG.clean.leukemia),
+  invitro = fread(PATHS$FULLINT$DEG.clean.invitro),
+  invivo = fread(PATHS$FULLINT$DEG.clean.invivo)
+)
+res.clean.t <- lapply(res.clean.t, function(dt){dt[,direction := ifelse(estimate > 0, "up", "down")]; dt})
 ann <- fread(PATHS$FULLINT$DEG.ann)
 logFCMT <- as.matrix(read.csv(PATHS$FULLINT$DEG.logFCMT))
 cds <- monocle.obj[,ann$rn]
@@ -25,9 +32,8 @@ umap <- fread(PATHS$FULLINT$DEG.UMAP)
 
 
 
-
 # Plots some genes (only in vitro) -------------------------------------------
-res.ex <- res.clean[interaction == FALSE & tissue == "in vitro" & q_value < 0.05 & estimate > 0]
+res.ex <- res.clean[interaction == FALSE & tissue == "in vitro" & q_value < 0.05 & estimate > 1]
 res.ex[,.N, by="guide"]
 
 genex <- "Kmt2d"
@@ -52,7 +58,7 @@ annC <- data.frame(
 )
 
 # Heatmap
-cleanDev(); pdf(out("HM.pdf"),w=10,h=10)
+cleanDev(); pdf(out("Example_HM.pdf"),w=10,h=10)
 pheatmap(
   cluster_cols = FALSE,
   annotation_col = annC,
@@ -76,7 +82,7 @@ plot_genes_violin(
   ncol = 10) + 
   scale_y_continuous(trans = "log1p") +
   xRot()
-ggsave(out("Violins.pdf"), w=30,h=30)
+ggsave(out("Example_Violins.pdf"), w=30,h=30)
 
 
 
@@ -106,6 +112,33 @@ ggsave(out("InteractionCoefficients_Corr.pdf"), w=6,h=4)
 
 
 
+# Number of genes ---------------------------------------------------------
+cnts <- lapply(res.clean.t, function(x) x[q_value < 0.05 & abs(estimate) > 1][,.N, by=c("guide", "tissue", "interaction", "direction")][order(N)])
+pDT <- do.call(rbind, cnts)
+pDT[direction == "down", N := -N]
+ggplot(pDT, aes(x=tissue, y=N, fill=interaction)) +
+  geom_bar(stat="identity", position = "dodge") +
+  facet_grid(. ~ guide) +
+  xRot()
+
+
+
+# Plot top genes ----------------------------------------------------------
+pDT <- do.call(rbind, res.clean.t)
+str(gg <- unique(pDT[q_value < 0.01][order(-abs(estimate))][,head(.SD, 5), by=c("guide", "tissue")]$gene_id))
+pDT <- pDT[gene_id %in% gg]
+pDT[, term := paste(guide, tissue, interaction)]
+pDT <- hierarch.ordering(pDT, toOrder="gene_id", orderBy = "term", value.var = "estimate", aggregate = TRUE)
+pDT[, int := ifelse(interaction == TRUE, "interaction", "basic")]
+ggplot(pDT, aes(x=paste(tissue), y=gene_id, size=pmin(5, -log10(q_value)), color=sign(estimate) * pmin(5,abs(estimate)))) +
+  scale_size_continuous(name="padj", range=c(0,5)) +
+  scale_color_gradient2(name="delta", low="blue", high="red") +
+  facet_grid(. ~ guide + int, space = "free", scales = "free") + 
+  theme_bw(12) +
+  geom_point() +
+  xRot()
+ggsave(out("TopGenes.pdf"), w=25,h=30)
+
 # Signal in gene clustes --------------------------------------------------
 # gg <- umap[Cluster ==1]$Gene
 # umap.logFC <- sapply(with(umap, split(Gene, Cluster)), function(gg){colMeans(logFCMT[gg,])})
@@ -114,7 +147,11 @@ ggsave(out("InteractionCoefficients_Corr.pdf"), w=6,h=4)
 
 # Enrichment in gene clusters ---------------------------------------------
 fish.genes <- with(umap, split(Gene, Cluster))
-fish.res <- fisher.test.enrichment(geneSets = enr.terms, gene.list = fish.genes, cores=10)
+fish.res <- fisher.test.enrichment(
+  geneSets = enr.terms, 
+  gene.list = fish.genes, 
+  cores=10,
+  bg=unique(res.clean$gene_id))
 fish.res[, padj := p.adjust(pval, method="BH")]
 write.tsv(fish.res, out("UMAP_GSEA.tsv"))
 
@@ -126,7 +163,8 @@ fish.res[db == "ChromatinFactors", pathway := gsub("^(.+?)_(.+)$", "\\2 \\1", pa
 dbx <- fish.res$db[1]
 for(dbx in unique(fgsea$db)){
   pDT <- fish.res[db == dbx]
-  pDT <- pDT[pathway %in% unique(pDT[padj < 0.05][order(-abs(log2OR))]$pathway)[1:30]]
+  pwx <- unique(pDT[padj < 0.1][order(-log2OR)][,head(.SD,n=3), by="list"]$pathway)
+  pDT <- pDT[pathway %in% pwx]
   ggplot(pDT, aes(y=factor(as.numeric(list)), x=pathway, size=pmin(5, -log10(padj)), color=log2OR)) + 
     theme_bw(12) +
     #facet_grid(. ~ guide, space = "free", scales = "free") +
@@ -168,6 +206,15 @@ if(file.exists(fgsea.file)){
   write.tsv(fgsea, fgsea.file)
 }
 
+# Check against other analysis
+# (load(dirout_load("FULLINT_10_01_BasicAnalysis_combined")("DEG_ChIP_GSEA.RData")))
+# fgsea.hitlists
+# gplots::venn(list(enr.terms$ChromatinFactors$Mye_Kmt2d, chip.targets$Mye_Kmt2d))
+# x <- resGuides.I[id == "Kmt2d leukemia"]
+# plot(x$estimate, fgsea.hitlists$Kmt2d.leukemia[x$gene_id])
+# fgsea[hitlist == "Kmt2d.leukemia" & pathway == "Mye_Kmt2d"][,1:7]
+# chip.gsea.res[list == "Kmt2d leukemia" & pathway == "Mye_Kmt2d"]
+
 # Plots
 fgsea[db == "ChromatinFactors", pathway := gsub("^(.+?)_(.+)$", "\\2 \\1", pathway)]
 dbx <- fgsea$db[1]
@@ -183,3 +230,39 @@ for(dbx in unique(fgsea$db)){
     xRot()
   ggsave(out("GSEA_", dbx, ".pdf"), w=15,h=10)
 }
+
+
+
+
+# Enrichment based on significant genes in each guide? -----------------------------------
+
+# Plot Values on UMAP (logFC or % of genes) -------------------------------
+
+# # Plot estimates on UMAP
+# pUMAP.de <- merge(umap, setNames(melt(data.table(umapMT, keep.rownames = TRUE), id.vars = "rn"), c("gene_id", "term", "estimate")), by.x="Gene", by.y="gene_id")
+# summary.function <- function(x){ret <- mean(x);return(min(5, abs(ret)) * sign(ret))}
+# dim.umap1 <- floor(max(abs(pUMAP.de$UMAP1))) + 0.5
+# dim.umap2 <- floor(max(abs(pUMAP.de$UMAP2))) + 0.5
+# pUMAP.de[, guide := gsub(" .+", "", term)]
+# pUMAP.de[, tissue := gsub(".+? ", "", term)]
+# tn <- length(unique(pUMAP.de$guide))
+# ggplot(pUMAP.de, aes(x=UMAP1, y=UMAP2)) +
+#   stat_summary_hex(
+#     aes(z=estimate),
+#     fun=summary.function) +
+#   scale_fill_gradient2(high="#e31a1c",mid="#ffffff", low="#1f78b4") +
+#   facet_grid(guide~tissue) + theme_bw(12) +
+#   xlab("UMAP dimension 1") + ylab("UMAP dimension 2") +
+#   xlim(-dim.umap1,dim.umap1) + ylim(-dim.umap2,dim.umap2)
+# ggsave(out("RegulatoryMap_UMAP_",umap.type.name,"_Values.pdf"), w=2*3+2,h=tn * 2 + 1)
+# 
+# # values by cluster
+# pDT <- pUMAP.de[, mean(estimate), by=c("Cluster", "term")]
+# pDT <- hierarch.ordering(pDT, toOrder = "Cluster", orderBy = "term", value.var = "V1")
+# pDT <- hierarch.ordering(pDT, orderBy = "Cluster", toOrder = "term", value.var = "V1")
+# ggplot(pDT, aes(x=factor(Cluster), y=term, fill=V1)) + 
+#   theme_bw(12) + 
+#   geom_tile() +
+#   scale_fill_gradient2(high="#e31a1c",mid="#ffffff", low="#1f78b4") +
+#   xlab("Gene modules (Gene-UMAP Clusters)")
+# ggsave(out("RegulatoryMap_UMAP_",umap.type.name,"_ClusterValues.pdf"), w=10,h=tn * 0.2 + 1)

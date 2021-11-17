@@ -69,32 +69,32 @@ done
 
 
 ######### BASIC ANALYSIS without RNA
-cd $HOME/omicstmp
-
-# ECCITE8_IRR_d14 ECCITE8_OP1_d7 ECCITE8_OP1_d9 ECCITE8_OP2_d7 ECCITE8_OP2_d9 ECCITE8_OP3_d7 ECCITE8_OP3_d9 ECCITE8_Toxin_d14 ECCITE8_IRR_OP1_d28_rep1 ECCITE8_IRR_OP1_d28_rep2
-for id_original in ECCITE8_OP1_d7 ECCITE8_OP1_d9 ECCITE8_OP2_d7 ECCITE8_OP2_d9 ECCITE8_OP3_d7 ECCITE8_OP3_d9; do
-
-    echo $id_original
-	id="${id_original}_onlyRNA"
-	echo $id
-
-	grep -v "CRISPR Guide Capture" $CODE/metadata/${id_original}_Library.csv > $CODE/metadata/${id}_Library.csv
-	
-	
-    echo "Files"
-    cat $CODEBASE/tfcf/metadata/${id}_Library.csv
-    
-	~/code/cellranger-6.0.1/cellranger count --id=$id \
-	 --no-bam \
-	 --libraries=$CODEBASE/tfcf/metadata/${id}_Library.csv \
-	 --transcriptome=newGenomeExtended/ \
-		 --localcores=24 \
-		 --localmem=128 \
-	 --expect-cells=10000 &> ${id}.log
-    
-	mkdir -p $DATA/$id
-	mv $id/outs $DATA/$id
-done
+# cd $HOME/omicstmp
+# 
+# # ECCITE8_IRR_d14 ECCITE8_OP1_d7 ECCITE8_OP1_d9 ECCITE8_OP2_d7 ECCITE8_OP2_d9 ECCITE8_OP3_d7 ECCITE8_OP3_d9 ECCITE8_Toxin_d14 ECCITE8_IRR_OP1_d28_rep1 ECCITE8_IRR_OP1_d28_rep2
+# for id_original in ECCITE8_OP1_d7 ECCITE8_OP1_d9 ECCITE8_OP2_d7 ECCITE8_OP2_d9 ECCITE8_OP3_d7 ECCITE8_OP3_d9; do
+# 
+#     echo $id_original
+# 	id="${id_original}_onlyRNA"
+# 	echo $id
+# 
+# 	grep -v "CRISPR Guide Capture" $CODE/metadata/${id_original}_Library.csv > $CODE/metadata/${id}_Library.csv
+# 	
+# 	
+#     echo "Files"
+#     cat $CODEBASE/tfcf/metadata/${id}_Library.csv
+#     
+# 	~/code/cellranger-6.0.1/cellranger count --id=$id \
+# 	 --no-bam \
+# 	 --libraries=$CODEBASE/tfcf/metadata/${id}_Library.csv \
+# 	 --transcriptome=newGenomeExtended/ \
+# 		 --localcores=24 \
+# 		 --localmem=128 \
+# 	 --expect-cells=10000 &> ${id}.log
+#     
+# 	mkdir -p $DATA/$id
+# 	mv $id/outs $DATA/$id
+# done
 
 
 

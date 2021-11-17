@@ -1,4 +1,5 @@
 fastqs,sample,library_type
 /usr/local/AGFORTELNY//PROJECTS/TfCf/NewData/ECCITE8_1/demux_fastq/,3mRNA_OP3_d9,Gene Expression
-/usr/local/AGFORTELNY//PROJECTS/TfCf/NewData/ECCITE8_3/demux_fastq/,3mRNA_OP3_d9,Gene Expression
 /usr/local/AGFORTELNY//PROJECTS/TfCf/NewData/ECCITE8_1/demux_fastq/,CRISPR_OP3_d9,CRISPR Guide Capture
+/usr/local/AGFORTELNY//PROJECTS/TfCf/NewData/ECCITE8_3/demux_fastq/,3mRNA_OP3_d9,Gene Expression
+/usr/local/AGFORTELNY//PROJECTS/TfCf/NewData/ECCITE8_4/demux_fastq/,3mRNA_OP3_d9,Gene Expression

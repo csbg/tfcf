@@ -579,6 +579,7 @@ if(file.exists(neb.file)){
     ))
   }
   res[,q_value := p.adjust(p_value, method="BH")]
+  res[, estimate := estimate / log(2)] # convert to log2 FC
   save(res, file=neb.file)
 }
 
@@ -690,12 +691,14 @@ if(file.exists(chip.gsea.file)){
   chip.gsea.res$leadingEdge <- NULL #sapply(chip.gsea.res$leadingEdge, function(x) paste(x, collapse = ","))
   write.tsv(chip.gsea.res, chip.gsea.file)
 }
+save(chip.gsea.res, resGuides.I, chip.targets, file=out("DEG_ChIP_GSEA.RData"))
 ggplot(chip.gsea.res, aes(x=pathway, y=list, size=pmin(5, -log10(padj)), color=NES))+ 
   theme_bw(12) +
   scale_color_gradient2(low="blue", high="red") +
   geom_point() + 
   xRot()
 ggsave(out("DEG_ChIP_GSEA.pdf"), w=9,h=6)
+
 
 # Correlation
 chip.fc <- copy(chip.targets.fc)
