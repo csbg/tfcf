@@ -136,15 +136,15 @@ ann$measure <- NULL
 #ann[Clusters %in% ann[,median(percent.mt), by="Clusters"][V1 < 1]$Clusters, cluster.qual.keep := FALSE]
 
 
-# CELLRANGER -------------------------------------------
-if("AGG.CSV" %in% ls()){
-  ann.exp <- merge(ann, AGG.CSV[,c("sample_id", "i"),with=F], by.x="sample", by.y="sample_id", all.x=TRUE)
-  stopifnot(!any(is.na(ann.exp$i)))
-  ann.exp[,Barcode := paste0(gsub("-.+$", "", rn), "-", i)]
-  write.table(ann.exp[,c("Barcode", "UMAP1", "UMAP2"),with=F], file=out("Cellranger_UMAP.csv"), sep=",", col.names = c("Barcode", "UMAP-1", "UMAP-2"), quote=F, row.names = F)
-  write.table(ann.exp[,c("Barcode", "mixscape_class"),with=F], file=out("Cellranger_MIXSCAPE.csv"), sep=",", col.names = c("Barcode", "MIXSCAPE"), quote=F, row.names = F)
-  write.table(ann.exp[,c("Barcode", "Clusters"),with=F], file=out("Cellranger_Clusters.csv"), sep=",", col.names = c("Barcode", "Clusters_Seurat"), quote=F, row.names = F)
-}
+# # CELLRANGER -------------------------------------------
+# if("AGG.CSV" %in% ls()){
+#   ann.exp <- merge(ann, AGG.CSV[,c("sample_id", "i"),with=F], by.x="sample", by.y="sample_id", all.x=TRUE)
+#   stopifnot(!any(is.na(ann.exp$i)))
+#   ann.exp[,Barcode := paste0(gsub("-.+$", "", rn), "-", i)]
+#   write.table(ann.exp[,c("Barcode", "UMAP1", "UMAP2"),with=F], file=out("Cellranger_UMAP.csv"), sep=",", col.names = c("Barcode", "UMAP-1", "UMAP-2"), quote=F, row.names = F)
+#   write.table(ann.exp[,c("Barcode", "mixscape_class"),with=F], file=out("Cellranger_MIXSCAPE.csv"), sep=",", col.names = c("Barcode", "MIXSCAPE"), quote=F, row.names = F)
+#   write.table(ann.exp[,c("Barcode", "Clusters"),with=F], file=out("Cellranger_Clusters.csv"), sep=",", col.names = c("Barcode", "Clusters_Seurat"), quote=F, row.names = F)
+# }
 
 
 
@@ -257,7 +257,7 @@ for(srx in names(singleR.res)){
   
   # Predicted cells on UMAP
   pDT.pc <- merge(
-    melt(singleR.resX[,c("cell", "pruned_labels"), with=F], id.vars = "cell"),
+    melt(singleR.resX[,c("cell", "labels"), with=F], id.vars = "cell"),
     ann[,c("UMAP1", "UMAP2", "rn", "Clusters"),with=F],
     by.x="cell", by.y="rn")
   pDT.pc <- pDT.pc[value %in% pDT.pc[,.N, by="value"][N > 10]$value]
@@ -276,36 +276,36 @@ for(srx in names(singleR.res)){
     plot=p)
   
   # Clusters - Predictions
-  pDT.ann <- merge(singleR.resX[,c("pruned_labels", "cell")],ann, by.x="cell", by.y="rn")
-  pDT.ann <- pDT.ann[,.N, by=c("Clusters", "pruned_labels", "tissue")]
+  pDT.ann <- merge(singleR.resX[,c("labels", "cell")],ann, by.x="cell", by.y="rn")
+  pDT.ann <- pDT.ann[,.N, by=c("Clusters", "labels", "tissue")]
   pDT.ann[,sum := sum(N), by=c("Clusters", "tissue")]
   pDT.ann[,percent := N/sum*100]
-  ggplot(pDT.ann, aes(x=factor(as.numeric(Clusters)), y=pruned_labels, fill=percent)) + 
+  ggplot(pDT.ann, aes(x=factor(as.numeric(Clusters)), y=labels, fill=percent)) + 
     theme_bw(12) +
     geom_tile() +
     facet_grid(. ~ tissue) +
     scale_fill_gradient(limits=c(0,100), low="white", high="red") +
     ggtitle(srx)
   ggsave(out("SingleR_", srx, "_Clusters_", "PercPredicted", ".pdf"),          
-         h=length(unique(pDT.ann$pruned_labels)) * 0.3+1,
+         h=length(unique(pDT.ann$labels)) * 0.3+1,
          w=length(unique(pDT.ann$Clusters)) * 0.3 * 3+2,
          limitsize = FALSE)
   
   pDT.ann$dataset <- srx
   singleR.sum <- rbind(singleR.sum, pDT.ann)
 }
-singleR.sum[,id := paste(dataset, pruned_labels, tissue)]
+singleR.sum[,id := paste(dataset, labels, tissue)]
 pDT <- merge(singleR.sum[,max(percent), by=c("id")][V1 > 20][,c("id")], singleR.sum, by=c("id"))
-pDT <- hierarch.ordering(pDT, toOrder = "Clusters", orderBy = "pruned_labels", value.var = "percent", aggregate = TRUE)
-pDT <- hierarch.ordering(pDT, toOrder = "pruned_labels", orderBy = "Clusters", value.var = "percent", aggregate = TRUE)
-ggplot(pDT, aes(y=Clusters, x=pruned_labels, fill=percent)) + 
+pDT <- hierarch.ordering(pDT, toOrder = "Clusters", orderBy = "labels", value.var = "percent", aggregate = TRUE)
+pDT <- hierarch.ordering(pDT, toOrder = "labels", orderBy = "Clusters", value.var = "percent", aggregate = TRUE)
+ggplot(pDT, aes(y=Clusters, x=labels, fill=percent)) + 
   theme_bw(12) + 
   geom_tile() +
   facet_grid(tissue ~ gsub("_", "\n", dataset), scales = "free", space = "free") + 
   scale_fill_gradient(limits=c(0,100), low="white", high="red") +
   xRot()
 ggsave(out("SingleR_0_Clusters_", "PercPredicted", ".pdf"),          
-       w=nrow(pDT[,.N, by=c("dataset", "pruned_labels")]) * 0.2+2,
+       w=nrow(pDT[,.N, by=c("dataset", "labels")]) * 0.2+2,
        h=length(unique(pDT$Clusters)) * 0.2 * 3+1,
        limitsize = FALSE)
 
@@ -733,6 +733,7 @@ dev.off()
 
 
 # . UMAP of DEG -----------------------------------------
+umap.log2FC.cutoff <- 3
 for(umap.type in c("all", "top")){
   
   umap.type.name <- paste0(umap.type, ".genes")
@@ -743,7 +744,10 @@ for(umap.type in c("all", "top")){
     umap <- fread(umap.file)
   } else {
     gg <- if(umap.type == "top") unique(resGuides[q_value < 0.05 & abs(estimate) > 1]$gene_id) else row.names(umapMT)
-    umap.res <- umap(umapMT[gg,])
+    mt <- umapMT[gg,]
+    mt[mt > umap.log2FC.cutoff] <- umap.log2FC.cutoff
+    mt[mt < -umap.log2FC.cutoff] <- -umap.log2FC.cutoff
+    umap.res <- umap(mt)
     umap <- data.table(umap.res$layout, keep.rownames = TRUE)
     umap <- setNames(umap, c("Gene", "UMAP1", "UMAP2"))
     ggplot(umap, aes(x=UMAP1, y=UMAP2)) + geom_hex(bins=100) + theme_bw(12)
@@ -769,27 +773,28 @@ for(umap.type in c("all", "top")){
     write.tsv(umap, umap.file)
   }
   
-  
-  # Plot estimates on UMAP
+  # Prepare for plotting
   pUMAP.de <- merge(umap, setNames(melt(data.table(umapMT, keep.rownames = TRUE), id.vars = "rn"), c("gene_id", "term", "estimate")), by.x="Gene", by.y="gene_id")
-  summary.function <- function(x){ret <- mean(x);return(min(5, abs(ret)) * sign(ret))}
   dim.umap1 <- floor(max(abs(pUMAP.de$UMAP1))) + 0.5
   dim.umap2 <- floor(max(abs(pUMAP.de$UMAP2))) + 0.5
   pUMAP.de[, guide := gsub(" .+", "", term)]
   pUMAP.de[, tissue := gsub(".+? ", "", term)]
   tn <- length(unique(pUMAP.de$guide))
+  pUMAP.de[, estimate_cap := pmin(umap.log2FC.cutoff, abs(estimate)) * sign(estimate)]
+  
+  # Plot estimates on UMAP
   ggplot(pUMAP.de, aes(x=UMAP1, y=UMAP2)) +
     stat_summary_hex(
-      aes(z=estimate),
-      fun=summary.function) +
+      aes(z=estimate_cap),
+      fun=mean) +
     scale_fill_gradient2(high="#e31a1c",mid="#ffffff", low="#1f78b4") +
     facet_grid(guide~tissue) + theme_bw(12) +
     xlab("UMAP dimension 1") + ylab("UMAP dimension 2") +
     xlim(-dim.umap1,dim.umap1) + ylim(-dim.umap2,dim.umap2)
-  ggsave(out("RegulatoryMap_UMAP_",umap.type.name,"_Values.pdf"), w=2*3+2,h=tn * 2 + 1)
+  ggsave(out("RegulatoryMap_UMAP_",umap.type.name,"_Values.pdf"), w=2*3+2,h=tn * 2 + 1, limitsize=FALSE)
   
   # values by cluster
-  pDT <- pUMAP.de[, mean(estimate), by=c("Cluster", "term")]
+  pDT <- pUMAP.de[, mean(estimate_cap), by=c("Cluster", "term")]
   pDT <- hierarch.ordering(pDT, toOrder = "Cluster", orderBy = "term", value.var = "V1")
   pDT <- hierarch.ordering(pDT, orderBy = "Cluster", toOrder = "term", value.var = "V1")
   ggplot(pDT, aes(x=factor(Cluster), y=term, fill=V1)) + 
@@ -797,7 +802,7 @@ for(umap.type in c("all", "top")){
     geom_tile() +
     scale_fill_gradient2(high="#e31a1c",mid="#ffffff", low="#1f78b4") +
     xlab("Gene modules (Gene-UMAP Clusters)")
-  ggsave(out("RegulatoryMap_UMAP_",umap.type.name,"_ClusterValues.pdf"), w=10,h=tn * 0.2 + 1)
+  ggsave(out("RegulatoryMap_UMAP_",umap.type.name,"_ClusterValues.pdf"), w=10,h=tn * 0.2 + 1, limitsize=FALSE)
   
   
   # CF targets on UMAP
@@ -826,7 +831,8 @@ for(umap.type in c("all", "top")){
     xlim(-dim.umap1,dim.umap1) + ylim(-dim.umap2,dim.umap2)
   ggsave(out("RegulatoryMap_UMAP_",umap.type.name,"_CFtargets.pdf"), 
          w=length(unique(pDT$tissue))*1+2,
-         h=length(unique(pDT$factor))*1+1)
+         h=length(unique(pDT$factor))*1+1,
+         limitsize=FALSE)
   
   # UMAP normalized
   df <- pDT[CF == pDT$CF[1]]
@@ -851,6 +857,7 @@ for(umap.type in c("all", "top")){
     xlim(-dim.umap1,dim.umap1) + ylim(-dim.umap2,dim.umap2)
   ggsave(out("RegulatoryMap_UMAP_",umap.type.name,"_CFtargets_normalized.pdf"), 
          w=length(unique(pDT.hex$tissue))*1+2,
-         h=length(unique(pDT.hex$factor))*1+1)
+         h=length(unique(pDT.hex$factor))*1+1,
+         limitsize=FALSE)
 }
 

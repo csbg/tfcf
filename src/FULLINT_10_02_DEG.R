@@ -89,7 +89,7 @@ ggsave(out("Example_Violins.pdf"), w=30,h=30)
 # Recalculate interaction coefficients -------------------------------------------
 res.invitro <- res.clean[interaction == FALSE & tissue == "in vitro"]
 res.interaction.leukemia <- res.clean[interaction == TRUE & tissue == "leukemia"]
-res.leukemia <- fread(dirout_load("FULLINT_10_01_BasicAnalysis_leukemia")("DEG_Results.tsv"))
+res.leukemia <- fread(dirout_load("FULLINT_10_01_BasicAnalysis_leukemia")("DEG_Results_all.tsv"))
 gg <- intersect(intersect(res.invitro$guide, res.interaction.leukemia$guide), res.leukemia$guide)
 
 pDT <- merge(res.invitro, res.leukemia, by=c("guide", "gene_id"), suffixes=c("_vitro", "_leuk"))
@@ -130,10 +130,11 @@ pDT <- pDT[gene_id %in% gg]
 pDT[, term := paste(guide, tissue, interaction)]
 pDT <- hierarch.ordering(pDT, toOrder="gene_id", orderBy = "term", value.var = "estimate", aggregate = TRUE)
 pDT[, int := ifelse(interaction == TRUE, "interaction", "basic")]
+pDT$UMAP.Cluster <- umap[match(pDT$gene_id, Gene)]$Cluster
 ggplot(pDT, aes(x=paste(tissue), y=gene_id, size=pmin(5, -log10(q_value)), color=sign(estimate) * pmin(5,abs(estimate)))) +
   scale_size_continuous(name="padj", range=c(0,5)) +
   scale_color_gradient2(name="delta", low="blue", high="red") +
-  facet_grid(. ~ guide + int, space = "free", scales = "free") + 
+  facet_grid(UMAP.Cluster ~ guide + int, space = "free", scales = "free") + 
   theme_bw(12) +
   geom_point() +
   xRot()
@@ -161,7 +162,7 @@ fish.res[, pathway := geneset]
 fish.res[, log2OR := log2(pmin(10, pmax(1/10, oddsRatio)))]
 fish.res[db == "ChromatinFactors", pathway := gsub("^(.+?)_(.+)$", "\\2 \\1", pathway)]
 dbx <- fish.res$db[1]
-for(dbx in unique(fgsea$db)){
+for(dbx in unique(fish.res$db)){
   pDT <- fish.res[db == dbx]
   pwx <- unique(pDT[padj < 0.1][order(-log2OR)][,head(.SD,n=3), by="list"]$pathway)
   pDT <- pDT[pathway %in% pwx]

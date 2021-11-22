@@ -42,15 +42,20 @@ for(fx in c(ff$folders)){
 
 
 # Analyzed scRNA-seq data ----------------------------------------------------------
-ff <- list.files(dirout_load("")(""), pattern="FULLINT_10_01_BasicAnalysis", full.names = TRUE)
+dir.current <- getwd()
+
+setwd(dirout_load("")(""))
+
+
+ff <- list.files(".", pattern="FULLINT_10_01_BasicAnalysis", full.names = TRUE)
 names(ff) <- gsub("FULLINT_10_01_BasicAnalysis_", "", basename(ff))
 fx <- names(ff)[1]
 for(fx in names(ff)){
-  system(paste0("zip -r ", out("ECCITE_Integration_", fx,".zip "), ff[[fx]], " --exclude *.RData"))
+  system(paste0("zip -r ", out(basename(ff[[fx]]),".zip "), ff[[fx]], " --exclude *.RData"))
 }
 
-folder <- dirout_load("FULLINT_01_01_Integration")("")
-system(paste0("zip -r ", out("ECCITE_QC",".zip "), folder, " --exclude *.RData --exclude *.tsv"))
+folder <- "FULLINT_01_01_Integration"
+system(paste0("zip -r ", out(basename(folder),".zip "), folder, " --exclude *.RData --exclude *.tsv"))
 
 folder <- dirout_load("FULLINT_10_02_DEG")("")
-system(paste0("zip -r ", out("ECCITE_DE",".zip "), folder, " --exclude *.RData"))
+system(paste0("zip -r ", out(basename(folder),".zip "), folder, " --exclude *.RData"))

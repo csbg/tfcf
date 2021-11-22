@@ -69,7 +69,6 @@ if(file.exists(monocle.file)){
       }
       
       if(dsx == "ECCITE1"){
-        read.csv(PATHS$ECCITE1$DATA$guides)
         matrix_dir = paste(Sys.getenv("DATA"), "ECCITE1_citeseq_combined//umi_count/", sep="/")
         barcode.path <- paste0(matrix_dir, "barcodes.tsv.gz")
         features.path <- paste0(matrix_dir, "features.tsv.gz")
@@ -113,7 +112,7 @@ if(file.exists(monocle.file)){
         ggsave(out("QC_", qcx, "_", dsx, ".pdf"), w=6,h=4)
       }
       # Subset and process
-      if(!grepl("ECCITE8", dsx)) seurat.obj <- subset(seurat.obj, subset = nFeature_RNA > cutoffs$nFeature_RNA & nCount_RNA > cutoffs$nCount_RNA & percent.mt < cutoffs$percent.mt)
+      seurat.obj <- subset(seurat.obj, subset = nFeature_RNA > cutoffs$nFeature_RNA & nCount_RNA > cutoffs$nCount_RNA & percent.mt < cutoffs$percent.mt)
       seurat.obj <- NormalizeData(seurat.obj, verbose = FALSE)
       seurat.obj <- CellCycleScoring(seurat.obj, s.features = cc.genes$s.genes,g2m.features = cc.genes$g2m.genes,set.ident = TRUE)
       

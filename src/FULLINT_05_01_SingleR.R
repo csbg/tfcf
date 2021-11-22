@@ -157,7 +157,7 @@ foreach(ref = names(reference_cell_types)) %dopar% {
   orgx <- if(olh > olm) "human" else "mouse"
   count_matrix <- if(orgx == "human") count_matrix_human else count_matrix_mouse
   
-  labelx <- "label.fine"
+  labelx <- "label.main"
   for(labelx in c("label.main", "label.fine")){
     print(paste(".", labelx))
     
@@ -195,6 +195,14 @@ foreach(ref = names(reference_cell_types)) %dopar% {
         "first_labels", "tuning_scores_first", "tuning_scores_second",
         "labels", "pruned_labels"
       )
+      
+      df <- select(df, -score_colnames)
+      
+      df <- df[,c("cell", "labels")]
+      
+      for(cx in colnames(df)){
+        if(is.numeric(df[[cx]])) df[[cx]] <- round(df[[cx]], 2)
+      }
       
       write_csv(df, out("cell_types_", results$ref, "_", results$labels, ".csv"))
     }
