@@ -5,6 +5,7 @@ require(umap)
 require(igraph)
 require(nebula)
 require(fgsea)
+library(SingleR)
 source("src/FUNC_Monocle_PLUS.R")
 
 # Figure out command line arguments (which tissue to analyze)
@@ -54,7 +55,7 @@ if(baseDir.add == "combined"){
         preprocess_method = "Aligned",
         verbose = TRUE)
     set.seed(12121)
-    monocle.obj = cluster_cells(monocle.obj, resolution=1e-5)
+    monocle.obj = cluster_cells(monocle.obj)
     
     additional.info <- additional.info[unique(monocle.obj$sample)]
     AGG.CSV <- AGG.CSV[sample_id %in% monocle.obj$sample]
@@ -87,21 +88,21 @@ sann <- fread("metadata/annotation.tsv", sep="\t")
 
 # Collect ANNOTATION --------------------------------------------------------------
 ann <- data.table(data.frame(colData(monocle.obj)@listData), keep.rownames = TRUE)
-ann$Clusters <- as.character(monocle.obj@clusters$UMAP$clusters[ann$rn])
+ann$MonocleClusters <- as.character(monocle.obj@clusters$UMAP$clusters[ann$rn])
 umap <- setNames(data.table(reducedDims(monocle.obj)$UMAP, keep.rownames = TRUE), c("rn", "UMAP1", "UMAP2"))
 ann <- merge(ann, umap, by="rn", all=TRUE)
 if("cytoRes" %in% ls()) ann$CytoTRACE <- cytoRes$CytoTRACE[ann$rn]
 #ann$tissue <- sann[match(gsub("_.+", "", ann$sample), sample),]$tissue
 
 
+# Final clusters ----------------------------------------------------------
+ann[, Clusters := MonocleClusters]
 
 # define files ------------------------------------------------------------
 neb.file <- out("DEG_Results_nebula.RData")
 
 
 # SETUP ENDS HERE ---------------------------------------------------------
-
-
 
 
 
@@ -145,6 +146,30 @@ ann$measure <- NULL
 #   write.table(ann.exp[,c("Barcode", "mixscape_class"),with=F], file=out("Cellranger_MIXSCAPE.csv"), sep=",", col.names = c("Barcode", "MIXSCAPE"), quote=F, row.names = F)
 #   write.table(ann.exp[,c("Barcode", "Clusters"),with=F], file=out("Cellranger_Clusters.csv"), sep=",", col.names = c("Barcode", "Clusters_Seurat"), quote=F, row.names = F)
 # }
+
+
+
+# TRANSFER / PREDICT CLUSTERS IN FULL DATASET ----------------------------------------
+transf.file <- out("TransferClusters.tsv")
+if(baseDir.add != "combined"){
+  if(file(exists(transf.file))){
+    
+  } else {
+    fullDS <- function(){load(PATHS$FULLINT$Monocle); return(monocle.obj)}
+    monocle.full <- fullDS()
+    
+    ref=SummarizedExperiment(
+      assays = SimpleList(logcounts=SCRNA.TPXToLog(SCRNA.RawToTPX(counts(monocle.obj), 1e6))), 
+      colData=DataFrame(label.main=ann$Clusters, row.names = ann$rn))
+    
+    res <- SingleR(
+      test = counts(monocle.full),
+      ref = ref,
+      labels = ann$Clusters)
+    
+    write.tsv(data.table(labels=res$labels, res@rownames), transf.file)
+  }
+}
 
 
 

@@ -1,6 +1,7 @@
 source("src/00_init.R")
 out <- dirout("FULLINT_01_01_Integration/")
 
+require("sceasy")
 
 # Read cellranger analysis results --------------------------------------------
 #AGG.CSV <- fread(paste(Sys.getenv("DATA"), "FULLINT_00_Aggr", "outs", "aggregation.csv", sep="/"))
@@ -273,10 +274,9 @@ if(file.exists(monocle.file)){
   
   # Clustering
   set.seed(12121)
-  monocle.obj = cluster_cells(monocle.obj, resolution=1e-5)
+  monocle.obj = cluster_cells(monocle.obj)
   
   # Store full dataset
   save(monocle.obj, additional.info, AGG.CSV, file=monocle.file)
 }
 
-  
