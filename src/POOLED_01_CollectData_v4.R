@@ -1,4 +1,4 @@
-source(paste0(Sys.getenv("CODE"), "src/00_init.R"))
+source("src/00_init.R")
 baseDir <- "POOLED_01_CollectData/"
 out <- dirout(baseDir)
 
@@ -15,7 +15,7 @@ cleanNames <- function(x){
 }
 
 # read data files ---------------------------------------------------------------
-ff <- list.files(paste0(Sys.getenv("RAWDATA"), "POOLED/v4_final/"), recursive = TRUE, pattern="", full.names = TRUE)
+ff <- list.files(paste0(PATHS$LOCATIONS$RAWDATA, "POOLED/v4_final/"), recursive = TRUE, pattern="", full.names = TRUE)
 ff <- ff[!grepl("\\/DM\\/", ff) | grepl("Time0", ff)]
 ff <- ff[grepl(".txt$", ff) | grepl(".tsv$", ff)]
 stopifnot(sum(duplicated(basename(ff))) == 0)

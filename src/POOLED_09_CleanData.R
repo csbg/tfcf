@@ -1,4 +1,4 @@
-source(paste0(Sys.getenv("CODE"), "src/00_init.R"))
+source("src/00_init.R")
 baseDir <- "POOLED_09_CleanData/"
 out <- dirout(baseDir)
 

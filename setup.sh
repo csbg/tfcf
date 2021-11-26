@@ -1,4 +1,3 @@
-
 export CODE="$HOME/code/tfcf/"
 export DATA="$GFS/PROJECTS/TfCf/Data/"
 export RAWDATA="$GFS/PROJECTS/TfCf/RawData/"

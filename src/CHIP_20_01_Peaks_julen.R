@@ -3,7 +3,7 @@ source("src/00_init.R")
 # Settings ----------------------------------------------------------------
 out <- dirout("CHIP_20_01_Peaks_julen/")
 
-ff <- list.files(paste(Sys.getenv("DATA"), "ChIP_Peaks_Julen","v2", sep="/"), recursive = TRUE, full.names = TRUE)
+ff <- list.files(paste(PATHS$LOCATIONS$DATA, "ChIP_Peaks_Julen","v2", sep="/"), recursive = TRUE, full.names = TRUE)
 
 fx <- "Brd9"
 res <- list()

@@ -4,7 +4,7 @@ out <- dirout("FULLINT_01_01_Integration/")
 require("sceasy")
 
 # Read cellranger analysis results --------------------------------------------
-#AGG.CSV <- fread(paste(Sys.getenv("DATA"), "FULLINT_00_Aggr", "outs", "aggregation.csv", sep="/"))
+#AGG.CSV <- fread(paste(PATHS$LOCATIONS$DATA, "FULLINT_00_Aggr", "outs", "aggregation.csv", sep="/"))
 AGG.CSV <- fread("metadata/FULLINT_00_Aggr.csv")
 AGG.CSV$i <- 1:nrow(AGG.CSV)
 
@@ -42,8 +42,8 @@ if(file.exists(monocle.file)){
     print("------------------------------")
     print(dsx)
     print("---------------")
-    path <- paste(Sys.getenv("DATA"), dsx, "outs", "filtered_feature_bc_matrix.h5", sep = "/")
-    path.guides <- paste(Sys.getenv("DATA"), dsx, "outs", "crispr_analysis", "protospacer_calls_per_cell.csv", sep = "/")
+    path <- paste(PATHS$LOCATIONS$DATA, dsx, "outs", "filtered_feature_bc_matrix.h5", sep = "/")
+    path.guides <- paste(PATHS$LOCATIONS$DATA, dsx, "outs", "crispr_analysis", "protospacer_calls_per_cell.csv", sep = "/")
     
     dsx.file <- out(paste0("SeuratObj_",dsx,".RData"))
     
@@ -70,7 +70,7 @@ if(file.exists(monocle.file)){
       }
       
       if(dsx == "ECCITE1"){
-        matrix_dir = paste(Sys.getenv("DATA"), "ECCITE1_citeseq_combined//umi_count/", sep="/")
+        matrix_dir = paste(PATHS$LOCATIONS$DATA, "ECCITE1_citeseq_combined//umi_count/", sep="/")
         barcode.path <- paste0(matrix_dir, "barcodes.tsv.gz")
         features.path <- paste0(matrix_dir, "features.tsv.gz")
         matrix.path <- paste0(matrix_dir, "matrix.mtx.gz")

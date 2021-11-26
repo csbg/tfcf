@@ -32,7 +32,7 @@ blacklist <- as(blacklist, "GRanges")
 
 
 # Load data ---------------------------------------------------------------
-ff <- list.files(paste0(Sys.getenv("DATA"), "ChIP_Peaks/"), full.names = TRUE, pattern=".narrowPeak")
+ff <- list.files(paste0(PATHS$LOCATIONS$DATA, "ChIP_Peaks/"), full.names = TRUE, pattern=".narrowPeak")
 names(ff) <- gsub("_peaks.narrowPeak", "", basename(ff))
 dat <- lapply(ff, fread)
 sigPeaks <- lapply(dat, function(dt){return(dt[V9 > cutoff])})
@@ -115,7 +115,7 @@ write.table(olMT, quote = F, row.names = TRUE, sep=",", file = out("OverlapMT.cs
 
 
 # Quantify reads in peaks in each sample (including BG?) ----------------------------------
-ff <- list.files(paste(Sys.getenv("RAWDATA"), "Raw_ChIP", sep="/"), full.names = TRUE, pattern=".bam$")
+ff <- list.files(paste(PATHS$LOCATIONS$RAWDATA, "Raw_ChIP", sep="/"), full.names = TRUE, pattern=".bam$")
 names(ff) <- gsub("\\.sort.+$", "", basename(ff))
 stopifnot(all(names(peaks) %in% names(ff)))
 

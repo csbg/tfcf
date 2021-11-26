@@ -25,7 +25,7 @@ for(fx in c(ff$folders)){
 
 
 # # LINE H5 ----------------------------------------
-# ff <- grep("LINES", list.files(Sys.getenv("DATA"), full.names = TRUE), value = TRUE)
+# ff <- grep("LINES", list.files(PATHS$LOCATIONS$DATA, full.names = TRUE), value = TRUE)
 # fx <- ff[1]
 # for(fx in ff){
 #   print(fx)
