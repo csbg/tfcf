@@ -69,6 +69,9 @@ fData(monocle.obj)$gene_short_name <- row.names(fData(monocle.obj))
 # Markers
 marker.genes <- fread("metadata/markers.csv")
 
+# Marker signautres
+marker.signatures <- as.matrix(read.csv(dirout_load("FULLINT_08_01_Markers")("Signatures.csv")))
+
 # SingleR
 ff <- list.files(dirout_load("FULLINT_05_01_SingleR")(""), pattern = "cell_types_.*.csv", full.names = TRUE)
 singleR.res <- setNames(lapply(ff, fread), gsub("cell_types_(.+).csv", "\\1", basename(ff)))
@@ -335,6 +338,22 @@ ggsave(out("SingleR_0_Clusters_", "PercPredicted", ".pdf"),
        limitsize = FALSE)
 
 
+
+# CellTypes from Marker signautres --------------------------------------------------
+cleanDev(); pdf(out("Markers_Signatures_Clusters.pdf"),w=8,h=6)
+pheatmap(sapply(with(ann, split(rn, Clusters)), function(cx) colMeans(marker.signatures[cx,])))
+dev.off()
+
+pDT <- merge(ann[,c("rn", "UMAP1", "UMAP2")], melt(data.table(marker.signatures, keep.rownames = TRUE), id.vars = "rn"), by="rn")
+
+ggplot(pDT, aes(x=UMAP1, y=UMAP2)) +
+  stat_summary_hex(aes(z=value),fun=mean, bins=100) +
+  #scale_fill_gradient2(low="blue", midpoint = 0.5, high="red") +
+  scale_fill_hexbin() +
+  theme_bw(12) +
+  facet_wrap(~variable) +
+  ggtitle("Marker Signatures - Larry et al, Science")
+ggsave(out("Markers_Signatures_UMAP.pdf"), w=12,h=12)
 
 # CYTOTRACE ---------------------------------------------------------------
 if("cytoRes" %in% ls()){

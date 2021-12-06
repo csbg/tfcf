@@ -1,3 +1,14 @@
+# packages ----------------------------------------------------------------
+require(data.table)
+require(ggplot2)
+require(pheatmap)
+# require(renv)
+require(hdf5r)
+require(dplyr)
+require(tidyr)
+require(Seurat)
+require(monocle3)
+require(mixtools)
 
 
 # Environmental variables ----------------------------------------
@@ -5,13 +16,16 @@
 
 # CODEBASE is where the code is (this code and also other functions)
 if(Sys.getenv("CODEBASE") == ""){
+  print("Setting CODEBASE")
   Sys.setenv(CODEBASE=paste0(Sys.getenv("HOME"), "/code/"))
 }
 
 # GFS points to where the data is stored and results will be written to
-if(Sys.getenv("GFS") == ""){
+if(dir.exists("/media/AGFORTELNY")){
+  print("Setting GFS")
+  
   # Working without singularity on the CAME cluster
-  if(dir.exists("/usr/local/AGFORTELNY/")) Sys.setenv(GFS="/usr/local/AGFORTELNY/")
+  # if(dir.exists("/usr/local/AGFORTELNY/")) Sys.setenv(GFS="/usr/local/AGFORTELNY/")
   
   # Working in singularity on the CAME cluster
   if(dir.exists("/media/AGFORTELNY")) Sys.setenv(GFS="/media/AGFORTELNY")
@@ -48,25 +62,14 @@ for(varx in ll$var){
   pathx <- if(Sys.getenv(varx) == "") ll[var == varx]$path else Sys.getenv(ll[i]$var)
   PATHS$LOCATIONS[[varx]] <- pathx
 }
+PATHS$LOCATIONS
+sapply(PATHS$LOCATIONS, dir.exists)
 stopifnot(all(sapply(PATHS$LOCATIONS, dir.exists)))
 
 
 
-# Packages and functions ----------------------------------------------------------------
+# functions ----------------------------------------------------------------
 .libPaths()
-
-require(data.table)
-require(ggplot2)
-require(pheatmap)
-# require(renv)
-require(hdf5r)
-require(dplyr)
-require(tidyr)
-require(Seurat)
-require(monocle3)
-require(mixtools)
-
-
 source(paste(Sys.getenv("CODEBASE"), "resources", "RFunctions", "Basics.R", sep="/"))
 source(paste(Sys.getenv("CODEBASE"), "resources", "RFunctions", "scRNA_Basics.R", sep="/"))
 source(paste(Sys.getenv("CODEBASE"), "resources", "RFunctions", "GSEA_hitlist.R", sep="/"))
