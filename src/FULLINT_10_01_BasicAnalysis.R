@@ -109,6 +109,8 @@ neb.file <- out("DEG_Results_nebula.RData")
 
 
 
+
+
 # Output annotation -------------------------------------------------------
 write.tsv(ann, out("Annotation.tsv"))
 
@@ -154,10 +156,11 @@ ann$measure <- NULL
 
 # TRANSFER / PREDICT CLUSTERS IN FULL DATASET ----------------------------------------
 transf.file <- out("TransferClusters.tsv")
-if(baseDir.add != "combined"){
-  if(file(exists(transf.file))){
+if(baseDir.add == "in vivo"){
+  if(file.exists(transf.file)){
     
   } else {
+    print("Transferring cell clusters to full datatset")
     fullDS <- function(){load(PATHS$FULLINT$Monocle); return(monocle.obj)}
     monocle.full <- fullDS()
     
@@ -345,15 +348,26 @@ pheatmap(sapply(with(ann, split(rn, Clusters)), function(cx) colMeans(marker.sig
 dev.off()
 
 pDT <- merge(ann[,c("rn", "UMAP1", "UMAP2")], melt(data.table(marker.signatures, keep.rownames = TRUE), id.vars = "rn"), by="rn")
+pDT[, value.norm := scale(value), by="variable"]
 
 ggplot(pDT, aes(x=UMAP1, y=UMAP2)) +
   stat_summary_hex(aes(z=value),fun=mean, bins=100) +
-  #scale_fill_gradient2(low="blue", midpoint = 0.5, high="red") +
+  #scale_fill_gradient2(low="blue", midpoint = 0, high="red") +
   scale_fill_hexbin() +
   theme_bw(12) +
   facet_wrap(~variable) +
   ggtitle("Marker Signatures - Larry et al, Science")
-ggsave(out("Markers_Signatures_UMAP.pdf"), w=12,h=12)
+ggsave(out("Markers_Signatures_UMAP_raw.pdf"), w=12,h=12)
+
+ggplot(pDT, aes(x=UMAP1, y=UMAP2)) +
+  stat_summary_hex(aes(z=pmin(3, value.norm)),fun=mean, bins=100) +
+  scale_fill_gradient2(low="blue", midpoint = 0, high="red") +
+  #scale_fill_hexbin() +
+  theme_bw(12) +
+  facet_wrap(~variable) +
+  ggtitle("Marker Signatures - Larry et al, Science")
+ggsave(out("Markers_Signatures_UMAP_scaled.pdf"), w=12,h=12)
+
 
 # CYTOTRACE ---------------------------------------------------------------
 if("cytoRes" %in% ls()){

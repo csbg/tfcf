@@ -59,3 +59,15 @@ system(paste0("zip -r ", out(basename(folder),".zip "), folder, " --exclude *.RD
 
 folder <- dirout_load("FULLINT_10_02_DEG")("")
 system(paste0("zip -r ", out(basename(folder),".zip "), folder, " --exclude *.RData"))
+
+
+# Cell type identification results ------------------------------------------
+setwd(dirout_load("")(""))
+ff <- list.files(".", pattern="FULLINT_10_01_BasicAnalysis", full.names = TRUE)
+dir.create(out("ct_markers/"))
+fx <- ff[1]
+for(fx in ff){
+  fm <- list.files(paste0(fx, "/"), pattern="Markers_*", full.names = TRUE)
+  fm <- c(fm, list.files(paste0(fx, "/"), pattern="^Clusters_*", full.names = TRUE))
+  file.copy(fm, out("ct_markers/", gsub("^\\..", "", make.names(fm))))
+}
