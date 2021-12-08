@@ -70,7 +70,10 @@ fData(monocle.obj)$gene_short_name <- row.names(fData(monocle.obj))
 marker.genes <- fread("metadata/markers.csv")
 
 # Marker signautres
-marker.signatures <- as.matrix(read.csv(dirout_load("FULLINT_08_01_Markers")("Signatures.csv")))
+ff <- list.files(dirout_load("FULLINT_08_01_Markers")(""), pattern="Signatures_")
+ff <- dirout_load("FULLINT_08_01_Markers")(ff)
+names(ff) <- gsub("^Signatures_(.+?).csv$", "\\1", basename(ff))
+marker.signatures <- lapply(ff, function(fx) as.matrix(read.csv(fx)))
 
 # SingleR
 ff <- list.files(dirout_load("FULLINT_05_01_SingleR")(""), pattern = "cell_types_.*.csv", full.names = TRUE)
@@ -343,30 +346,36 @@ ggsave(out("SingleR_0_Clusters_", "PercPredicted", ".pdf"),
 
 
 # CellTypes from Marker signautres --------------------------------------------------
-cleanDev(); pdf(out("Markers_Signatures_Clusters.pdf"),w=8,h=6)
-pheatmap(sapply(with(ann, split(rn, Clusters)), function(cx) colMeans(marker.signatures[cx,])))
-dev.off()
+mnam <- "Larry"
+for(mnam in names(marker.signatures)){
+  mx <- marker.signatures[[mnam]]
+  
+  cleanDev(); pdf(out("Markers_Signatures_",mnam,"_Clusters.pdf"),w=8,h=6)
+  pheatmap(sapply(with(ann, split(rn, Clusters)), function(cx) colMeans(mx[cx,])))
+  dev.off()
+  
+  pDT <- merge(ann[,c("rn", "UMAP1", "UMAP2")], melt(data.table(mx, keep.rownames = TRUE), id.vars = "rn"), by="rn")
+  pDT[, value.norm := scale(value), by="variable"]
+  
+  ggplot(pDT, aes(x=UMAP1, y=UMAP2)) +
+    stat_summary_hex(aes(z=value),fun=mean, bins=100) +
+    #scale_fill_gradient2(low="blue", midpoint = 0, high="red") +
+    scale_fill_hexbin() +
+    theme_bw(12) +
+    facet_wrap(~variable) +
+    ggtitle("Marker Signatures - Larry et al, Science")
+  ggsave(out("Markers_Signatures_",mnam,"_UMAP_raw.pdf"), w=12,h=12)
+  
+  ggplot(pDT, aes(x=UMAP1, y=UMAP2)) +
+    stat_summary_hex(aes(z=pmin(3, value.norm)),fun=mean, bins=100) +
+    scale_fill_gradient2(low="blue", midpoint = 0, high="red") +
+    #scale_fill_hexbin() +
+    theme_bw(12) +
+    facet_wrap(~variable) +
+    ggtitle("Marker Signatures - Larry et al, Science")
+  ggsave(out("Markers_Signatures_",mnam,"_UMAP_scaled.pdf"), w=12,h=12)
+}
 
-pDT <- merge(ann[,c("rn", "UMAP1", "UMAP2")], melt(data.table(marker.signatures, keep.rownames = TRUE), id.vars = "rn"), by="rn")
-pDT[, value.norm := scale(value), by="variable"]
-
-ggplot(pDT, aes(x=UMAP1, y=UMAP2)) +
-  stat_summary_hex(aes(z=value),fun=mean, bins=100) +
-  #scale_fill_gradient2(low="blue", midpoint = 0, high="red") +
-  scale_fill_hexbin() +
-  theme_bw(12) +
-  facet_wrap(~variable) +
-  ggtitle("Marker Signatures - Larry et al, Science")
-ggsave(out("Markers_Signatures_UMAP_raw.pdf"), w=12,h=12)
-
-ggplot(pDT, aes(x=UMAP1, y=UMAP2)) +
-  stat_summary_hex(aes(z=pmin(3, value.norm)),fun=mean, bins=100) +
-  scale_fill_gradient2(low="blue", midpoint = 0, high="red") +
-  #scale_fill_hexbin() +
-  theme_bw(12) +
-  facet_wrap(~variable) +
-  ggtitle("Marker Signatures - Larry et al, Science")
-ggsave(out("Markers_Signatures_UMAP_scaled.pdf"), w=12,h=12)
 
 
 # CYTOTRACE ---------------------------------------------------------------
