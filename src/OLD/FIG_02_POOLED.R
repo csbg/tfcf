@@ -1,5 +1,5 @@
 source("src/00_init.R")
-out <- dirout("FIG_02_POOLED/")
+out <- dirout("FIG_01_POOLED/")
 
 require(latex2exp)
 require(ggrepel)

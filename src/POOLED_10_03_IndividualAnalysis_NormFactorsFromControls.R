@@ -19,7 +19,7 @@ stopifnot(all(ann$sample == colnames(m)))
 ann[, id := paste(Genotype, Population, Library, sep="_")]
 
 
-# Aggregate values for replicates -----------------------------------------
+# AGGREGATE VALUES for replicates -----------------------------------------
 m2 <- sapply(with(ann, split(sample, id)), function(sx){
   apply(m[,sx, drop=F], 1, function(row){
     if(all(is.na(row))){
@@ -31,7 +31,48 @@ m2 <- sapply(with(ann, split(sample, id)), function(sx){
 })
 
 
-# Get raw scores ------------------------------------------
+# AGGREGATED VALUES for genes compared to WT -------------------------------------------------------------------------
+stopifnot(all(colnames(m) == ann$sample))
+rMT <- m[,ann[Library != "A"]$sample]
+tpmMT <- t(t(rMT) / colSums(rMT, na.rm=TRUE)*1e6)
+stopifnot(all(is.na(rMT) == is.na(tpmMT)))
+stopifnot(all(tpmMT[,1] == rMT[,1]/sum(rMT[,1],na.rm=T)*1e6, na.rm = TRUE))
+cDT <- copy(ann[Library != "A"])
+cDT[,id := paste(Population, Library, Date, Library2, System, Date2)]
+cDT <- dcast.data.table(cDT, id ~ Genotype, value.var = "sample")
+cDT <- cDT[!is.na(WT)]
+normMT <- sapply(cDT$id, function(i){
+  tpmMT[,cDT[id == i]$Cas9] / tpmMT[,cDT[id == i]$WT]
+})
+normMT[normMT == Inf] <- 8
+
+cDT2 <- data.table(id=cDT$id, do.call(rbind, strsplit(cDT$id, " ")))
+cDT2[V1 == "LSK", V1 := V5]
+agMT <- sapply(with(cDT2, split(id, V1)), function(ids){
+  rowMeans(normMT[,ids], na.rm=TRUE)
+})
+agMT[is.nan(agMT)] <- NA
+#agMT[grepl("Kmt2d", row.names(agMT)),]
+agMT <- t(sapply(split(row.names(agMT), gsub("_.+$", "", row.names(agMT))), function(guides){
+  colMeans(agMT[guides,,drop=F], na.rm=TRUE)
+}))
+agMT[is.nan(agMT)] <- NA
+
+agDT <- melt(data.table(agMT, keep.rownames = TRUE), id.vars = "rn")[!is.na(value)]
+agDT[,log2FC := log2(value)]
+write.tsv(agDT, out("Aggregated.tsv"))
+# ggplot(agDT[rn %in% hit.genes], aes(x=variable, y=rn, color=log2FC)) +
+#   geom_point() +
+#   theme_bw(12) + 
+#   xRot() +
+#   scale_color_gradient2()
+# ggsave(out("Aggregated_log2TPM_vsWT.pdf"), w=4,h=15)
+
+
+
+# CALCULATE P-VALUES ----------------------------------------------------
+
+# . Get raw scores ------------------------------------------
 res <- data.table()
 datex <- "10022021_Feb2021"
 libx <- "Br"
@@ -107,7 +148,7 @@ write.tsv(res, out("Results_Scores.tsv"))
 #res <- fread(out("Results_Scores.tsv"))
 
 
-# Get mean and sd summary statistics ------------------------------------------
+# . Get mean and sd summary statistics ------------------------------------------
 res[,Analysis := paste(Library, Comparison)]
 stats <- data.table()
 ax <- res$Analysis[1]
@@ -128,7 +169,7 @@ write.tsv(stats, out("Results_SummaryStats.tsv"))
 #stats <- fread(out("Results_SummaryStats.tsv"))
 
 
-# Plot calculation of p-values ------------------------------------------
+# . Plot calculation of p-values ------------------------------------------
 stat.rnorm <- data.table()
 for(ax in unique(stats$Analysis)){
   x <- stats[Analysis == ax]
@@ -145,7 +186,7 @@ ggplot(res, aes(x=Score)) +
 ggsave(out("PopulationScores_Density_BgNormal.pdf"), w=20,h=15)
 
 
-# Calculate z-scores and p-values ------------------------------------------
+# . Calculate z-scores and p-values ------------------------------------------
 res.stats <- data.table()
 ax <- res$Analysis[1]
 for(ax in unique(res$Analysis)){
@@ -166,7 +207,7 @@ write.tsv(res.stats, out("Results_Pvalues.tsv"))
 #res.stats <- fread(out("Results_Pvalues.tsv"))
 
 
-# Plot Summaries of z-scores and number of hits ------------------------------------------
+# . Plot Summaries of z-scores and number of hits ------------------------------------------
 
 # Z scores
 ggplot(res.stats, aes(y=z, x=paste(Genotype, GuideType), fill=paste(Genotype, GuideType))) + 
@@ -208,7 +249,7 @@ ggsave(out("PopulationScores_N_Significant_Cas9_Targeted.pdf"), w=6,h=15)
 
 
 
-# Plot specific genes and guides ------------------------------------------
+# . Plot specific genes and guides ------------------------------------------
 (libx <- res$Library[1])
 for(libx in unique(res.stats$Library)){
   lDT <- res.stats[Library == libx][Gene != "NonTargetingControlGuideForMouse"]
@@ -229,7 +270,7 @@ for(libx in unique(res.stats$Library)){
 
 
 
-# Plot examples -----------------------------------------------------------
+# . Plot examples -----------------------------------------------------------
 m.norm <- t(t(m)/colSums(m, na.rm = TRUE)) * 1e-6
 m.norm <- log2(m.norm + 1)
 table(is.na(m.norm))
@@ -264,7 +305,7 @@ for(genex in c("Spi1", "Kmt2d")){
 
 
 
-# Blacklist of guides that didn't work ------------------------------------
+# . Blacklist of guides that didn't work ------------------------------------
 # res.stats <- fread(out("Results_Pvalues.tsv"))
 # x <- res.stats[GuideType == "Targeted" & Genotype == "Cas9"]
 # x[Gene == "Kmt2d"]
@@ -276,7 +317,7 @@ for(genex in c("Spi1", "Kmt2d")){
 # res.stats[GuideType == "Targeted" & Genotype == "Cas9"][,.(sum(padj < 0.05), .N), c("Guide", "Gene")][order(Gene)][1:100]
 
 
-# Summarize MDS -----------------------------------------------------------
+# . Summarize MDS -----------------------------------------------------------
 mdsDT <- fread(out("Results_Pvalues.tsv"))[Library != "A"][GuideType == "Targeted" & Genotype == "Cas9"]
 mdsDT.hits <- copy(mdsDT)
 
@@ -323,46 +364,7 @@ for(typex in c("all", "hits")){
 }
 
 
-
-
-# Aggregate values -------------------------------------------------------------------------
-stopifnot(all(colnames(m) == ann$sample))
-rMT <- m[,ann[Library != "A"]$sample]
-tpmMT <- t(t(rMT) / colSums(rMT, na.rm=TRUE)*1e6)
-stopifnot(all(is.na(rMT) == is.na(tpmMT)))
-stopifnot(all(tpmMT[,1] == rMT[,1]/sum(rMT[,1],na.rm=T)*1e6, na.rm = TRUE))
-cDT <- copy(ann[Library != "A"])
-cDT[,id := paste(Population, Library, Date, Library2, System, Date2)]
-cDT <- dcast.data.table(cDT, id ~ Genotype, value.var = "sample")
-cDT <- cDT[!is.na(WT)]
-normMT <- sapply(cDT$id, function(i){
-  tpmMT[,cDT[id == i]$Cas9] / tpmMT[,cDT[id == i]$WT]
-})
-normMT[normMT == Inf] <- 8
-
-cDT2 <- data.table(id=cDT$id, do.call(rbind, strsplit(cDT$id, " ")))
-cDT2[V1 == "LSK", V1 := V5]
-agMT <- sapply(with(cDT2, split(id, V1)), function(ids){
-  rowMeans(normMT[,ids], na.rm=TRUE)
-})
-agMT[is.nan(agMT)] <- NA
-#agMT[grepl("Kmt2d", row.names(agMT)),]
-agMT <- t(sapply(split(row.names(agMT), gsub("_.+$", "", row.names(agMT))), function(guides){
-  colMeans(agMT[guides,,drop=F], na.rm=TRUE)
-}))
-agMT[is.nan(agMT)] <- NA
-
-agDT <- melt(data.table(agMT, keep.rownames = TRUE), id.vars = "rn")[!is.na(value)]
-agDT[,log2FC := log2(value)]
-write.tsv(agDT, out("Aggregated.tsv"))
-# ggplot(agDT[rn %in% hit.genes], aes(x=variable, y=rn, color=log2FC)) +
-#   geom_point() +
-#   theme_bw(12) + 
-#   xRot() +
-#   scale_color_gradient2()
-# ggsave(out("Aggregated_log2TPM_vsWT.pdf"), w=4,h=15)
-
-
+# EVERYTHING BELOW IS MOVED TO FIGURSE ------------------------------------
 
 # Hopefully Cool plot ---------------------------------------------------------------
 agDT <- fread(out("Aggregated.tsv"))
@@ -395,10 +397,10 @@ mds <- fread(out("Correlation_hits_MDS.tsv"))
 #agDT <- hierarch.ordering(agDT, toOrder = "rn", orderBy = "variable", value.var = "log2FC", aggregate = TRUE)
 agDT$rn <- factor(agDT$rn, levels=mds$rn[hclust(dist(as.matrix(data.frame(mds[,c("V1", "V2"), with=F]))))$order])
 ggplot(agDT[rn %in% pDT.stats$Gene], aes(x=Population, y=rn)) +
-  theme_bw(12) + 
+  theme_bw(12) +
   geom_point(aes(fill=log2FC), shape=21, color="white", size=5) +
   facet_grid(. ~ cleanComparisons2(Comparison.Group), scales = "free", space = "free") +
-  geom_segment(data=pDT.stats, aes(xend=Population1, x=Population2, y=Gene, yend=Gene, color=V1), arrow=arrow(type="closed", length = unit(0.3, "cm"))) + 
+  geom_segment(data=pDT.stats, aes(xend=Population1, x=Population2, y=Gene, yend=Gene, color=V1), arrow=arrow(type="closed", length = unit(0.3, "cm"))) +
   scale_fill_gradient2(name=TeX(r'($\\overset{\Delta_{Cas9-WT}}{(dots)}$)')) +
   #geom_point(aes(fill=log2FC), shape=21, color="white", size=2) +
   scale_color_gradient2(name=TeX(r'($\\overset{\Delta_{Populations}}{(arrows)}$)')) +
@@ -424,11 +426,11 @@ mx[is.na(mx)] <- 0
 pDT.stats$Cluster <- cutree(hclust(dist(mx)), k = 7)[pDT.stats$Gene]
 
 ggplot(pDT.stats, aes(x=cleanComparisons(Comparison), y=Gene)) +
-  theme_bw(12) + 
+  theme_bw(12) +
   geom_point(aes(color=V1), size=4) +
   scale_color_gradient2(name=TeX(r'($\\overset{\Delta_{Cas9-WT}}$)')) +
   facet_grid(Cluster ~ ., scales = "free", space = "free") +
-  xRot() + 
+  xRot() +
   xlab("")
 ggsave(out("SimpleHM.pdf"), w=3.5,h=13)
 
@@ -438,23 +440,23 @@ ggsave(out("SimpleHM.pdf"), w=3.5,h=13)
 genex <- "Kmt2d"
 for(genex in hit.genes){
   COLORS.graph <- c("#fb9a99", "lightgrey", "#a6cee3")
-  
+
   agx <- agDT[rn == genex]
   agx <- unique(agx[,c("variable", "log2FC"), with=F])
-  
+
   statx <- res.stats[Gene == genex][Genotype == "Cas9"]
   statx[, keep := sum(padj < 0.05) >= 2 & (all(sign(Score[padj < 0.05]) > 0) | all(sign(Score[padj < 0.05]) < 0)), by=c("Gene", "Analysis")]
   statx <- statx[, .(
-    z=mean(z), 
+    z=mean(z),
     up=length(unique(Guide[padj < 0.05 & z > 0])),
     dn=length(unique(Guide[padj < 0.05 & z < 0])),
-    n=length(unique(Guide))), 
+    n=length(unique(Guide))),
     by=c("Gene", "Comparison")]
-  
+
   el <- do.call(rbind, COMPARISONS)
   statx <- statx[match(row.names(el), Comparison)][!is.na(Gene)]
   el <- el[statx$Comparison,]
-  
+
   g <- graph.edgelist(el[,2:1])
   V(g)$log2FC <- agx[match(V(g)$name, variable),]$log2FC
   E(g)$z <- statx$z
@@ -464,7 +466,7 @@ for(genex in hit.genes){
   E(g)$sig.label <- with(statx, paste(up, dn, n, sep="/"))
   E(g)$cnt <- ifelse(E(g)$z > 0, E(g)$up, E(g)$dn)
   E(g)$perc <- round(E(g)$cnt/E(g)$n) * 100
-  
+
   g <- delete.vertices(g, is.na(V(g)$log2FC))
   V(g)$color <- mapNumericToColors(V(g)$log2FC, cols = COLORS.graph)
   V(g)$frame.color <- NA
@@ -475,8 +477,8 @@ for(genex in hit.genes){
   E(g)$arrow.size <- 1
   E(g)$label <- paste0("", round(E(g)$z, 1),"\n", "(",E(g)$sig.label, ")")
   E(g)$label.color <- "black"
-  
-  
+
+
   layout <- list(
     "LSKd7" = c(0,3),
     "GMP" = c(-1,1.5),
@@ -487,7 +489,7 @@ for(genex in hit.genes){
     "LSKd9" = c(3,2),
     "GMP.CD11bGr1" = c(3,1),
     "GMP.DN" = c(3,0))
-  
+
   cleanDev(); pdf(out("Graph_", genex, ".pdf"), w=5,h=5)
   plot.igraph(g, layout=do.call(rbind, layout)[V(g)$name,], main=genex)
   dev.off()
@@ -502,10 +504,10 @@ quantile(res.stats$z)
 data.table()
 
 statx <- res.stats[, .(
-  z=mean(z), 
+  z=mean(z),
   up=length(unique(Guide[padj < 0.05 & z > 0])),
   dn=length(unique(Guide[padj < 0.05 & z < 0])),
-  n=length(unique(Guide))), 
+  n=length(unique(Guide))),
   by=c("Gene", "Comparison")]
 
 bg <- data.table()
@@ -516,11 +518,11 @@ for(gx in hit.genes){
 }
 
 
-ggplot(statx[Gene %in% hit.genes], aes(x=Gene)) + 
+ggplot(statx[Gene %in% hit.genes], aes(x=Gene)) +
   facet_grid(cleanComparisons(Comparison) ~ .) +
-  geom_tile(data=bg, aes(fill=z, y=factor(z))) + 
-  scale_fill_gradient2(high="#a6cee3", low="#fb9a99") + 
+  geom_tile(data=bg, aes(fill=z, y=factor(z))) +
+  scale_fill_gradient2(high="#a6cee3", low="#fb9a99") +
   geom_point(aes(y=factor(round(z))), size=3, color="black", shape=18) +
-  theme_bw(12) + 
+  theme_bw(12) +
   xRot()
 ggsave(out("GraphHM.pdf"),w=15, h=10)

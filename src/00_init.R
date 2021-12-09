@@ -148,6 +148,8 @@ COMPARISONS.healthy <- c(
   "MYE.UND",
   "GMPcd11.DN"
 )
+
+
 cleanComparisons <- function(x, order=TRUE, ggtext=FALSE, dm="clean"){
   transformPretty <- function(i, gg=ggtext){
     if(gg){
