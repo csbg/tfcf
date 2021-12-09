@@ -7,6 +7,7 @@ require(ggrepel)
 require(igraph)
 require(ggtext)
 
+
 # Load data ---------------------------------------------------------------
 m <- as.matrix(read.csv(PATHS$POOLED$DATA$matrix))
 ann <- fread(PATHS$POOLED$DATA$annotation)
@@ -19,6 +20,7 @@ list.files(inDir(""), pattern=".tsv")
 RESULTS.wt <- fread(inDir("Results_Pvalues.tsv"))[Library != "A"][Comparison %in% COMPARISONS.healthy]
 RESULTS.wt.agg <- fread(inDir("Aggregated.tsv"))
 
+
 # Gene annotations --------------------------------------------------------
 ANN.genes <- fread("metadata/TFCF_Annotations.tsv")
 ANN.genes[,Complex_simple := make.names(COMPLEX)]
@@ -29,18 +31,19 @@ ANN.genes <- ANN.genes[rank == 1][,-"rank"]
 stopifnot(all(ANN.genes[,.N, by="GENE"]$N == 1))
 unique(ANN.genes$Complex_simple)
 
+
 # Define comparison groups ------------------------------------------------
 # Add Main branch
 cleanComparisons2 <- function(x){
   orderX <- c("Main branch", "LSK.CKIT", "GMP.MEP", "MYE.UND", "GMPcd11.DN")
   x <- factor(x, levels=orderX)
 }
-
 # Define groups
 compDT <- unique(RESULTS.wt[Library != "A"][,c("Population1", "Population2", "Comparison"), with=F])
 compDT[Comparison %in% c("GMP.LSK", "MEP.LSK","UND.MEP", "MYE.GMP"), Comparison.Group := "Main branch"]
 compDT[is.na(Comparison.Group), Comparison.Group := Comparison]
 FIGS.COMPARISONS <- copy(compDT)
+
 
 # Summarize results of differential analysis for each gene ----------------
 pDT.stats <- merge(RESULTS.wt[Genotype == "Cas9"], unique(FIGS.COMPARISONS[,c("Comparison", "Comparison.Group")]), by="Comparison", all.x=TRUE)
@@ -58,11 +61,45 @@ pDT.stats[, hit := percSig >= 50]
 pDT.stats[, complete.screen := all(COMPARISONS.healthy %in% Comparison), by="Gene"]
 RESULTS.wt.agg.gene <- copy(pDT.stats)
 
-
 # Did this keep all genes?
 stopifnot(length(unique(RESULTS.wt.agg.gene$Gene)) == length(unique(RESULTS.wt$Gene)))
 
-# Check inconsistencies
+
+# Example calculation -----------------------------------------------------
+SCORES.EXAMPLE.comp <- "GMP.MEP"
+SCORES.EXAMPLE.lib <- "As"
+SCORES.EXAMPLE <- fread(inDir("Results_Scores.tsv"))
+SCORES.EXAMPLE <- SCORES.EXAMPLE[Comparison == SCORES.EXAMPLE.comp][Library == SCORES.EXAMPLE.lib]
+SCORES.EXAMPLE.bg <- fread(inDir("Results_SummaryStats.tsv"))[Comparison == SCORES.EXAMPLE.comp][Library == SCORES.EXAMPLE.lib]
+
+
+
+# Data from replicates ----------------------------------------------------
+replicationDir <- dirout_load("POOLED_11_03_Replicates_NormFactorsFromControls")
+
+list.files(replicationDir(""))
+# Scores
+REPLICATES.SCORES <- fread(replicationDir("Results.tsv"))
+REPLICATES.SCORES <- REPLICATES.SCORES[coef == gsub("\\.", "vs", SCORES.EXAMPLE.comp)][grepl(SCORES.EXAMPLE.lib, analysis)]
+
+
+# Values
+REPLICATES.VALUES <- fread(replicationDir("analysis_", REPLICATES.SCORES$analysis[1], "/", "Data_DateRemoved.csv"))
+rns <- REPLICATES.VALUES$rn
+REPLICATES.VALUES <- as.matrix(REPLICATES.VALUES[, -"rn"])
+row.names(REPLICATES.VALUES) <- rns
+REPLICATES.VALUES <- REPLICATES.VALUES[unique(REPLICATES.SCORES[significant_TF == TRUE]$rn),ann[Library == SCORES.EXAMPLE.lib][Population %in% COMPARISONS[[SCORES.EXAMPLE.comp]]]$sample]
+REPLICATES.VALUES <- melt(data.table(REPLICATES.VALUES, keep.rownames = TRUE), id.vars = "rn")
+REPLICATES.VALUES <- merge(ann, REPLICATES.VALUES, by.x="sample", by.y="variable")
+REPLICATES.VALUES[, Gene := gsub("_.+", "", rn)]
+REPLICATES.VALUES[, sample_i := rank(sample), by=c("Gene", "rn", "Genotype")]
+REPLICATES.VALUES[, guide_i := rank(rn), by=c("Gene", "sample")]
+
+
+# SETUP ENDS HERE ---------------------------------------------------------
+
+
+# Check inconsistencies ---------------------------------------------------
 pDT <- merge(RESULTS.wt[Genotype == "Cas9"], RESULTS.wt.agg.gene[sig.down != 0 & sig.up != 0][,c("Gene", "Comparison"),with=F],by=c("Gene", "Comparison"))
 ggplot(pDT, aes(x=Comparison, y=paste(Guide, Library), color=z, size=pmin(5, -log10(padj)))) + 
   theme_bw(12) +
@@ -72,14 +109,74 @@ ggplot(pDT, aes(x=Comparison, y=paste(Guide, Library), color=z, size=pmin(5, -lo
 ggsave(out("Check_inconsistencies.pdf"), w=10,h=29)
 
 
-# SETUP ENDS HERE ---------------------------------------------------------
+# Number of genes ---------------------------------------------------------
+ggplot(RESULTS.wt[Genotype != "WT" & !grepl("NonT", Gene),length(unique(Guide)), by=c("Gene", "Comparison")], aes(x=Comparison, fill=factor(V1))) + 
+  theme_bw(12) +
+  geom_bar() +
+  xRot()
+ggsave(out("Numbers.pdf"), w=5,h=5)
+
+
+# Example calculation and scores -----------------------------------------------------
+ggplot(SCORES.EXAMPLE, aes(x=Score)) + 
+  geom_density(data=data.table(Score=rnorm(10000, mean=SCORES.EXAMPLE.bg$mean, sd=SCORES.EXAMPLE.bg$sd)), fill="#b2df8a", color=NA) +
+  scale_color_manual(values=COLOR.Genotypes) +
+  geom_density(aes(color=Genotype)) +
+  theme_bw(12)
+ggsave(out("Scores_Example_Calculation.pdf"), w=5,h=3)
+
+# Scores
+str(gg <- unique(RESULTS.wt[Comparison == SCORES.EXAMPLE.comp][Library == SCORES.EXAMPLE.lib][hit == TRUE]$Gene))
+pDT <- SCORES.EXAMPLE
+pDT[,Gene := gsub("_.+$", "", Guide)]
+pDT[, label := ifelse(Genotype == "WT", "WT", Gene)]
+pDT$label <- factor(pDT$label, levels = unique(c("WT", pDT[,median(Score), by=c("label")][order(V1)]$label)))
+ggplot(pDT[Gene %in% gg | grepl("^NonT", label) | Genotype == "WT"], aes(x=label, y=Score, color=grepl("^NonT", label))) + 
+  geom_boxplot(color="lightgrey") + 
+  scale_color_manual(values=c("black", "red")) + 
+  theme_bw(12) +
+  geom_hline(color="lightblue", yintercept = 0) +
+  geom_jitter(height=0, width=0.2, shape=1) +
+  xRot()
+ggsave(out("Scores_Example_Scores.pdf"), w=10,h=4)
+
+
+# Distribution
+compx <- "MYE.UND"
+pDT <- RESULTS.wt[Comparison == compx][!grepl("NonT", Gene)]
+pDT.median <- pDT[,.(z=mean(z), sd=sd(z), n=.N), by=c("Gene")]
+pDT.median[, se := sd/sqrt(n)]
+pDT.median[Gene %in% RESULTS.wt.agg.gene[Comparison == compx][hit == TRUE]$Gene, hit := TRUE]
+pDT.median[is.na(hit), hit := FALSE]
+pDT$Gene <- factor(pDT$Gene, levels=c(pDT.median[order(z)]$Gene))
+ggplot(pDT, aes(x=Gene, y=z)) + 
+  theme_bw(12) +
+  geom_point(shape=1) +
+  geom_point(data=pDT.median, aes(color=hit), shape=16) +
+  xRot()
+ggsave(out("Scores_Example_Distribution.pdf"), w=70,h=5, limitsize = FALSE)
+
+# Mean and SE
+pDT.median$Gene <- factor(pDT.median$Gene, levels=levels(pDT$Gene))
+ggplot(pDT.median, aes(x=Gene, y=z)) + 
+  theme_bw(12) +
+  geom_point(aes(color=hit)) +
+  geom_errorbar(aes(ymax=z-sd, ymin=z+sd)) +
+  xRot()
+ggsave(out("Scores_Example_Distribution_SD.pdf"), w=70,h=5, limitsize = FALSE)
 
 
 
+# Validation with replicates ----------------------------------------------
+ggplot(REPLICATES.VALUES, aes(x=paste(Genotype, Population), shape=factor(sample_i), y=value, color=factor(guide_i))) + 
+  theme_bw(12) +
+  geom_point() +
+  facet_grid(~ Gene) +
+  xRot()
+ggsave(out("Valiation_Replicates.pdf"), w=12,h=4)
 
 
-# Hopefully Cool plot ---------------------------------------------------------------
-# Map group to comparisons
+# Networks in one dimension ---------------------------------------------------------------
 compDT2 <- unique(melt(FIGS.COMPARISONS[,-"Comparison",with=F], id.vars = "Comparison.Group")[,-"variable"])
 
 # Aggregated data annotated with comparisons
@@ -112,13 +209,11 @@ ggplot(agDT[rn %in% pDT.stats$Gene], aes(x=Population, y=rn)) +
 ggsave(out("Aggregated_Edges.pdf"), w=8,h=18)
 
 
-
 # Selected comparisons (David) --------------------------------------------
 pDT.stats <- copy(RESULTS.wt.agg.gene)
 pDT.stats <- unique(pDT.stats[,-"Comparison.Group"])
 pDT.stats <- pDT.stats[Gene %in% pDT.stats[hit == TRUE][complete.screen == TRUE]$Gene]
 pDT.stats <- pDT.stats[Comparison %in% COMPARISONS.healthy]
-
 pDT.stats <- merge(pDT.stats, ANN.genes, by.x="Gene", by.y="GENE", all.x=TRUE)
 # mx <- toMT(pDT.stats, row = "Gene", col = "Comparison", val = "z")
 # mx[is.na(mx)] <- 0
@@ -126,6 +221,7 @@ pDT.stats <- merge(pDT.stats, ANN.genes, by.x="Gene", by.y="GENE", all.x=TRUE)
 pDT.stats <- hierarch.ordering(pDT.stats, toOrder = "Gene", orderBy = "Comparison", value.var="z")
 write.tsv(pDT.stats, out("SimpleHM.tsv"))
 
+# Plot
 ggplot(pDT.stats, aes(x=cleanComparisons(Comparison, ggtext = TRUE), y=Gene)) +
   theme_bw(12) + 
   geom_point(aes(color=z, size=percSig)) +
@@ -144,7 +240,6 @@ ggplot(RESULTS.wt[Comparison %in% COMPARISONS.healthy], aes(x=z, y=-log10(p))) +
   facet_grid(. ~ cleanComparisons(Comparison)) +
   theme_bw(12)
 ggsave(out("Vulcano.pdf"), w=15,h=2)
-
 
 
 # Comparison of two main populations --------------------------------------
@@ -182,10 +277,7 @@ ggplot(pDT, aes_string(x=cx[1], y=cx[2], color="sig")) +
 ggsave(out("Comparison_Scatter.pdf"), w=5.5,h=4.5)
 
 
-
-
-
-# Plot network ------------------------------------------------------------
+# Plot networks ------------------------------------------------------------
 outGraphs <- dirout(paste0(base.dir, "/Graphs/"))
 genex <- "Kmt2d"
 for(genex in unique(RESULTS.wt.agg.gene[hit == TRUE][complete.screen == TRUE]$Gene)){
@@ -247,10 +339,11 @@ for(genex in unique(RESULTS.wt.agg.gene[hit == TRUE][complete.screen == TRUE]$Ge
 
 
 
-# Heatmaps for graphs -----------------------------------------------------
+# Heatmaps for networks -----------------------------------------------------
 res.stats <- RESULTS.wt.agg.gene[hit == TRUE][complete.screen == TRUE]
 res.stats[abs(z) >= 5, z := 5 * sign(z)]
 
+# Generate background
 bg <- data.table()
 for(gx in unique(res.stats$Gene)){
   for(cx in unique(res.stats$Comparison)){
@@ -258,6 +351,7 @@ for(gx in unique(res.stats$Gene)){
   }
 }
 
+# Plotting
 ggplot(res.stats, aes(x=Gene)) + 
   facet_grid(cleanComparisons(Comparison) ~ .) +
   geom_tile(data=bg, aes(fill=z, y=factor(z))) + 

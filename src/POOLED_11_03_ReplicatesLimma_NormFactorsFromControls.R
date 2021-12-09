@@ -217,6 +217,8 @@ for(ai in 1:nrow(ann_replicates)){
 
 ff <- list.files(out(""), recursive = TRUE, pattern="AllResults.tsv", full.names = TRUE)
 res <- do.call(rbind, lapply(ff, fread))
+write.tsv(res, out("Results.tsv"))
+
 table(res$coef, res$analysis)
 
 res[gene == "NonTargetingControlGuideForMouse", analysis := gsub("_x", "_controls", analysis)]
@@ -267,17 +269,21 @@ ggsave(out("VulcanoPlots.pdf"), w=30,h=30)
 (ax <- unique(res$analysis)[1])
 for(ax in unique(res[!grepl("_controls", analysis)]$analysis)){
   message(ax)
+  
+  # Get comparisons from this analysis (Library and System)
   resx <- res[analysis == ax][grepl("vs", coef) | grepl("^Cas9_", coef)]
   
+  # Read in data
   data.br <- fread(out("analysis_", ax, "/", "Data_DateRemoved.csv"))
   rns <- data.br$rn
   data.br <- as.matrix(data.br[, -"rn"])
   row.names(data.br) <- rns
   
+  # Find significant hits
   sig.res <- resx[!coef %in% unique(ann$Date)][!coef == "(Intercept)"]
   sig.res[, keep := sum(padj < 0.05) >= 2 & (all(sign(logFC[padj < 0.05]) > 0) | all(sign(logFC[padj < 0.05]) < 0)), by=c("gene", "coef")]
   
-  
+  # Plot all coefficients for all genes
   (p_coef2 <- ggplot(resx[!coef %in% unique(ann$Date)][!coef == "(Intercept)"], 
                      aes(x=coef, y=rn, fill=logFC, size=-log10(padj), color=padj < 0.05)) + 
       geom_point(shape=21) +
@@ -287,15 +293,16 @@ for(ax in unique(res[!grepl("_controls", analysis)]$analysis)){
       theme_bw(12) +
       xRot() +
       theme(axis.text.y = element_blank()))
-  ggsave(out("Results_", ax, "_AllGenes_Coefficients.pdf"), w=12,h=10, plot=p_coef2)
+  ggsave(out("Results_", ax, "_AllGenes_Coefficients.pdf"), w=25,h=35, plot=p_coef2, limitsize = FALSE)
   
-  
+  # pick top genes
   if(nrow(sig.res[keep == TRUE]) == 0){
     sig.res[, keep := gene %in% sig.res[,mean(logFC), by=c("gene", "coef")][order(abs(V1), decreasing=TRUE)][,head(.SD, n=10),by="coef"]$gene]
   }
-  
+
   hx <- length(unique(sig.res[keep==TRUE]$gene)) * 1 + 1
   
+  # Plot coefficients
   p_coef <- ggplot(sig.res[gene %in% sig.res[keep==TRUE]$gene], 
                     aes(x=coef, y=rn, fill=logFC, size=-log10(padj), color=padj < 0.05)) + 
       geom_point(shape=21) +
@@ -303,9 +310,9 @@ for(ax in unique(res[!grepl("_controls", analysis)]$analysis)){
       scale_fill_gradient2(low="red", high="blue") +
       facet_grid(gene~"y" + "x",scales = "free", space = "free") +
       theme_bw(12)
-  ggsave(out("Results_", ax, "_Coefficients.pdf"), w=4,h=hx, plot=p_coef + xRot())
+  ggsave(out("Results_", ax, "_Coefficients.pdf"), w=6,h=hx, plot=p_coef + xRot(), limitsize = FALSE)
   
-  
+  # Plot data for those coefficients
   annx <- ann[paste0(System, "_", Library) == gsub("_[a-z]+$", "", ax)]
   pDT <- do.call(rbind, lapply(sig.res$rn, function(guide){data.table(annx, guide=guide, log2cpm=data.br[guide, annx$sample])}))
   pDT[,gene := gsub("_.+", "", guide)]
@@ -315,14 +322,14 @@ for(ax in unique(res[!grepl("_controls", analysis)]$analysis)){
       geom_tile() + 
       facet_grid(gene~Genotype + Population, scales ="free", space = "free") +
       scale_fill_gradient2(low="red", high="blue")
-  ggsave(out("Results_", ax, "_HM.pdf"), w=5,h=hx, plot=p_vals + xRot())
+  ggsave(out("Results_", ax, "_HM.pdf"), w=5,h=hx, plot=p_vals + xRot(), limitsize = FALSE)
   
   
   p <- gridExtra::grid.arrange(
     p_vals,
     p_coef, 
     nrow=1, ncol=2, widths=c(5,4))
-  ggsave(out("Results_", ax, "_combined.pdf"), h=hx, w=9, plot=p)
+  ggsave(out("Results_", ax, "_combined.pdf"), h=hx, w=9, plot=p, limitsize = FALSE)
   
   
   write.tsv(sig.res, out("Results_", ax, "_Model_results.tsv"))
