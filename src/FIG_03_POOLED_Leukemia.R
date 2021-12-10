@@ -1,10 +1,11 @@
 source("src/00_init.R")
-out <- dirout("FIG_03_POOLED_Leukemia/")
+out <- dirout("FIG_01_POOLED_vsControls/")
 
 require(latex2exp)
 require(ggrepel)
 require(igraph)
 require(ggtext)
+
 
 
 
@@ -33,11 +34,28 @@ mAA <-sapply(grps, function(grpx){
   rowMeans(mA.cpm[,colx], na.rm = TRUE)
 })
 
-
-
 # Load analysis results ---------------------------------------------------
 RESULTS.ctr.pval <- fread(dirout_load("POOLED_12_01_Controls")("Results_Pvalues.tsv"))
+RESULTS.ctr.pval[, Library := gsub("^.+_", "", Group)]
+RESULTS.ctr.pval[, Genotype := gsub("_.+$", "", Group)]
 
+RESULTS.wt.pval <- fread(dirout_load("POOLED_10_03_IndividualAnalysis_NormFactors_Controls")("Results_Pvalues.tsv"))
+RESULTS.wt.pval[, Ratio.log2 := Score]
+
+
+# Aggregate results across guides
+pDT.stats <- RESULTS.ctr.pval[, .(
+  Ratio.log2=mean(Ratio.log2), 
+  sig.up=length(unique(Guide[padj < 0.05 & Ratio.log2 > 0])),
+  sig.down=length(unique(Guide[padj < 0.05 & Ratio.log2 < 0])),
+  n=length(unique(Guide))
+), by=c("Gene", "Comparison")]
+pDT.stats[, sig := ifelse(Ratio.log2 > 0, sig.up, sig.down)]
+pDT.stats[,percSig := sig/n*100]
+stopifnot(all(pDT.stats$percSig >= 0))
+stopifnot(all(pDT.stats$percSig <= 100))
+pDT.stats[, hit := percSig >= 50]
+RESULTS.AGG <- copy(pDT.stats)
 
 
 # Define comparisons that are to be combined ------------------------------
@@ -56,21 +74,35 @@ SAMPLES <- list(
 
 
 
-# Aggregate results across libraries --------------------------------------
+
+# Compare methods for p-values --------------------------------------------
+cols.merge <- c("Genotype", "Library", "Comparison", "Guide", "Gene")
+cols.vals <- c("Ratio.log2", "z", "p", "padj")
+pDT <- merge.data.table(RESULTS.ctr.pval[,c(cols.merge, cols.vals),with=F], RESULTS.wt.pval[,c(cols.merge, cols.vals),with=F], by=cols.merge, suffixes = c("_ctr", "_wt"))
+pDT[,cor(z_wt, z_ctr), by=c("Genotype", "Library", "Comparison")]
+pDT[,corS(z_wt, z_ctr), by=c("Genotype", "Library", "Comparison")]
+pDT[,cor(Ratio.log2_wt, Ratio.log2_ctr), by=c("Genotype", "Library", "Comparison")]
+pDT[,corS(Ratio.log2_wt, Ratio.log2_ctr), by=c("Genotype", "Library", "Comparison")]
+pDT[,cor(-log10(p_wt), -log10(p_ctr)), by=c("Genotype", "Library", "Comparison")]
+pDT[,corS(-log10(p_wt), -log10(p_ctr)), by=c("Genotype", "Library", "Comparison")]
+
+# Ratio log2
+ggplot(pDT[Genotype == "Cas9"], aes(x=Ratio.log2_wt, y=Ratio.log2_ctr)) + 
+  theme_bw(12) +
+  geom_point(shape=1) + 
+  facet_wrap(~ Comparison + Library, scales = "free")
+ggsave(out("Methods_comparison_WTvsCTRL_log2Ratio.pdf"), w=10,h=10)
+
+# log10 p-value
+ggplot(pDT[Genotype == "Cas9"], aes(x=sign(Ratio.log2_wt) * -log10(p_wt), y=sign(Ratio.log2_ctr) * -log10(p_ctr))) + 
+  theme_bw(12) +
+  geom_point(shape=1) + 
+  facet_wrap(~ Comparison + Library, scales = "free")
+ggsave(out("Methods_comparison_WTvsCTRL_log10p.pdf"), w=10,h=10)
 
 
 
-# Analysis per gene -------------------------------------------------------
-
-# Aggregate results across guides
-RESULTS.AGG <- RESULTS.ctr.pval[!grepl("^WT_", Group),.(
-  Ratio.log2 = mean(Ratio.log2), 
-  N=.N, 
-  Nsig.pos=sum(padj < 0.05 * sign(Ratio.log2 > 0)),
-  Nsig.neg=sum(padj < 0.05 * sign(Ratio.log2 < 0))
-  ), by=c("Comparison", "Gene")]
-RESULTS.AGG[, Frag.sig := pmax(Nsig.pos, Nsig.neg)/N]
-RESULTS.AGG[Nsig.pos > 0 & Nsig.neg > 0, Frag.sig := 0]
+# Scatterplot with arrows -------------------------------------------------------------
 
 # Combine logFCs and p-values in one table
 xDT_r <- dcast.data.table(
@@ -80,7 +112,7 @@ xDT_r <- dcast.data.table(
 xDT_p <- dcast.data.table(
   data = RESULTS.AGG[Comparison %in% do.call(c, lapply(COMBINATIONS, unlist))], 
   formula = Gene ~ Comparison, 
-  value.var = "Frag.sig")
+  value.var = "percSig")
 id.cols <- setdiff(colnames(xDT_r), unique(RESULTS.ctr.pval$Comparison))
 xDT <- merge(xDT_r, xDT_p, by=id.cols, all=TRUE, suffixes=c("_r", "_p"))
 stopifnot(all(duplicated(xDT$Gene)==FALSE))
@@ -122,17 +154,20 @@ for(ci in names(COMBINATIONS)){
 }
 
 # Combined plot
+
 lDT <- xDT[
-  sign(GMP.LSK_r) != sign(DMMye.LSC_r) & (GMP.LSK_p > 0.5 | DMMye.LSC_p > 0.5) |
-    sign(MEP.LSK_r) != sign(DMEry.LSC_r) & (MEP.LSK_p > 0.5 | DMEry.LSC_p > 0.5)
+  sign(GMP.LSK_r) != sign(DMMye.LSC_r) & Gene %in% RESULTS.AGG[Comparison %in% unlist(COMBINATIONS$healthy)]$Gene |
+  sign(MEP.LSK_r) != sign(DMEry.LSC_r) & Gene %in% RESULTS.AGG[Comparison %in% unlist(COMBINATIONS$leukemia)]$Gene
 ]
+lDT <- unique(lDT)
+
 # lDT.labels <- lDT[,.(m_r=pmean(DMMye.LSC_r, GMP.LSK_r), e_r=pmean(DMEry.LSC_r, MEP.LSK_r)), by="Gene"]
 ggplot(pDT, aes(x=m_r, y=e_r, color=tissue)) + 
   ggplot2::theme_classic() +
   geom_abline(color="black", size=0.5, linetype=3) +
   geom_hline(yintercept = 0, color="black", size=0.5, linetype=3) +
   geom_vline(xintercept = 0, color="black", size=0.5, linetype=3) +
-  geom_point(aes(size=pmax(m_p, e_p)*100, alpha=pmax(m_p, e_p))) + 
+  geom_point(aes(size=pmax(m_p, e_p), alpha=pmax(m_p, e_p))) + 
   geom_segment(
     color="#666666", size=0.3, data=lDT,  alpha=1,
     arrow=arrow(length = unit(0.25, "cm")),
@@ -152,9 +187,8 @@ ggsave(out("Scatterplot_comb.pdf"), w=10,h=8)
 
 
 # Triangle / ternary plots ------------------------------------------------
-require(ggtern)
 colnames(mA)
-
+require(ggtern) # Has to stay here, otherwise breaks everything else - especially ggplot
 scale.hexgradient <- scale_fill_gradientn(colours=c("#a6cee3", "#fdbf6f", "#ff7f00"))  
 
 tx <- "leukemia"
@@ -163,8 +197,10 @@ for(tx in names(SAMPLES)){
   mx <- mx[rowSums(mx) > 0,]
   colnames(mx) <- gsub("Cas9_(DM\\.)?", "", colnames(mx))
   cx <- colnames(mx)
-  pDT <- data.table(data.frame(mx), keep.rownames = TRUE)
-  gg <- unique(RESULTS.AGG[Comparison %in% COMBINATIONS[[tx]]][Frag.sig > 0.5 & abs(Ratio.log2) > 1 ]$Gene)
+  mx2 <- apply(mx, 1, max) - mx + apply(mx, 1, min)
+  
+  pDT <- data.table(data.frame(mx2), keep.rownames = TRUE)
+  gg <- unique(RESULTS.AGG[Comparison %in% COMBINATIONS[[tx]]][hit == TRUE]$Gene)
   ggtern(pDT, aes_string(x=cx[1], y=cx[2], z=cx[3])) + 
     theme_bw() +
     #geom_point(shape=1, color="#33a02c") +

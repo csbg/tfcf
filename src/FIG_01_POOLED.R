@@ -1,5 +1,5 @@
 source("src/00_init.R")
-base.dir <- "FIG_01_POOLED/"
+base.dir <- "FIG_01_POOLED_vsWT/"
 out <- dirout(base.dir)
 
 require(latex2exp)
@@ -80,15 +80,17 @@ replicationDir <- dirout_load("POOLED_11_03_Replicates_NormFactorsFromControls")
 list.files(replicationDir(""))
 # Scores
 REPLICATES.SCORES <- fread(replicationDir("Results.tsv"))
-REPLICATES.SCORES <- REPLICATES.SCORES[coef == gsub("\\.", "vs", SCORES.EXAMPLE.comp)][grepl(SCORES.EXAMPLE.lib, analysis)]
-
+REPLICATES.SCORES <- REPLICATES.SCORES[grepl("vs", coef)]
+REPLICATES.SCORES[, Comparison := gsub("vs", ".", coef)]
+# unique(REPLICATES.SCORES[!toupper(Comparison) %in% toupper(names(COMPARISONS))]$Comparison)
+REPLICATES.SCORES.EXAMPLE <- REPLICATES.SCORES[coef == gsub("\\.", "vs", SCORES.EXAMPLE.comp)][grepl(SCORES.EXAMPLE.lib, analysis)]
 
 # Values
-REPLICATES.VALUES <- fread(replicationDir("analysis_", REPLICATES.SCORES$analysis[1], "/", "Data_DateRemoved.csv"))
+REPLICATES.VALUES <- fread(replicationDir("analysis_", REPLICATES.SCORES.EXAMPLE$analysis[1], "/", "Data_DateRemoved.csv"))
 rns <- REPLICATES.VALUES$rn
 REPLICATES.VALUES <- as.matrix(REPLICATES.VALUES[, -"rn"])
 row.names(REPLICATES.VALUES) <- rns
-REPLICATES.VALUES <- REPLICATES.VALUES[unique(REPLICATES.SCORES[significant_TF == TRUE]$rn),ann[Library == SCORES.EXAMPLE.lib][Population %in% COMPARISONS[[SCORES.EXAMPLE.comp]]]$sample]
+REPLICATES.VALUES <- REPLICATES.VALUES[unique(REPLICATES.SCORES.EXAMPLE[significant_TF == TRUE]$rn),ann[Library == SCORES.EXAMPLE.lib][Population %in% COMPARISONS[[SCORES.EXAMPLE.comp]]]$sample]
 REPLICATES.VALUES <- melt(data.table(REPLICATES.VALUES, keep.rownames = TRUE), id.vars = "rn")
 REPLICATES.VALUES <- merge(ann, REPLICATES.VALUES, by.x="sample", by.y="variable")
 REPLICATES.VALUES[, Gene := gsub("_.+", "", rn)]
@@ -99,6 +101,7 @@ REPLICATES.VALUES[, guide_i := rank(rn), by=c("Gene", "sample")]
 # SETUP ENDS HERE ---------------------------------------------------------
 
 
+
 # Check inconsistencies ---------------------------------------------------
 pDT <- merge(RESULTS.wt[Genotype == "Cas9"], RESULTS.wt.agg.gene[sig.down != 0 & sig.up != 0][,c("Gene", "Comparison"),with=F],by=c("Gene", "Comparison"))
 ggplot(pDT, aes(x=Comparison, y=paste(Guide, Library), color=z, size=pmin(5, -log10(padj)))) + 
@@ -107,6 +110,45 @@ ggplot(pDT, aes(x=Comparison, y=paste(Guide, Library), color=z, size=pmin(5, -lo
   scale_color_gradient2() +
   facet_grid(Gene ~ ., scales = "free", space = "free")
 ggsave(out("Check_inconsistencies.pdf"), w=10,h=29)
+
+
+
+# Method validation with replicates ---------------------------------------
+cols.merge <- c("Comparison", "Guide", "Gene")
+cols.vals <- c("Ratio.log2", "p")
+repDT <- copy(REPLICATES.SCORES)
+repDT[,Ratio.log2 := logFC]
+repDT[,p := P.Value]
+repDT[,Comparison := toupper(Comparison)]
+repDT[, Guide := rn]
+repDT[, Gene := gsub("_.+$", "", Guide)]
+wtDT <- copy(RESULTS.wt)
+wtDT[,Comparison := toupper(Comparison)]
+wtDT[,Ratio.log2 := Score]
+pDT <- merge.data.table(repDT[,c(cols.merge, cols.vals),with=F], wtDT[Genotype == "Cas9"][,c(cols.merge, cols.vals, "Library"),with=F], by=cols.merge, suffixes = c("_rep", "_wt"))
+pDT[,cor(Ratio.log2_rep, Ratio.log2_wt), by=c("Comparison")]
+pDT[,corS(Ratio.log2_rep, Ratio.log2_wt), by=c("Comparison")]
+pDT[,cor(-log10(p_rep), -log10(p_wt)), by=c("Comparison")]
+pDT[,corS(-log10(p_rep), -log10(p_wt)), by=c("Comparison")]
+
+# Ratio log2
+ggplot(pDT, aes(x=Ratio.log2_wt, y=Ratio.log2_rep)) + 
+  geom_vline(xintercept = 0, color="blue") +
+  geom_hline(yintercept = 0, color="blue") +
+  theme_bw(12) +
+  geom_point(shape=1) + 
+  facet_wrap(~ Comparison + Library, scales = "free")
+ggsave(out("Methods_comparison_WTvsREP_log2Ratio.pdf"), w=10,h=10)
+
+# log10 p-value
+ggplot(pDT, aes(x=sign(Ratio.log2_wt) * -log10(p_wt), y=sign(Ratio.log2_rep) * -log10(p_rep))) + 
+  geom_vline(xintercept = 0, color="blue") +
+  geom_hline(yintercept = 0, color="blue") +
+  theme_bw(12) +
+  geom_point(shape=1) + 
+  facet_wrap(~ Comparison + Library, scales = "free")
+ggsave(out("Methods_comparison_WTvsREP_log10p.pdf"), w=10,h=10)
+
 
 
 # Number of genes ---------------------------------------------------------
@@ -165,6 +207,15 @@ ggplot(pDT.median, aes(x=Gene, y=z)) +
   xRot()
 ggsave(out("Scores_Example_Distribution_SD.pdf"), w=70,h=5, limitsize = FALSE)
 
+ggplot(pDT.median, aes(x=Gene, y=z)) + 
+  theme_bw(12) +
+  geom_point() +
+  geom_point(data=pDT.median[hit == TRUE], color="red") +
+  theme(panel.grid = element_blank()) +
+  theme(axis.text.x = element_blank()) +
+  theme(axis.ticks.x = element_blank()) +
+  xlab("Target genes")
+ggsave(out("Scores_Example_Distribution_Simple.pdf"), w=5,h=4)
 
 
 # Validation with replicates ----------------------------------------------

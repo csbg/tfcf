@@ -107,7 +107,7 @@ for(libx in unique(ann$Library)){
       if(length(pop1) == 1 & length(pop2) == 1){
         res <- rbind(res, data.table(
           Genotype = gtx, 
-          Score=xMT[,pop1] - xMT[,pop2], 
+          Score=xMT[,pop1] - xMT[,pop2], # Score is basically a log2FC (subtraction in log2 space)
           Guide=row.names(xMT),
           Population1=COMPARISONS[[cx]][1],
           Population2=COMPARISONS[[cx]][2],

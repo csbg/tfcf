@@ -39,7 +39,7 @@ for(cx in names(COMPARISONS)){
   for(gx in unique(annx$group)){
     print(gx)
     annx2 <- annx[group == gx]
-    x <- m2.cpm[,annx2[Population == p1]$id[1], drop=F] / m2.cpm[,annx2[Population == p2]$id[1], drop=F]
+    x <- m2.cpm[,annx2[Population == p1]$id[1], drop=F] / m2.cpm[,annx2[Population == p2]$id[1], drop=F] # Division of CPM values - later log2 tranformation
     x <- setNames(data.table(group=gx, comparison=cx, data.frame(x), keep.rownames = TRUE), c("Group", "Comparison", "Guide", "Ratio"))
     res.ratios <- rbind(res.ratios, x)
   }
@@ -49,7 +49,7 @@ res.ratios <- res.ratios[!is.na(Ratio)]
 res.ratios[,Ratio.log2 := Ratio]
 res.ratios[Ratio == 0,Ratio.log2 := min(res.ratios[Ratio !=0]$Ratio)]
 res.ratios[Ratio == Inf,Ratio.log2 := max(res.ratios[Ratio !=Inf]$Ratio)]
-res.ratios[,Ratio.log2 := log2(Ratio.log2)]
+res.ratios[,Ratio.log2 := log2(Ratio.log2)] # log 2 transformation
 write.tsv(res.ratios, out("Results_Scores.tsv"))
 
 # Get mean and sd summary statistics ------------------------------------------
