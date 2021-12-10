@@ -37,7 +37,29 @@ markers <- lapply(colnames(m), function(cx){
   unique(names(tail(sort(delta[delta > 0.5]), 100)))
 })
 names(markers) <- colnames(m)
+write.tsv(melt(markers), out("Markers_Larry.tsv"))
 marker.lists[["Larry"]] <- markers
+
+
+# Enrichr ----------------------------------------------------------------
+enr.file <- out("EnrichR.RData")
+if(file.exists(enr.file)){
+  load(enr.file)
+} else {
+  enr.terms <- enrichrGetGenesets(c("CellMarker_Augmented_2021", "PanglaoDB_Augmented_2021"))
+  save(enr.terms, file=enr.file)
+}
+
+# Convert to mouse --------------------------------------------------------
+hm <- unique(hm.map[Human.gene.name != "",c("Gene.name", "Human.gene.name")])
+names(hm) <- c("Mouse", "Human")
+enr.terms <- lapply(enr.terms, function(dbl){
+  dbl <- lapply(dbl, function(gs){
+    unique(hm[Human %in% gs]$Mouse)
+  })
+  dbl[sapply(dbl, length) > 0]
+})
+marker.lists <- c(marker.lists, enr.terms)
 
 
 # Panglao DB --------------------------------------------------------------
@@ -59,21 +81,29 @@ marker.lists[["PanglaoDB"]] <- m
 
 # Calculate signatures ----------------------------------------------------
 dat <- SCRNA.TPXToLog(SCRNA.RawToTPX(counts(monocle.obj), scale.factor = 1e6))
+min.reads <- ncol(dat) * 0.001
+dat <- dat[Matrix::rowSums(dat) > min.reads,]
+
 mnam <- "PanglaoDB"
+mnam <- names(marker.lists)[2]
 for(mnam in names(marker.lists)){
+  mfile <- out("Signatures_",mnam,".csv")
+  if(file.exists(mfile)) next
+  
   markers <- marker.lists[[mnam]]
-  dat2 <- dat[row.names(dat) %in% unique(do.call(c, markers)),]
-  dat2 <- dat2[apply(dat2, 1, max) > 0,]
-  dat2 <- dat2 - apply(dat2, 1, min)
-  dat2 <- dat2 / apply(dat2, 1, max)
-  markers <- lapply(markers, function(x) x[x %in% row.names(dat2)])
+  markers <- lapply(markers, function(x) x[x %in% row.names(dat)])
   markers <- markers[sapply(markers, length) >= 5]
+  
+  dat2 <- dat[row.names(dat) %in% unique(do.call(c, markers)),]
+  dat2 <- dat2 - rowMins(dat2)
+  dat2 <- dat2 / rowMaxs(dat2)
   # markers <- lapply(markers, function(gg) gg[gg %in% row.names(dat2)])
   # markers <- markers[sapply(markers, length) > 0]
   # str(markers)
   sigs <- sapply(markers, function(gg) Matrix::colMeans(dat2[gg,,drop=F]))
+  sigs <- round(sigs, 3)
   #ggplot(data.table(melt(sigs)), aes(x=Var2, y=value)) + geom_violin()
   
-  write.table(sigs, out("Signatures_",mnam,".csv"), quote=F, row.names = TRUE, col.names = TRUE, sep=",")
+  write.table(sigs, mfile, quote=F, row.names = TRUE, col.names = TRUE, sep=",")
 }
 
