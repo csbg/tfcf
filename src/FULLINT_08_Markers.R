@@ -59,8 +59,15 @@ enr.terms <- lapply(enr.terms, function(dbl){
   })
   dbl[sapply(dbl, length) > 0]
 })
-marker.lists <- c(marker.lists, enr.terms)
+# THESE MARKERS ARE CURRENTLY NOT USED!
+# marker.lists <- c(marker.lists, enr.terms)
 
+# x <- colnames(mx)
+# sort(table(gsub(".+\\.", "", x)))
+# x <- x[grepl("Marrow$", x) | grepl("Blood$", x) | grepl("Undefined$", x)]
+# x <- x[!grepl("T\\.+cell", x)]
+# x <- x[!grepl("T.Helper", x)]
+# x <- x[!grepl("T\\.reg", x)]
 
 # Panglao DB --------------------------------------------------------------
 panglaoDB.file <- out("PanglaoDB.txt.gz")

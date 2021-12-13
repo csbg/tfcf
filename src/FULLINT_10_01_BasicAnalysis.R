@@ -73,6 +73,7 @@ marker.genes <- fread("metadata/markers.csv")
 ff <- list.files(dirout_load("FULLINT_08_01_Markers")(""), pattern="Signatures_")
 ff <- dirout_load("FULLINT_08_01_Markers")(ff)
 names(ff) <- gsub("^Signatures_(.+?).csv$", "\\1", basename(ff))
+ff <- ff[!grepl("Augmented_2021", ff)]
 marker.signatures <- lapply(ff, function(fx) as.matrix(read.csv(fx)))
 
 # SingleR
@@ -345,17 +346,15 @@ ggsave(out("SingleR_0_Clusters_", "PercPredicted", ".pdf"),
 
 
 
-# CellTypes from Marker signautres --------------------------------------------------
-mnam <- "Larry"
+# CellTypes from Marker signatures --------------------------------------------------
+mnam <- names(marker.signatures)[4]
 for(mnam in names(marker.signatures)){
   mx <- marker.signatures[[mnam]]
   
-  cleanDev(); pdf(out("Markers_Signatures_",mnam,"_Clusters.pdf"),w=8,h=6)
-  pheatmap(sapply(with(ann, split(rn, Clusters)), function(cx) colMeans(mx[cx,])))
-  dev.off()
-  
   pDT <- merge(ann[,c("rn", "UMAP1", "UMAP2")], melt(data.table(mx, keep.rownames = TRUE), id.vars = "rn"), by="rn")
   pDT[, value.norm := scale(value), by="variable"]
+  # filter what to show?
+  # pDT[value.norm > 2][,.(UMAP1 = sd(UMAP1), UMAP2 = sd(UMAP2)), by="variable"][,.(mean(UMAP1, UMAP2)), by="variable"][order(V1)]
   
   ggplot(pDT, aes(x=UMAP1, y=UMAP2)) +
     stat_summary_hex(aes(z=value),fun=mean, bins=100) +
@@ -374,6 +373,10 @@ for(mnam in names(marker.signatures)){
     facet_wrap(~variable) +
     ggtitle("Marker Signatures - Larry et al, Science")
   ggsave(out("Markers_Signatures_",mnam,"_UMAP_scaled.pdf"), w=12,h=12)
+  
+  cleanDev(); pdf(out("Markers_Signatures_",mnam,"_Clusters.pdf"),w=8,h=6)
+  pheatmap(sapply(with(ann, split(rn, Clusters)), function(cx) colMeans(mx[cx,])))
+  dev.off()
 }
 
 
@@ -558,6 +561,58 @@ ggplot(res, aes(
   theme(strip.text.y = element_text(angle=0))
 ggsave(out("Guides_Fisher_noMixscape.pdf"), w=10, h=length(unique(res$grp)) * 0.25 + 1, limitsize = FALSE)
 write.tsv(res[,-c("grp"), with=F], out("Guides_Fisher_noMixscape.tsv"))
+
+
+
+# Guides Signature differential analysis ----------------------------------
+
+# Calculate stats
+mMT <- marker.signatures$Larry
+resSDA <- data.table()
+guides <- unique(ann[mixscape_class.global == "KO"][,.N, by="guide"][N > 10]$guide)
+sigx <- colnames(mMT)[1]
+for(sigx in colnames(mMT)){
+  xNTC <- mMT[ann[mixscape_class.global == "NTC"]$rn, sigx]
+  (guidex <- ann$guide[1])
+  for(guidex in guides){
+    x <- mMT[ann[guide == guidex & mixscape_class.global == "KO"]$rn, sigx]
+    resSDA <- rbind(resSDA, data.table(
+      guide=guidex, 
+      sig=sigx, 
+      p=wilcox.test(x, xNTC)$p.value, 
+      d=mean(x) - mean(xNTC)
+      ))
+  }
+}
+resSDA[, padj := p.adjust(p, method="BH")]
+
+# Plot stats
+ggplot(resSDA, aes(x=guide,y=sig, color=d, size=pmin(5, -log10(padj)))) + 
+  theme_bw(12) +
+  geom_point() +
+  scale_color_gradient2(low="blue", high="red") +
+  xRot()
+ggsave(out("SigDA_Stats.pdf"), w=8,h=5)
+
+# Guides in UMAP
+pDT <- ann[mixscape_class.global %in% c("KO", "NTC") & guide %in% c(guides, "NTC")]
+grps <- length(unique(pDT$guide))
+ggplot(pDT, aes(x=UMAP1, y=UMAP2)) + 
+  geom_hex(bins=50) +
+  scale_fill_gradient(low="lightgrey", high="blue") +
+  facet_wrap(~guide, ncol = 7) +
+  theme_bw(12)
+ggsave(out("SigDA_UMAP.pdf"), w=7*4,h=ceiling(grps/7)*4+1)
+
+# follow up specific guide
+# xDT <- copy(ann)[guide %in% c("Kmt2d_4G", "NTC") & mixscape_class.global %in% c("KO", "NTC")]
+# xDT$Sig <- marker.signatures.use[xDT$rn,"Granulocyte"]
+# ggplot(xDT, aes(x=UMAP1, y=UMAP2, color=Sig)) + 
+#   geom_point(size=0.2) +
+#   scale_color_gradient(high="red") +
+#   scale_fill_gradient(low="lightgrey", high="blue") +
+#   facet_wrap(~guide, ncol = 7) +
+#   theme_bw(12)
 
 
 # DE for GUIDES -----------------------------------------
