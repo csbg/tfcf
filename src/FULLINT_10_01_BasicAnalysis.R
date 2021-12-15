@@ -569,30 +569,39 @@ write.tsv(res[,-c("grp"), with=F], out("Guides_Fisher_noMixscape.tsv"))
 # Calculate stats
 mMT <- cbind(marker.signatures$Larry, marker.signatures$PanglaoDB[,c("Basophils", "Megakaryocytes")])
 resSDA <- data.table()
-guides <- unique(ann[mixscape_class.global == "KO"][,.N, by="guide"][N > 10]$guide)
-sigx <- colnames(mMT)[1]
-for(sigx in colnames(mMT)){
-  xNTC <- mMT[ann[mixscape_class.global == "NTC"]$rn, sigx]
-  (guidex <- ann$guide[1])
-  for(guidex in guides){
-    x <- mMT[ann[guide == guidex & mixscape_class.global == "KO"]$rn, sigx]
-    resSDA <- rbind(resSDA, data.table(
-      guide=guidex, 
-      sig=sigx, 
-      p=wilcox.test(x, xNTC)$p.value, 
-      d=mean(x) - mean(xNTC)
+sx <- ann$sample[1]
+for(sx in unique(ann$sample)){
+  annS <- ann[sample == sx]
+  if(nrow(annS[mixscape_class.global == "NTC"]) < 10) next
+  guides <- unique(annS[mixscape_class.global == "KO"][,.N, by="guide"][N > 10]$guide)
+  sigx <- colnames(mMT)[1]
+  for(sigx in colnames(mMT)){
+    xNTC <- mMT[annS[mixscape_class.global == "NTC"]$rn, sigx]
+    (guidex <- guides[1])
+    for(guidex in guides){
+      x <- mMT[annS[guide == guidex & mixscape_class.global == "KO"]$rn, sigx]
+      resSDA <- rbind(resSDA, data.table(
+        sample=sx,
+        guide=guidex, 
+        sig=sigx, 
+        p=wilcox.test(x, xNTC)$p.value, 
+        d=median(x) - median(xNTC)
       ))
+    }
   }
 }
 resSDA[, padj := p.adjust(p, method="BH")]
+resSDA[, gene := gsub("_.+", "", guide)]
 
 # Plot stats
-ggplot(resSDA, aes(x=guide,y=sig, color=d, size=pmin(5, -log10(padj)))) + 
+ggplot(resSDA, aes(x=paste(sample, guide),y=sig, color=d, size=pmin(5, -log10(padj)))) + 
   theme_bw(12) +
   geom_point() +
   scale_color_gradient2(low="blue", high="red") +
+  facet_grid(. ~ gene, scales = "free", space = "free") +
   xRot()
-ggsave(out("SigDA_Stats.pdf"), w=8,h=5)
+ggsave(out("SigDA_Stats.pdf"), w=15,h=7)
+
 
 # Guides in UMAP
 pDT <- ann[mixscape_class.global %in% c("KO", "NTC") & guide %in% c(guides, "NTC")]
