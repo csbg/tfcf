@@ -1,4 +1,4 @@
-source(paste0(Sys.getenv("CODE"), "src/00_init.R"))
+source("src/00_init.R")
 baseDir <- "POOLED_09_CleanData/"
 out <- dirout(baseDir)
 
@@ -39,6 +39,24 @@ ggplot(pDT, aes(x=sample, y=value)) + geom_bar(stat="identity") +
   facet_grid(variable ~ Genotype + Population, space = "free_x", scales = "free") +
   theme_bw(12) +
   xRot()
-ggsave(out("QC.pdf"),w=20,h=20)
+ggsave(out("QC.pdf"),w=30,h=20)
 
+
+
+# Aggregate data ----------------------------------------------------------
+ann.agg <- copy(ann)
+ann.agg[grepl("^LSK", System) & Population == "LSK", Population := System]
+ann.agg[, id := paste(Genotype, Population, Library, sep="_")]
+ann.agg[, group := paste(Genotype, Library, sep="_")]
+m2 <- sapply(with(ann.agg, split(sample, id)), function(sx){
+  apply(m[,sx, drop=F], 1, function(row){
+    if(all(is.na(row))){
+      NA
+    } else {
+      sum(row, na.rm=TRUE)
+    }
+  })
+})
+write.table(m2, quote = F, sep = ",", row.names = TRUE, col.names = TRUE, file = out("Matrix_aggregated.csv"))
+write.tsv(ann.agg, out("Annotation_aggregated.tsv"))
 

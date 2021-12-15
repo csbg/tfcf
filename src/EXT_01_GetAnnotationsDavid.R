@@ -1,4 +1,4 @@
-source(paste0(Sys.getenv("CODE"), "src/00_init.R"))
+source("src/00_init.R")
 out <- dirout("EXT_01_GetAnnotationsDavid/")
 
 

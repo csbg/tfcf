@@ -21,4 +21,40 @@ DotPlotData <- function(cds, markers, cols, pseudocount = 1, scale_max = 3, scal
 }
 
 
+getCL <- function(obj){
+  as.character(monocle3::clusters(obj))
+}
 
+NF_TPM_Matrix <- function(cds, genes){
+  cds_exprs <- SingleCellExperiment::counts(cds)[genes, , drop = FALSE]
+  Matrix::t(Matrix::t(cds_exprs)/size_factors(cds))
+}
+
+
+plot_cells_umap_hex_NF <- function(cds, genes, ncol=5, nbins=50, scale=FALSE){
+  genes <- genes[genes %in% row.names(cds)]
+  #genes <- sample(genes, 5)
+  cds_exprs <- NF_TPM_Matrix(cds, genes)
+  # cds_exprs <- SingleCellExperiment::counts(cds)[genes, , drop = FALSE]
+  # cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds))
+  pDT <- data.table()
+  for(gx in genes){
+    pDT <- rbind(pDT, data.table(reducedDims(cds)[["UMAP"]], Expression=cds_exprs[gx,], Gene=gx))
+  }
+  func_summary <- function(x){
+    log(mean(x)+1)
+  }
+  pDT[,scaleE := scale(Expression), by="Gene"]
+  pDT[,scaleE := min(3, abs(scaleE)) * sign(scaleE)]
+  
+  p <- ggplot(pDT, aes(x=V1, y=V2)) +
+    scale_fill_hexbin() +
+    facet_wrap(~Gene, ncol=ncol) +
+    theme_bw(12)
+  if(scale){
+    p <- p + stat_summary_hex(aes(z=scaleE),fun=mean, bins=nbins)
+  } else {
+    p <- p + stat_summary_hex(aes(z=Expression),fun=func_summary, bins=nbins)
+  }
+  return(p)
+}

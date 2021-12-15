@@ -1,4 +1,4 @@
-source(paste0(Sys.getenv("CODE"), "src/00_init.R"))
+source("src/00_init.R")
 baseDir <- "PPI_01_CollectData/"
 out <- dirout(baseDir)
 
@@ -15,7 +15,7 @@ m <- as.matrix(read.csv(PATHS$POOLED$DATA$matrix))
 (GENES.OF.INTEREST <- unique(gsub("_\\d+$", "", row.names(m))))
 
 # HUMAN - MOUSE mapping ---------------------------------------------------
-# Run on July 27, 2021
+# Run on July 27, 2021. BioMART Ensembl
 # Dataset
 # - Mouse genes (GRCm39)
 # Filters

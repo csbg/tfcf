@@ -1,8 +1,30 @@
-ECCITE3	in vivo	3prime	few genes
-ECCITE2	leukemia	3prime	Mostly Gata2
-ECCITE1	leukemia	5prime	multiple genes
-CITESEQ1	leukemia		not great signal
-CITESEQ2	leukemia		better signal than CITESEQ1
-ECCITE4	in vitro	3prime	20 guides
-ECCITE5	leukemia	3prime	20 guides
-ECCITE6	in vivo	3prime	one non-targeting guide
+sample	tissue	seq_direction	markers	timepoint
+CITESEQ1	leukemia	3prime		
+CITESEQ2	leukemia	3prime		
+ECCITE1	leukemia	5prime		
+ECCITE2	leukemia	3prime		
+ECCITE3_high_14d	in vivo	3prime		d14
+ECCITE3_high_7d	in vivo	3prime		d7
+ECCITE3_low_14d	in vivo	3prime		d14
+ECCITE3_low_7d	in vivo	3prime		d7
+ECCITE4_Cas9	ex vivo	3prime		
+ECCITE4_WT	ex vivo	3prime		
+ECCITE5	leukemia	3prime		
+ECCITE6	in vivo	3prime		
+ECCITE7_Lib1Rep1	leukemia	3prime		
+ECCITE7_Lib1Rep2	leukemia	3prime		
+ECCITE7_Lib2	leukemia	3prime		
+ECCITE8_IRR_OP1_d28_rep1	in vivo	3prime		d28
+ECCITE8_IRR_OP1_d28_rep2	in vivo	3prime		d28
+ECCITE8_IRR_d14	in vivo	3prime		d14
+ECCITE8_OP1_d7	ex vivo	3prime		d7
+ECCITE8_OP1_d9	ex vivo	3prime		d9
+ECCITE8_OP2_d7	ex vivo	3prime		d7
+ECCITE8_OP2_d9	ex vivo	3prime		d9
+ECCITE8_OP3_d7	ex vivo	3prime		d7
+ECCITE8_OP3_d9	ex vivo	3prime		d9
+ECCITE8_Toxin_d14	in vivo	3prime		d14
+ECCITE8_Linneg-OP2_d14	in vivo	3prime		d14
+ECCITE8_Linneg-OP3_d14	in vivo	3prime		d14
+ECCITE8_cKit-OP2_d14	in vivo	3prime		d14
+ECCITE8_cKit-OP3_d14	in vivo	3prime		d14
