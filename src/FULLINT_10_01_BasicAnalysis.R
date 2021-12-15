@@ -567,7 +567,7 @@ write.tsv(res[,-c("grp"), with=F], out("Guides_Fisher_noMixscape.tsv"))
 # Guides Signature differential analysis ----------------------------------
 
 # Calculate stats
-mMT <- marker.signatures$Larry
+mMT <- cbind(marker.signatures$Larry, marker.signatures$PanglaoDB[,c("Basophils", "Megakaryocytes")])
 resSDA <- data.table()
 guides <- unique(ann[mixscape_class.global == "KO"][,.N, by="guide"][N > 10]$guide)
 sigx <- colnames(mMT)[1]
