@@ -4,13 +4,24 @@ out <- dirout("FULLINT_01_01_Integration/")
 require("sceasy")
 
 # Read cellranger analysis results --------------------------------------------
-#AGG.CSV <- fread(paste(PATHS$LOCATIONS$DATA, "FULLINT_00_Aggr", "outs", "aggregation.csv", sep="/"))
-AGG.CSV <- fread("metadata/FULLINT_00_Aggr.csv")
-AGG.CSV$i <- 1:nrow(AGG.CSV)
+SANN <- fread("metadata/annotation.tsv", fill=TRUE, sep="\t", header = TRUE)
+SANN <- SANN[, sapply(SANN, function(col) sum(!is.na(col)) > 0), with=F]
+SANN <- SANN[!New_Name %in% c("", "PENDING")]
+SANN <- SANN[,-c("Guides", "Comments", "Technology", "atCIMA"),with=F]
+SANN[,markers := tolower(markers)]
+SANN[,markers := gsub("lin\\+\\/\\-", "", markers)]
+SANN[,markers := gsub(" ", "", markers)]
+SANN[,markers := gsub(" ", "", markers)]
+SANN[markers %in% c("nomarker", ""),markers := "unsorted"]
+SANN[is.na(timepoint),timepoint := "d0"]
+SANN$s <- paste0("s", 1:nrow(SANN))
+SANN[, sample_new := gsub(" ", "", paste(tissue, markers, timepoint, s, sep="_"))]
 
-SANN <- fread("metadata/annotation.tsv", sep="\t")
 
+# Match samples to those in the folder ------------------------------------
 str(ff <- getMainDatasets()$folders)
+SANN[sample %in% ff, sample_found := sample]
+#SANN[New_Name %in% ff, sample_found := New_Name]
 
 
 # Read data, Seurat processing, and Monocle integration --------------------------------------------
@@ -31,7 +42,7 @@ if(file.exists(monocle.file)){
   dsx <- ff[1]
   dsx <- "ECCITE6"
   dsx <- "ECCITE7_Lib1Rep1"
-  for(dsx in ff){
+  for(dsx in SANN$sample_found){
     
     # already processed?
     if(dsx %in% names(monocle.obj.list)){
@@ -277,6 +288,6 @@ if(file.exists(monocle.file)){
   monocle.obj = cluster_cells(monocle.obj)
   
   # Store full dataset
-  save(monocle.obj, additional.info, AGG.CSV, file=monocle.file)
+  save(monocle.obj, additional.info, file=monocle.file)
 }
 

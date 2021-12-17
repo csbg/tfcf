@@ -58,9 +58,8 @@ if(baseDir.add == "combined"){
     monocle.obj = cluster_cells(monocle.obj)
     
     additional.info <- additional.info[unique(monocle.obj$sample)]
-    AGG.CSV <- AGG.CSV[sample_id %in% monocle.obj$sample]
     
-    save(monocle.obj, additional.info, AGG.CSV, file=monocle.file)
+    save(monocle.obj, additional.info, file=monocle.file)
   }
 }
 fData(monocle.obj)$gene_short_name <- row.names(fData(monocle.obj))
@@ -144,17 +143,6 @@ for(qcm in c("percent.mt", "nFeature_RNA", "nCount_RNA")){
 ann$measure <- NULL
 #ann[,cluster.qual.keep :=TRUE]
 #ann[Clusters %in% ann[,median(percent.mt), by="Clusters"][V1 < 1]$Clusters, cluster.qual.keep := FALSE]
-
-
-# # CELLRANGER -------------------------------------------
-# if("AGG.CSV" %in% ls()){
-#   ann.exp <- merge(ann, AGG.CSV[,c("sample_id", "i"),with=F], by.x="sample", by.y="sample_id", all.x=TRUE)
-#   stopifnot(!any(is.na(ann.exp$i)))
-#   ann.exp[,Barcode := paste0(gsub("-.+$", "", rn), "-", i)]
-#   write.table(ann.exp[,c("Barcode", "UMAP1", "UMAP2"),with=F], file=out("Cellranger_UMAP.csv"), sep=",", col.names = c("Barcode", "UMAP-1", "UMAP-2"), quote=F, row.names = F)
-#   write.table(ann.exp[,c("Barcode", "mixscape_class"),with=F], file=out("Cellranger_MIXSCAPE.csv"), sep=",", col.names = c("Barcode", "MIXSCAPE"), quote=F, row.names = F)
-#   write.table(ann.exp[,c("Barcode", "Clusters"),with=F], file=out("Cellranger_Clusters.csv"), sep=",", col.names = c("Barcode", "Clusters_Seurat"), quote=F, row.names = F)
-# }
 
 
 
@@ -347,7 +335,7 @@ ggsave(out("SingleR_0_Clusters_", "PercPredicted", ".pdf"),
 
 
 # CellTypes from Marker signatures --------------------------------------------------
-mnam <- names(marker.signatures)[4]
+mnam <- names(marker.signatures)[1]
 for(mnam in names(marker.signatures)){
   mx <- marker.signatures[[mnam]]
   
@@ -362,7 +350,7 @@ for(mnam in names(marker.signatures)){
     scale_fill_hexbin() +
     theme_bw(12) +
     facet_wrap(~variable) +
-    ggtitle("Marker Signatures - Larry et al, Science")
+    ggtitle(paste("Marker Signatures", mnam))
   ggsave(out("Markers_Signatures_",mnam,"_UMAP_raw.pdf"), w=12,h=12)
   
   ggplot(pDT, aes(x=UMAP1, y=UMAP2)) +
@@ -371,7 +359,7 @@ for(mnam in names(marker.signatures)){
     #scale_fill_hexbin() +
     theme_bw(12) +
     facet_wrap(~variable) +
-    ggtitle("Marker Signatures - Larry et al, Science")
+    ggtitle(paste("Marker Signatures", mnam))
   ggsave(out("Markers_Signatures_",mnam,"_UMAP_scaled.pdf"), w=12,h=12)
   
   cleanDev(); pdf(out("Markers_Signatures_",mnam,"_Clusters.pdf"),w=8,h=6)

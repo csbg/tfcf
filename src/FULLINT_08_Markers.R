@@ -86,13 +86,29 @@ m <- lapply(m, function(mx) unique(hm.map[Human.gene.name %in% mx]$Gene.name))
 m <- m[sapply(m, length) >= 10]
 marker.lists[["PanglaoDB"]] <- m
 
+
+# Izzo et al., https://doi.org/10.1038/s41588-020-0595-4 -----------------------------------------------------------------
+izzo.file <- out("IzzoEtAl.xls")
+if(!file.exists(izzo.file)){
+  url <- "https://static-content.springer.com/esm/art%3A10.1038%2Fs41588-020-0595-4/MediaObjects/41588_2020_595_MOESM3_ESM.xlsx"
+  download.file(url, izzo.file)
+}
+x <- readxl::read_xlsx(izzo.file,sheet = 2, skip = 2)
+x <- data.table(x, check.names = TRUE)[,1:8]
+x <- setNames(x, c("p", "logFC", "perc1", "perc2", "padj", "cl", "gene", "cell"))
+x <- x[!is.na(p),]
+x <- x[logFC > 0.5 & padj < 0.05]
+marker.lists[["IzzoEtAl"]] <- with(x, split(gene, cell))
+
+
+
 # Calculate signatures ----------------------------------------------------
 dat <- SCRNA.TPXToLog(SCRNA.RawToTPX(counts(monocle.obj), scale.factor = 1e6))
 min.reads <- ncol(dat) * 0.001
 dat <- dat[Matrix::rowSums(dat) > min.reads,]
 
 mnam <- "PanglaoDB"
-mnam <- names(marker.lists)[2]
+mnam <- names(marker.lists)[5]
 for(mnam in names(marker.lists)){
   mfile <- out("Signatures_",mnam,".csv")
   if(file.exists(mfile)) next

@@ -1,0 +1,232 @@
+Loading required package: data.table
+Loading required package: ggplot2
+Loading required package: pheatmap
+Loading required package: hdf5r
+Loading required package: dplyr
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:data.table’:
+
+    between, first, last
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+Loading required package: tidyr
+Loading required package: Seurat
+Attaching SeuratObject
+Loading required package: monocle3
+Loading required package: Biobase
+Loading required package: BiocGenerics
+Loading required package: parallel
+
+Attaching package: ‘BiocGenerics’
+
+The following objects are masked from ‘package:parallel’:
+
+    clusterApply, clusterApplyLB, clusterCall, clusterEvalQ,
+    clusterExport, clusterMap, parApply, parCapply, parLapply,
+    parLapplyLB, parRapply, parSapply, parSapplyLB
+
+The following objects are masked from ‘package:dplyr’:
+
+    combine, intersect, setdiff, union
+
+The following objects are masked from ‘package:stats’:
+
+    IQR, mad, sd, var, xtabs
+
+The following objects are masked from ‘package:base’:
+
+    anyDuplicated, append, as.data.frame, basename, cbind, colnames,
+    dirname, do.call, duplicated, eval, evalq, Filter, Find, get, grep,
+    grepl, intersect, is.unsorted, lapply, Map, mapply, match, mget,
+    order, paste, pmax, pmax.int, pmin, pmin.int, Position, rank,
+    rbind, Reduce, rownames, sapply, setdiff, sort, table, tapply,
+    union, unique, unsplit, which.max, which.min
+
+Welcome to Bioconductor
+
+    Vignettes contain introductory material; view with
+    'browseVignettes()'. To cite Bioconductor, see
+    'citation("Biobase")', and for packages 'citation("pkgname")'.
+
+Loading required package: SingleCellExperiment
+Loading required package: SummarizedExperiment
+Loading required package: MatrixGenerics
+Loading required package: matrixStats
+
+Attaching package: ‘matrixStats’
+
+The following objects are masked from ‘package:Biobase’:
+
+    anyMissing, rowMedians
+
+The following object is masked from ‘package:dplyr’:
+
+    count
+
+
+Attaching package: ‘MatrixGenerics’
+
+The following objects are masked from ‘package:matrixStats’:
+
+    colAlls, colAnyNAs, colAnys, colAvgsPerRowSet, colCollapse,
+    colCounts, colCummaxs, colCummins, colCumprods, colCumsums,
+    colDiffs, colIQRDiffs, colIQRs, colLogSumExps, colMadDiffs,
+    colMads, colMaxs, colMeans2, colMedians, colMins, colOrderStats,
+    colProds, colQuantiles, colRanges, colRanks, colSdDiffs, colSds,
+    colSums2, colTabulates, colVarDiffs, colVars, colWeightedMads,
+    colWeightedMeans, colWeightedMedians, colWeightedSds,
+    colWeightedVars, rowAlls, rowAnyNAs, rowAnys, rowAvgsPerColSet,
+    rowCollapse, rowCounts, rowCummaxs, rowCummins, rowCumprods,
+    rowCumsums, rowDiffs, rowIQRDiffs, rowIQRs, rowLogSumExps,
+    rowMadDiffs, rowMads, rowMaxs, rowMeans2, rowMedians, rowMins,
+    rowOrderStats, rowProds, rowQuantiles, rowRanges, rowRanks,
+    rowSdDiffs, rowSds, rowSums2, rowTabulates, rowVarDiffs, rowVars,
+    rowWeightedMads, rowWeightedMeans, rowWeightedMedians,
+    rowWeightedSds, rowWeightedVars
+
+The following object is masked from ‘package:Biobase’:
+
+    rowMedians
+
+Loading required package: GenomicRanges
+Loading required package: stats4
+Loading required package: S4Vectors
+
+Attaching package: ‘S4Vectors’
+
+The following object is masked from ‘package:tidyr’:
+
+    expand
+
+The following objects are masked from ‘package:dplyr’:
+
+    first, rename
+
+The following object is masked from ‘package:hdf5r’:
+
+    values
+
+The following objects are masked from ‘package:data.table’:
+
+    first, second
+
+The following object is masked from ‘package:base’:
+
+    expand.grid
+
+Loading required package: IRanges
+
+Attaching package: ‘IRanges’
+
+The following objects are masked from ‘package:dplyr’:
+
+    collapse, desc, slice
+
+The following object is masked from ‘package:data.table’:
+
+    shift
+
+Loading required package: GenomeInfoDb
+
+Attaching package: ‘SummarizedExperiment’
+
+The following object is masked from ‘package:SeuratObject’:
+
+    Assays
+
+The following object is masked from ‘package:Seurat’:
+
+    Assays
+
+
+Attaching package: ‘monocle3’
+
+The following objects are masked from ‘package:Biobase’:
+
+    exprs, fData, fData<-, pData, pData<-
+
+Loading required package: mixtools
+mixtools package, version 1.2.0, Released 2020-02-05
+This package is based upon work supported by the National Science Foundation under Grant No. SES-0518772.
+
+[1] "Setting GFS"
+Loading required package: Matrix
+
+Attaching package: ‘Matrix’
+
+The following object is masked from ‘package:S4Vectors’:
+
+    expand
+
+The following objects are masked from ‘package:tidyr’:
+
+    expand, pack, unpack
+
+Loading required package: rhdf5
+
+Attaching package: ‘rhdf5’
+
+The following object is masked from ‘package:hdf5r’:
+
+    h5version
+
+Loading required package: enrichR
+Warning messages:
+1: package ‘hdf5r’ was built under R version 4.0.3 
+2: package ‘mixtools’ was built under R version 4.0.3 
+3: In readLines("setup.sh") : incomplete final line found on 'setup.sh'
+4: In library(package, lib.loc = lib.loc, character.only = TRUE, logical.return = TRUE,  :
+  there is no package called ‘enrichR’
+Setting output directory: /media/AGFORTELNY/PROJECTS/TfCf/Analysis//FULLINT_01_01_Integration//
+Loading required package: sceasy
+Loading required package: reticulate
+ chr [1:29] "CITESEQ1" "CITESEQ2" "ECCITE1" "ECCITE2" "ECCITE3_high_14d" ...
+[1] "Processing datasets"
+[1] "------------------------------"
+[1] "CITESEQ1"
+[1] "---------------"
+[1] "Loading processed dataset"
+[1] "------------------------------"
+[1] "CITESEQ2"
+[1] "---------------"
+[1] "Loading processed dataset"
+[1] "------------------------------"
+[1] "ECCITE1"
+[1] "---------------"
+[1] "Loading processed dataset"
+[1] "------------------------------"
+[1] "ECCITE2"
+[1] "---------------"
+[1] "Loading processed dataset"
+[1] "------------------------------"
+[1] "ECCITE3_high_14d"
+[1] "---------------"
+[1] "Loading processed dataset"
+[1] "------------------------------"
+[1] "ECCITE3_high_7d"
+[1] "---------------"
+[1] "Processing dataset"
+Genome matrix has multiple modalities, returning a list of matrices for this genome
+Warning: The following features are not present in the object: MCM5, PCNA, TYMS, FEN1, MCM2, MCM4, RRM1, UNG, GINS2, MCM6, CDCA7, DTL, PRIM1, UHRF1, MLF1IP, HELLS, RFC2, RPA2, NASP, RAD51AP1, GMNN, WDR76, SLBP, CCNE2, UBR7, POLD3, MSH2, ATAD2, RAD51, RRM2, CDC45, CDC6, EXO1, TIPIN, DSCC1, BLM, CASP8AP2, USP1, CLSPN, POLA1, CHAF1B, BRIP1, E2F8, not searching for symbol synonyms
+Warning: The following features are not present in the object: HMGB2, CDK1, NUSAP1, UBE2C, BIRC5, TPX2, TOP2A, NDC80, CKS2, NUF2, CKS1B, MKI67, TMPO, CENPF, TACC3, FAM64A, SMC4, CCNB2, CKAP2L, CKAP2, AURKB, BUB1, KIF11, ANP32E, TUBB4B, GTSE1, KIF20B, HJURP, CDCA3, HN1, CDC20, TTK, CDC25C, KIF2C, RANGAP1, NCAPD2, DLGAP5, CDCA2, CDCA8, ECT2, KIF23, HMMR, AURKA, PSRC1, ANLN, LBR, CKAP5, CENPE, CTCF, NEK2, G2E3, GAS2L3, CBX5, CENPA, not searching for symbol synonyms
+[1] "CRISPR Guide Capture"
+
+Kmt2d_3G Kmt2d_4G   NTC_3G   NTC_4G  Spi1_4G 
+      15     2676        1       10       35 
+Processing rep1
+Cannot find more nearest neighbours than there are pointsProcessing rep1
+Cannot find more nearest neighbours than there are pointsProcessing rep1
+Processing rep1
+Centering data matrix
+  |                                                                              |                                                                      |   0%  |                                                                              |===================================                                   |  50%  |                                                                              |======================================================================| 100%
+Processing Kmt2d_4G
+Finding new perturbation gene set
