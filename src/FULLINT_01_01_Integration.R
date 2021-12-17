@@ -7,13 +7,16 @@ require("sceasy")
 SANN <- fread("metadata/annotation.tsv", fill=TRUE, sep="\t", header = TRUE)
 SANN <- SANN[, sapply(SANN, function(col) sum(!is.na(col)) > 0), with=F]
 SANN <- SANN[!New_Name %in% c("", "PENDING")]
-SANN <- SANN[,-c("Guides", "Comments", "Technology", "atCIMA"),with=F]
-SANN[,markers := tolower(markers)]
-SANN[,markers := gsub("lin\\+\\/\\-", "", markers)]
-SANN[,markers := gsub(" ", "", markers)]
-SANN[,markers := gsub(" ", "", markers)]
-SANN[markers %in% c("nomarker", ""),markers := "unsorted"]
+SANN <- SANN[,-c("Guides", "Comments", "Technology", "atCIMA", "md5sum", "md5sumFile"),with=F]
+SANN[,markers := gsub("\\,", "", markers)]
+# SANN[,markers := tolower(markers)]
+# SANN[,markers := gsub("lin\\+\\/\\-", "", markers)]
+# SANN[,markers := gsub(" ", "", markers)]
+SANN[markers %in% c("noMarker", ""),markers := "unsorted"]
+SANN[,tissue := gsub("\\d+$", "", tissue)]
+table(SANN$markers)
 SANN[is.na(timepoint),timepoint := "d0"]
+table(SANN$timepoint)
 SANN$s <- paste0("s", 1:nrow(SANN))
 SANN[, sample_new := gsub(" ", "", paste(tissue, markers, timepoint, s, sep="_"))]
 
@@ -279,9 +282,14 @@ if(file.exists(monocle.file)){
       verbose = TRUE)
   
   # Add tissue information
-  colData(monocle.obj)$tissue <- SANN[match(gsub("_.+", "", colData(monocle.obj)$sample), sample)]$tissue
-  monocle.obj$tissue[grepl("ECCITE8_OP", monocle.obj$sample)] <- "in vitro"
-  table(monocle.obj$sample, monocle.obj$tissue)
+  stopifnot(all(colData(monocle.obj)$sample %in% SANN$sample_found))
+  
+  for(x in c("tissue", "markers", "timepoint")){
+    colData(monocle.obj)[[x]] <- SANN[match(colData(monocle.obj)$sample, sample_found)][[x]]
+  }
+  colData(monocle.obj)$sample <- SANN[match(colData(monocle.obj)$sample, sample_found)]$sample_new
+  
+  table(colData(monocle.obj)$sample)
   
   # Clustering
   set.seed(12121)
