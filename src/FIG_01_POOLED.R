@@ -95,7 +95,7 @@ REPLICATES.VALUES <- melt(data.table(REPLICATES.VALUES, keep.rownames = TRUE), i
 REPLICATES.VALUES <- merge(ann, REPLICATES.VALUES, by.x="sample", by.y="variable")
 REPLICATES.VALUES[, Gene := gsub("_.+", "", rn)]
 REPLICATES.VALUES[, sample_i := rank(sample), by=c("Gene", "rn", "Genotype")]
-REPLICATES.VALUES[, guide_i := rank(rn), by=c("Gene", "sample")]
+REPLICATES.VALUES[, guide_i := rank(rn), by=c("Gene")]
 
 
 # SETUP ENDS HERE ---------------------------------------------------------
@@ -104,13 +104,24 @@ REPLICATES.VALUES[, guide_i := rank(rn), by=c("Gene", "sample")]
 
 # Check inconsistencies ---------------------------------------------------
 pDT <- merge(RESULTS.wt[Genotype == "Cas9"], RESULTS.wt.agg.gene[sig.down != 0 & sig.up != 0][,c("Gene", "Comparison"),with=F],by=c("Gene", "Comparison"))
-ggplot(pDT, aes(x=Comparison, y=paste(Guide, Library), color=z, size=pmin(5, -log10(padj)))) + 
+ggplot(pDT, aes(x="x", y=paste(Guide, Library), color=z, size=pmin(5, -log10(padj)))) + 
   theme_bw(12) +
   geom_point() +
   scale_color_gradient2() +
-  facet_grid(Gene ~ ., scales = "free", space = "free")
+  facet_wrap(~ Gene + Comparison, scales = "free") +
+  #facet_grid(Gene ~ ., scales = "free", space = "free")
+  xRot()
 ggsave(out("Check_inconsistencies.pdf"), w=10,h=29)
 
+inc <- RESULTS.wt[, var(z, na.rm = TRUE), by=c("Gene", "Comparison")][order(V1, decreasing = TRUE)][1:20]
+pDT <- merge(RESULTS.wt[Genotype == "Cas9"], inc, by=c("Gene", "Comparison"))
+p <- ggplot(pDT, aes(x=Library, y=Guide, color=z, size=pmin(5, -log10(padj)))) + 
+  theme_bw(12) +
+  geom_point() +
+  scale_color_gradient2() +
+  facet_grid(Gene ~ Comparison, scales = "free", space = "free") +
+  xRot()
+ggsave(out("Check_inconsistencies2.pdf"), w=10,h=25, plot=p)
 
 
 # Method validation with replicates ---------------------------------------
@@ -185,7 +196,7 @@ ggsave(out("Scores_Example_Scores.pdf"), w=10,h=4)
 
 # Distribution
 compx <- "MYE.UND"
-pDT <- RESULTS.wt[Comparison == compx][!grepl("NonT", Gene)]
+pDT <- RESULTS.wt[Genotype == "Cas9"][Comparison == compx][!grepl("NonT", Gene)]
 pDT.median <- pDT[,.(z=mean(z), sd=sd(z), n=.N), by=c("Gene")]
 pDT.median[, se := sd/sqrt(n)]
 pDT.median[Gene %in% RESULTS.wt.agg.gene[Comparison == compx][hit == TRUE]$Gene, hit := TRUE]
@@ -218,13 +229,17 @@ ggplot(pDT.median, aes(x=Gene, y=z)) +
 ggsave(out("Scores_Example_Distribution_Simple.pdf"), w=5,h=4)
 
 
-# Validation with replicates ----------------------------------------------
-ggplot(REPLICATES.VALUES, aes(x=paste(Genotype, Population), shape=factor(sample_i), y=value, color=factor(guide_i))) + 
+# Result validation with replicates ----------------------------------------------
+pDT <- dcast.data.table(REPLICATES.VALUES, guide_i + sample_i + Population + Gene ~ Genotype, value.var = "value")
+pDT[, diff := Cas9 - WT]
+ggplot(pDT, aes(x=paste(Population, sample_i), shape=factor(sample_i), y=diff, fill=factor(guide_i))) + 
+  geom_bar(stat="identity", position="dodge") +
   theme_bw(12) +
-  geom_point() +
-  facet_grid(~ Gene) +
-  xRot()
-ggsave(out("Valiation_Replicates.pdf"), w=12,h=4)
+  facet_wrap(~Gene, scales = "free") +
+  geom_vline(xintercept = 2.5) +
+  geom_hline(yintercept = 0) +
+  xRot() 
+ggsave(out("Valiation_Replicates.pdf"), w=8,h=8)
 
 
 # Networks in one dimension ---------------------------------------------------------------
@@ -281,8 +296,9 @@ ggplot(pDT.stats, aes(x=cleanComparisons(Comparison, ggtext = TRUE), y=Gene)) +
   theme(strip.text.y = element_text(angle=0)) +
   xRot() + 
   ylab("") +
-  theme(axis.text.x = element_markdown())
-ggsave(out("SimpleHM.pdf"), w=5,h=16)
+  theme(axis.text.x = element_markdown()) +
+  xlab("")
+ggsave(out("SimpleHM.pdf"), w=5,h=20)
 
 
 # Vulcano plots -----------------------------------------------------------
@@ -412,6 +428,3 @@ ggplot(res.stats, aes(x=Gene)) +
   xRot()
 ggsave(out("GraphHM.pdf"),w=17, h=10)
 
-
-
-# TODO --> example of how p-values were calculated

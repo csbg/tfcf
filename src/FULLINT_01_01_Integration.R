@@ -5,26 +5,35 @@ require("sceasy")
 
 # Read cellranger analysis results --------------------------------------------
 SANN <- fread("metadata/annotation.tsv", fill=TRUE, sep="\t", header = TRUE)
+# Remove bad columns
 SANN <- SANN[, sapply(SANN, function(col) sum(!is.na(col)) > 0), with=F]
-SANN <- SANN[!New_Name %in% c("", "PENDING")]
 SANN <- SANN[,-c("Guides", "Comments", "Technology", "atCIMA", "md5sum", "md5sumFile"),with=F]
+# Remove empty rows
+SANN <- SANN[!New_Name %in% c("", "PENDING")]
+# clean markers
 SANN[,markers := gsub("\\,", "", markers)]
-# SANN[,markers := tolower(markers)]
-# SANN[,markers := gsub("lin\\+\\/\\-", "", markers)]
-# SANN[,markers := gsub(" ", "", markers)]
 SANN[markers %in% c("noMarker", ""),markers := "unsorted"]
-SANN[,tissue := gsub("\\d+$", "", tissue)]
 table(SANN$markers)
+# clean tissues
+SANN[,tissue := gsub("\\d+$", "", tissue)]
+SANN[,tissue := gsub("V", " v", tissue)]
+SANN[,tissue := gsub("ex vivo", "in vitro", tissue)]
+# clean time-points
 SANN[is.na(timepoint),timepoint := "d0"]
 table(SANN$timepoint)
+# add sample number
 SANN$s <- paste0("s", 1:nrow(SANN))
 SANN[, sample_new := gsub(" ", "", paste(tissue, markers, timepoint, s, sep="_"))]
+SANN[grepl("CITESEQ", sample), sample_new := paste0("CITESEQ_", sample_new)]
 
 
 # Match samples to those in the folder ------------------------------------
 str(ff <- getMainDatasets()$folders)
 SANN[sample %in% ff, sample_found := sample]
-#SANN[New_Name %in% ff, sample_found := New_Name]
+SANN[is.na(sample_found) & New_Name %in% ff, sample_found := New_Name]
+SANN <- SANN[!is.na(sample_found)]
+write.tsv(SANN, out("SampleAnnotation.tsv"))
+
 
 
 # Read data, Seurat processing, and Monocle integration --------------------------------------------
@@ -295,6 +304,7 @@ if(file.exists(monocle.file)){
   set.seed(12121)
   monocle.obj = cluster_cells(monocle.obj)
   
+  additional.info <- additional.info["CITESEQ2"]
   # Store full dataset
   save(monocle.obj, additional.info, file=monocle.file)
 }

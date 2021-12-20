@@ -6,6 +6,7 @@ require(igraph)
 require(nebula)
 require(fgsea)
 library(SingleR)
+require(doMC)
 source("src/FUNC_Monocle_PLUS.R")
 
 # Figure out command line arguments (which tissue to analyze)
@@ -147,27 +148,27 @@ ann$measure <- NULL
 
 
 # TRANSFER / PREDICT CLUSTERS IN FULL DATASET ----------------------------------------
-transf.file <- out("TransferClusters.tsv")
-if(baseDir.add == "in vivo"){
-  if(file.exists(transf.file)){
-    
-  } else {
-    print("Transferring cell clusters to full datatset")
-    fullDS <- function(){load(PATHS$FULLINT$Monocle); return(monocle.obj)}
-    monocle.full <- fullDS()
-    
-    ref=SummarizedExperiment(
-      assays = SimpleList(logcounts=SCRNA.TPXToLog(SCRNA.RawToTPX(counts(monocle.obj), 1e6))), 
-      colData=DataFrame(label.main=ann$Clusters, row.names = ann$rn))
-    
-    res <- SingleR(
-      test = counts(monocle.full),
-      ref = ref,
-      labels = ann$Clusters)
-    
-    write.tsv(data.table(labels=res$labels, res@rownames), transf.file)
-  }
-}
+# transf.file <- out("TransferClusters.tsv")
+# if(baseDir.add == "in vivo"){
+#   if(file.exists(transf.file)){
+#     
+#   } else {
+#     print("Transferring cell clusters to full datatset")
+#     fullDS <- function(){load(PATHS$FULLINT$Monocle); return(monocle.obj)}
+#     monocle.full <- fullDS()
+#     
+#     ref=SummarizedExperiment(
+#       assays = SimpleList(logcounts=SCRNA.TPXToLog(SCRNA.RawToTPX(counts(monocle.obj), 1e6))), 
+#       colData=DataFrame(label.main=ann$Clusters, row.names = ann$rn))
+#     
+#     res <- SingleR(
+#       test = counts(monocle.full),
+#       ref = ref,
+#       labels = ann$Clusters)
+#     
+#     write.tsv(data.table(labels=res$labels, res@rownames), transf.file)
+#   }
+# }
 
 
 
@@ -397,7 +398,7 @@ if("CITESEQ2" %in% ann$sample){
   abMT <- additional.info$CITESEQ2$`Antibody Capture`
   abMT <- SCRNA.TPXToLog(SCRNA.RawToTPX(abMT, scale.factor = 1e6))
   ann.c1 <- ann[sample == "CITESEQ2"]
-  
+
   # UMAP
   res <- data.table()
   abx <- row.names(abMT)[1]
@@ -414,7 +415,7 @@ if("CITESEQ2" %in% ann$sample){
     facet_wrap(~Antibody) +
     theme_bw(12)
   ggsave(out("Antibodies_UMAP.pdf"), w=12+2, h=9+1)
-  
+
   # Correlations
   cMT <- corS(t(as.matrix(abMT)), use="pairwise.complete.obs")
   diag(cMT) <- NA
@@ -426,7 +427,7 @@ if("CITESEQ2" %in% ann$sample){
            breaks=seq(-1,1, 0.01), color=COLORS.HM.FUNC(200),
   )
   dev.off()
-  
+
   # Percentile plots
   probx=0.9
   res[,percentile := quantile(Signal.norm, probs=probx, na.rm=TRUE), by="Antibody"]
@@ -555,12 +556,17 @@ write.tsv(res[,-c("grp"), with=F], out("Guides_Fisher_noMixscape.tsv"))
 # Guides Signature differential analysis ----------------------------------
 
 # Calculate stats
-mMT <- cbind(marker.signatures$Larry, marker.signatures$PanglaoDB[,c("Basophils", "Megakaryocytes")])
-resSDA <- data.table()
-sx <- ann$sample[1]
-for(sx in unique(ann$sample)){
+mMT <- lapply(names(marker.signatures), function(xnam){x <- marker.signatures[[xnam]]; colnames(x) <- paste(xnam, colnames(x)); x})
+mMT <- do.call(cbind, mMT)
+mMT <- scale(mMT)
+#mMT <- cbind(marker.signatures$Larry, marker.signatures$PanglaoDB[,c("Basophils", "Megakaryocytes")])
+
+registerDoMC(cores = 6)
+sx <- ann$sample[13]
+resSDA <- foreach(sx = unique(ann$sample)) %dopar% {
+  resSDA <- data.table()
   annS <- ann[sample == sx]
-  if(nrow(annS[mixscape_class.global == "NTC"]) < 10) next
+  if(nrow(annS[mixscape_class.global == "NTC"]) < 10) return(data.table())
   guides <- unique(annS[mixscape_class.global == "KO"][,.N, by="guide"][N > 10]$guide)
   sigx <- colnames(mMT)[1]
   for(sigx in colnames(mMT)){
@@ -577,9 +583,12 @@ for(sx in unique(ann$sample)){
       ))
     }
   }
+  return(resSDA)
 }
+resSDA <- do.call(rbind, resSDA)
 resSDA[, padj := p.adjust(p, method="BH")]
 resSDA[, gene := gsub("_.+", "", guide)]
+write.tsv(resSDA, out("SigDA.tsv"))
 
 # Plot stats
 ggplot(resSDA, aes(x=paste(sample, guide),y=sig, color=d, size=pmin(5, -log10(padj)))) + 
@@ -588,7 +597,7 @@ ggplot(resSDA, aes(x=paste(sample, guide),y=sig, color=d, size=pmin(5, -log10(pa
   scale_color_gradient2(low="blue", high="red") +
   facet_grid(. ~ gene, scales = "free", space = "free") +
   xRot()
-ggsave(out("SigDA_Stats.pdf"), w=15,h=7)
+ggsave(out("SigDA_Stats.pdf"), w=29,h=20)
 
 
 # Guides in UMAP
@@ -599,7 +608,7 @@ ggplot(pDT, aes(x=UMAP1, y=UMAP2)) +
   scale_fill_gradient(low="lightgrey", high="blue") +
   facet_wrap(~guide, ncol = 7) +
   theme_bw(12)
-ggsave(out("SigDA_UMAP.pdf"), w=7*4,h=ceiling(grps/7)*4+1)
+ggsave(out("SigDA_UMAP.pdf"), w=7*4,h=ceiling(grps/7)*4+1, limitsize = FALSE)
 
 # follow up specific guide
 # xDT <- copy(ann)[guide %in% c("Kmt2d_4G", "NTC") & mixscape_class.global %in% c("KO", "NTC")]

@@ -62,7 +62,7 @@ for(ax in unique(res.ratios$Analysis)){
   resx <- res.ratios[Analysis == ax][control == TRUE]
   if(nrow(resx) ==0) next
   x <- resx$Ratio.log2
-  plot(density(x))
+  #plot(density(x))
   # Remove outliers
   q <- quantile(x, probs=c(0.25,0.75))
   qr <- q[2]-q[1]

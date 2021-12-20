@@ -419,7 +419,7 @@ pDT.stats[, keep := sum(padj < 0.05) >= 2 & (all(sign(Score[padj < 0.05]) > 0) |
 pDT.stats <- pDT.stats[Gene %in% pDT.stats[keep == TRUE]$Gene][, .(mean(z), length(unique(Guide[padj < 0.05])),n=length(unique(Guide))), by=c("Gene", "Comparison",  "Comparison.Group", "Population1", "Population2")]
 pDT.stats[,percSig := V2/n*100]
 pDT.stats <- pDT.stats[Gene %in% pDT.stats[percSig > 50]$Gene]
-pDT.stats <- pDT.stats[Comparison %in% COMPARISONS.USE]
+pDT.stats <- pDT.stats[Comparison %in% COMPARISONS.healthy]
 
 mx <- toMT(pDT.stats, row = "Gene", col = "Comparison", val = "V1")
 mx[is.na(mx)] <- 0
