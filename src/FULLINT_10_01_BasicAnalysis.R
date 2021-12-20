@@ -684,7 +684,7 @@ if(file.exists(neb.file)){
   }
   
   mm <- mm[,colSums(mm) != 0]
-  x <- as.matrix(unique(data.table(mm)))
+  # x <- as.matrix(unique(data.table(mm)))
   #pheatmap(x[,sort(colnames(x))], cluster_cols = F)
   
   # run nebula
