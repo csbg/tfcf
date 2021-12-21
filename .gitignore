@@ -45,4 +45,5 @@ vignettes/*.pdf
 renv/*
 
 
-pipeline.sh.log
+pipeline*log
+.Rprofile
