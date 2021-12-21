@@ -186,6 +186,13 @@ ggplot(ann, aes(x=UMAP1, y=UMAP2)) +
   facet_wrap(~sample, ncol=5)
 ggsave(out("Samples_UMAP.pdf"), w=5*2+2,h=ceiling(length(unique(ann$sample))/5) * 2 + 1)
 
+ggplot(ann[mixscape_class.global == "NTC"], aes(x=UMAP1, y=UMAP2)) + 
+  theme_bw(12) +
+  geom_hex(bins=100) +
+  scale_fill_gradient(low="lightgrey", high="blue") +
+  facet_wrap(~sample, ncol=5)
+ggsave(out("Samples_UMAP_NTCs.pdf"), w=5*2+2,h=ceiling(length(unique(ann$sample))/5) * 2 + 1)
+
 pDT <- ann[,.N, by=c("sample", "Clusters")]
 pDT[,sumS := sum(N), by="sample"]
 pDT[,sumC := sum(N), by="Clusters"]
@@ -653,6 +660,7 @@ stopifnot(row.names(obj.de.ann) == colnames(obj.de))
 str(obj.de.ann)
 write.tsv(data.table(obj.de.ann, keep.rownames = TRUE), out("DEG_Annnotation.tsv"))
 
+
 # Run nebula
 if(file.exists(neb.file)){
   (load(neb.file))
@@ -685,7 +693,7 @@ if(file.exists(neb.file)){
   
   mm <- mm[,colSums(mm) != 0]
   # x <- as.matrix(unique(data.table(mm)))
-  #pheatmap(x[,sort(colnames(x))], cluster_cols = F)
+  # pheatmap(x[,sort(colnames(x))], cluster_cols = F)
   
   # run nebula
   nebRes <- nebula(
@@ -862,6 +870,7 @@ dev.off()
 
 # . UMAP of DEG -----------------------------------------
 umap.log2FC.cutoff <- 3
+umap.type <- "top"
 for(umap.type in c("all", "top")){
   
   umap.type.name <- paste0(umap.type, ".genes")
