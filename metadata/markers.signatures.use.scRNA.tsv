@@ -1,15 +1,12 @@
 DB	Celltype	Quality	FinalName
 Larry	CMP	Good	CMP
+Larry	MEP	OK	MEP
+Larry	GMP	OK	GMP
 Larry	Granulocyte	Good	Granulocyte
 Larry	Mono	Good	Mono
-Larry	EryA	Good	EryA
-Larry	EryB	Good	EryB
-IzzoEtAl	Ery.2	Good	Ery.2
-IzzoEtAl	Ery.3	Good	Ery.3
-IzzoEtAl	Ery.4	Good	Ery.4
-IzzoEtAl	IMP1	Good	IMP1
-IzzoEtAl	MkP.1	Good	MkP.1
-IzzoEtAl	MkP.2	Good	MkP.2
-IzzoEtAl	Neu.4	Good	Neu.4
+Larry	EryB	Good	Erythrocyte 2
+IzzoEtAl	Ery.4	Good	Erythrocyte 1
+IzzoEtAl	IMP1	Good	IMP
+IzzoEtAl	MkP.1	Good	Megakaryocyte
 PanglaoDB	B.cells	Good	B.cells
 PanglaoDB	Neutrophils	Good	Neutrophils
