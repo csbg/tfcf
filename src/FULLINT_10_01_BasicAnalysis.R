@@ -96,7 +96,9 @@ sann <- fread("metadata/annotation.tsv", sep="\t")
 # Collect ANNOTATION --------------------------------------------------------------
 ann <- data.table(data.frame(colData(monocle.obj)@listData), keep.rownames = TRUE)
 ann$MonocleClusters <- as.character(monocle.obj@clusters$UMAP$clusters[ann$rn])
-umap <- setNames(data.table(reducedDims(monocle.obj)$UMAP, keep.rownames = TRUE), c("rn", "UMAP1", "UMAP2"))
+umap <- setNames(
+  data.table(reducedDims(monocle.obj)$UMAP, keep.rownames = TRUE), 
+  c("rn", "UMAP1", "UMAP2"))
 ann <- merge(ann, umap, by="rn", all=TRUE)
 if("cytoRes" %in% ls()) ann$CytoTRACE <- cytoRes$CytoTRACE[ann$rn]
 #ann$tissue <- sann[match(gsub("_.+", "", ann$sample), sample),]$tissue
@@ -142,9 +144,6 @@ for(qcm in c("percent.mt", "nFeature_RNA", "nCount_RNA")){
   ggsave(out("QC_", qcm, "_UMAP.pdf"), w=5,h=4)
   }
 ann$measure <- NULL
-#ann[,cluster.qual.keep :=TRUE]
-#ann[Clusters %in% ann[,median(percent.mt), by="Clusters"][V1 < 1]$Clusters, cluster.qual.keep := FALSE]
-
 
 
 # TRANSFER / PREDICT CLUSTERS IN FULL DATASET ----------------------------------------
@@ -401,10 +400,11 @@ if("cytoRes" %in% ls()){
 
 
 # ANTIBODIES --------------------------------------------------------------
-if("CITESEQ2" %in% ann$sample){
+if("CITESEQ_leukemia_unsorted_d0_s2" %in% ann$sample){
+  
   abMT <- additional.info$CITESEQ2$`Antibody Capture`
   abMT <- SCRNA.TPXToLog(SCRNA.RawToTPX(abMT, scale.factor = 1e6))
-  ann.c1 <- ann[sample == "CITESEQ2"]
+  ann.c1 <- ann[sample == "CITESEQ_leukemia_unsorted_d0_s2"]
 
   # UMAP
   res <- data.table()

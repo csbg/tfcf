@@ -35,18 +35,18 @@ markS <- merge(do.call(rbind, markS), marker.signatures.use, by.x=c("variable", 
 
 
 
-# Specific tissue ---------------------------------------------------------
-inDir.current <- "in.vivo"
+# IN VIVO ---------------------------------------------------------
 
+# . load data ---------------------------------------------------------
+inDir.current <- "in.vivo"
 #dsx <- ds(inDir.funcs[[inDir.current]]("MonocleObject.RData"))
 ann <- fread(inDir.funcs[[inDir.current]]("Annotation.tsv"))
 sda <- fread(inDir.funcs[[inDir.current]]("SigDA.tsv"))
 sda <- merge(sda, unique(ann[,c("timepoint", "markers", "sample")]), c("sample"))
-
 ann[,.N, by=c("sample", "markers", "timepoint")][order(markers, timepoint)]
 ann[, perturbed := !(mixscape_class.global %in% c("NP", "NTC") | is.na(mixscape_class.global))]
 
-# UMAP of timepoint / markers
+# . UMAP of timepoint / markers ---------------------------------------------------------
 ggplot(ann[perturbed == FALSE][markers != "ckit+"], aes(x=UMAP1, y=UMAP2)) + 
   theme_bw(12) +
   geom_hex(bins=100) +
@@ -54,7 +54,7 @@ ggplot(ann[perturbed == FALSE][markers != "ckit+"], aes(x=UMAP1, y=UMAP2)) +
   facet_wrap(~markers + timepoint, ncol=3)
 ggsave(out("UMAP_Samples.pdf"), w=7,h=5)
 
-# Plot top signatures
+# . Plot top signatures ---------------------------------------------------------
 pDT <- merge(ann[perturbed == FALSE][,c("rn", "UMAP1", "UMAP2"),with=F], markS, by="rn")
 pDT[, value.norm := scale(value), by="FinalName"]
 ggplot(pDT, aes(x=UMAP1, y=UMAP2)) +
@@ -66,7 +66,40 @@ ggplot(pDT, aes(x=UMAP1, y=UMAP2)) +
   ggtitle(paste("Marker Signatures"))
 ggsave(out("UMAP_MarkerSignatures.pdf"), w=12,h=12)
 
-# Plot enrichment scores
+
+pDTx <- pDT[value.norm > 2][,paste(FinalName, collapse="xxx"), by=c("rn")][!grepl("xxx", V1)]
+pDTx <- merge(ann[perturbed == FALSE], pDTx, by="rn", all=TRUE)
+ggplot(pDTx[!is.na(V1)], aes(x=UMAP1, y=UMAP2, color=V1)) +
+  geom_hex(data=pDTx[is.na(V1)], fill="lightgrey") +
+  geom_point(size=0.2) +
+  scale_color_manual(values=colors) +
+  theme_bw(12) +
+  ggtitle(paste("Marker Signatures"))
+ggsave(out("UMAP_MarkerSignatures_Simple_points.pdf"), w=5,h=4)
+
+
+colors <- setNames(marker.signatures.use$Color, marker.signatures.use$FinalName)
+names(colors)[is.na(names(colors))] <- "NA"
+
+pDTx <- pDT[value.norm > 2][,paste(FinalName, collapse="xxx"), by=c("rn")][!grepl("xxx", V1)]
+pDTx <- merge(ann, pDTx, by="rn", all=TRUE)
+hex.fun.x <- function(x){
+  #sum(is.na(x))/length(x)
+  #names(sort(table(x), decreasing = TRUE))[1]
+  if(sum(!is.na(x)) > 5) names(sort(table(x), decreasing=TRUE))[1] else "NA"
+}
+ggplot(pDTx[!is.na(V1)], aes(x=UMAP1, y=UMAP2)) +
+  #geom_hex(data=pDTx[is.na(V1)], bins=100, fill="lightgrey", color=NA) + 
+  stat_summary_hex(aes(z=factor(V1)), fun=hex.fun.x, bins=100) +
+  theme_bw(12) +
+  #scale_fill_brewer(palette = "Paired") +
+  scale_fill_manual(values = colors) +
+  ggtitle(paste("Marker Signatures"))
+ggsave(out("UMAP_MarkerSignatures_Simple.pdf"), w=5,h=4)
+
+
+
+# . Plot enrichment scores ---------------------------------------------------------
 pDT <- sda[, .(
   d=mean(d), 
   sig.pos=sum(padj < 0.05 & d > 0),
@@ -87,7 +120,7 @@ ggplot(pDT[timepoint == "14d" & markers == "Lin-"], aes(x=FinalName, y=guide, si
   ggtitle("Only: d14 / Lin-")
 ggsave(out("MarkerSignatures_DA.pdf"), w=6,h=12)
 
-# Plot top guides
+# . Plot top guides ---------------------------------------------------------
 pDT.top <- ann[timepoint == "14d" & markers == "Lin-"]
 pDT.ntc <- pDT.top[mixscape_class.global == "NTC"]
 pDT.final <- copy(pDT.ntc)
@@ -106,7 +139,7 @@ ggplot(pDT.final, aes(x=UMAP1, y=UMAP2)) +
   facet_wrap(~plot, ncol=3)
 ggsave(out("UMAP_Guides.pdf"), w=9,h=7)
 
-# Plot displasia guides
+# . Plot displasia guides ---------------------------------------------------------
 pDT.top <- ann[timepoint == "28d"]
 pDT.ntc <- pDT.top[mixscape_class.global == "NTC"]
 pDT.final <- copy(pDT.ntc)
@@ -125,15 +158,12 @@ ggplot(pDT.final, aes(x=UMAP1, y=UMAP2)) +
   facet_wrap(~plot, ncol=3)
 ggsave(out("UMAP_Guides_displasia.pdf"), w=9,h=7)
 
+
+
+# . Plot displasia numberes -----------------------------------------------
 pDT <- copy(ann[markers=="Lin-"])
 pDT[, group := gsub("_.+", "", guide)]
 pDT <- pDT[!is.na(group)]
-ggplot(pDT, aes(x=group, fill=paste(timepoint, markers))) + 
-  theme_bw() +
-  geom_bar(position="dodge") +
-  facet_grid(. ~ mixscape_class.global, space="free", scales = "free") +
-  xRot()
-
 pDT <- pDT[,.N, by=c("timepoint", "mixscape_class.global", "group")]
 pDT[, sum := sum(N), by="timepoint"]
 pDT[, perc := N/sum*100]
@@ -143,6 +173,17 @@ ggplot(pDT, aes(x=timepoint, y=perc, group=group, color=group)) +
   theme_bw() +
   geom_point() +
   geom_line() +
+  ylab("Percent of cells with guide") + 
   xRot()
 ggsave(out("Displasia_Numbers.pdf"), w=4,h=4)
 
+pDT$group <- factor(pDT$group, levels=pDT[timepoint == "28d"][order(N)]$group)
+ggplot(pDT, aes(x=group, y=perc, fill=group == "NTC")) + 
+  theme_bw() +
+  scale_fill_manual(values=c("black", "red")) +
+  geom_bar(position="dodge", stat='identity') +
+  facet_grid(. ~ timepoint, space="free", scales = "free") + 
+  guides(fill=FALSE) +
+  ylab("Percent of cells with guide") + 
+  xRot()
+ggsave(out("Displasia_Numbers_bars.pdf"), w=5,h=3)

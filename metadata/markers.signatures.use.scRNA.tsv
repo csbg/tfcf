@@ -1,12 +1,13 @@
-DB	Celltype	Quality	FinalName
-Larry	CMP	Good	CMP
-Larry	MEP	OK	MEP
-Larry	GMP	OK	GMP
-Larry	Granulocyte	Good	Granulocyte
-Larry	Mono	Good	Mono
-Larry	EryB	Good	Erythrocyte 2
-IzzoEtAl	Ery.4	Good	Erythrocyte 1
-IzzoEtAl	IMP1	Good	IMP
-IzzoEtAl	MkP.1	Good	Megakaryocyte
-PanglaoDB	B.cells	Good	B.cells
-PanglaoDB	Neutrophils	Good	Neutrophils
+DB	Celltype	Quality	FinalName	Color
+Larry	CMP	Good	CMP	#ff7f00
+Larry	MEP	OK	MEP	#fb9a99
+Larry	GMP	OK	GMP	#cab2d6
+Larry	Granulocyte	Good	Granulocyte	#a6cee3
+Larry	Mono	Good	Mono	#6a3d9a
+Larry	EryB	Good	Erythrocyte 2	#e31a1c
+IzzoEtAl	Ery.4	Good	Erythrocyte 1	#e31a1c
+IzzoEtAl	IMP1	Good	IMP	#b2df8a
+IzzoEtAl	MkP.1	Good	Megakaryocyte	#33a02c
+PanglaoDB	B.cells	Good	B.cells	#1f78b4
+PanglaoDB	Neutrophils	Good	Neutrophils	#b15928
+NA	NA	NA	NA	lightgrey
