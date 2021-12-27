@@ -7,7 +7,6 @@ out <- dirout(base.dir)
 ds <- function(path){load(path); return(monocle.obj)}
 
 
-
 # Folders -----------------------------------------------------------------
 list.files(dirout_load("")(""))
 inDir.funcs <- list(
@@ -68,32 +67,37 @@ ggsave(out("UMAP_MarkerSignatures.pdf"), w=12,h=12)
 
 
 pDTx <- pDT[value.norm > 2][,paste(FinalName, collapse="xxx"), by=c("rn")][!grepl("xxx", V1)]
-pDTx <- merge(ann[perturbed == FALSE], pDTx, by="rn", all=TRUE)
+pDTx <- merge(ann, pDTx, by="rn", all=TRUE)
 ggplot(pDTx[!is.na(V1)], aes(x=UMAP1, y=UMAP2, color=V1)) +
-  geom_hex(data=pDTx[is.na(V1)], fill="lightgrey") +
+  geom_hex(data=pDTx[is.na(V1)], fill="lightgrey", bins=100) +
   geom_point(size=0.2) +
-  scale_color_manual(values=colors) +
+  scale_color_manual(values=COLORS.CELLTYPES.scRNA) +
   theme_bw(12) +
   ggtitle(paste("Marker Signatures"))
 ggsave(out("UMAP_MarkerSignatures_Simple_points.pdf"), w=5,h=4)
 
 
-colors <- setNames(marker.signatures.use$Color, marker.signatures.use$FinalName)
-names(colors)[is.na(names(colors))] <- "NA"
-
-pDTx <- pDT[value.norm > 2][,paste(FinalName, collapse="xxx"), by=c("rn")][!grepl("xxx", V1)]
-pDTx <- merge(ann, pDTx, by="rn", all=TRUE)
-hex.fun.x <- function(x){
-  #sum(is.na(x))/length(x)
-  #names(sort(table(x), decreasing = TRUE))[1]
-  if(sum(!is.na(x)) > 5) names(sort(table(x), decreasing=TRUE))[1] else "NA"
-}
-ggplot(pDTx[!is.na(V1)], aes(x=UMAP1, y=UMAP2)) +
-  #geom_hex(data=pDTx[is.na(V1)], bins=100, fill="lightgrey", color=NA) + 
-  stat_summary_hex(aes(z=factor(V1)), fun=hex.fun.x, bins=100) +
+hex.obj <- hexbin::hexbin(x=pDTx$UMAP1, y=pDTx$UMAP2, xbins = 100, IDs=TRUE)
+pDTh <- cbind(pDTx, data.table(hex.x=hex.obj@xcm, hex.y=hex.obj@ycm, hex.cell=hex.obj@cell)[match(hex.obj@cID, hex.cell),])[,.N, by=c("hex.x", "hex.y", "V1")][!is.na(V1)]
+pDTh[, rank := rank(-N), by=c("hex.x", "hex.y")]
+pDTh[rank == 1]
+ggplot(pDTh[rank == 1]) +
   theme_bw(12) +
-  #scale_fill_brewer(palette = "Paired") +
-  scale_fill_manual(values = colors) +
+  geom_hex(data=pDTx, aes(x=UMAP1, y=UMAP2), fill="lightgrey", bins=100) +
+  geom_point(aes(x=hex.x, y=hex.y, color=V1), size=0.2) + 
+  scale_color_manual(values = COLORS.CELLTYPES.scRNA) +
+  ggtitle(paste("Marker Signatures"))
+ggsave(out("UMAP_MarkerSignatures_Simple_hexpoints.pdf"), w=6,h=4)
+
+hex.fun.x <- function(x){
+  if(sum(x != "NA") >= 1) names(sort(table(setdiff(x, "NA")), decreasing=TRUE))[1] else NA
+}
+pDTx[, finalLabel := ifelse(is.na(V1), "NA", V1)]
+pDTx$finalLabel <- factor(pDTx$finalLabel)
+ggplot(pDTx, aes(x=UMAP1, y=UMAP2, z=finalLabel)) +
+  stat_summary_hex(fun=hex.fun.x, bins=100) +
+  theme_bw(12) +
+  scale_fill_manual(values = COLORS.CELLTYPES.scRNA) +
   ggtitle(paste("Marker Signatures"))
 ggsave(out("UMAP_MarkerSignatures_Simple.pdf"), w=5,h=4)
 
