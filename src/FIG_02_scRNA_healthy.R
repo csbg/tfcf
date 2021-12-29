@@ -1,6 +1,6 @@
 source("src/00_init.R")
 base.dir <- "FIG_02_scRNA_healthy/"
-out <- dirout(base.dir)
+outBase <- dirout(base.dir)
 
 
 # FUNCTIONS ---------------------------------------------------------------
@@ -44,6 +44,10 @@ sda <- fread(inDir.funcs[[inDir.current]]("SigDA.tsv"))
 sda <- merge(sda, unique(ann[,c("timepoint", "markers", "sample")]), c("sample"))
 ann[,.N, by=c("sample", "markers", "timepoint")][order(markers, timepoint)]
 ann[, perturbed := !(mixscape_class.global %in% c("NP", "NTC") | is.na(mixscape_class.global))]
+
+
+# . out directory ---------------------------------------------------------
+out <- dirout(paste0(base.dir, "/", inDir.current))
 
 # . UMAP of timepoint / markers ---------------------------------------------------------
 ggplot(ann[perturbed == FALSE][markers != "ckit+"], aes(x=UMAP1, y=UMAP2)) + 
@@ -191,3 +195,90 @@ ggplot(pDT, aes(x=group, y=perc, fill=group == "NTC")) +
   ylab("Percent of cells with guide") + 
   xRot()
 ggsave(out("Displasia_Numbers_bars.pdf"), w=5,h=3)
+
+
+
+
+
+
+# LEUKEMIA---------------------------------------------------------
+
+# . load data ---------------------------------------------------------
+inDir.current <- "leukemia"
+#dsx <- ds(inDir.funcs[[inDir.current]]("MonocleObject.RData"))
+ann <- fread(inDir.funcs[[inDir.current]]("Annotation.tsv"))
+sda <- fread(inDir.funcs[[inDir.current]]("SigDA.tsv"))
+sda <- merge(sda, unique(ann[,c("timepoint", "markers", "sample")]), c("sample"))
+ann[,.N, by=c("sample", "markers", "timepoint")][order(markers, timepoint)]
+ann[, perturbed := !(mixscape_class.global %in% c("NP", "NTC") | is.na(mixscape_class.global))]
+
+
+# . antibodies ------------------------------------------------------------
+abs <- fread(inDir.funcs[[inDir.current]]("Antibodies.tsv"))
+
+# . out directory ---------------------------------------------------------
+out <- dirout(paste0(base.dir, "/", inDir.current))
+
+# . markers ---------------------------------------------------------------
+pDT <- merge(ann[perturbed == FALSE][,c("rn", "UMAP1", "UMAP2"),with=F], markS, by="rn")
+pDT[, value.norm := scale(value), by="FinalName"]
+ggplot(pDT, aes(x=UMAP1, y=UMAP2)) +
+  stat_summary_hex(aes(z=pmin(3, value.norm)),fun=mean, bins=100) +
+  scale_fill_gradient2(low="blue", midpoint = 0, high="red") +
+  #scale_fill_hexbin() +
+  theme_bw(12) +
+  facet_wrap(~FinalName) +
+  ggtitle(paste("Marker Signatures"))
+ggsave(out("UMAP_MarkerSignatures.pdf"), w=12,h=12)
+
+pDTx <- pDT[value.norm > 2][,paste(FinalName, collapse="xxx"), by=c("rn")][!grepl("xxx", V1)]
+pDTx <- merge(ann, pDTx, by="rn", all=TRUE)
+hex.obj <- hexbin::hexbin(x=pDTx$UMAP1, y=pDTx$UMAP2, xbins = 100, IDs=TRUE)
+pDTh <- cbind(pDTx, data.table(hex.x=hex.obj@xcm, hex.y=hex.obj@ycm, hex.cell=hex.obj@cell)[match(hex.obj@cID, hex.cell),])[,.N, by=c("hex.x", "hex.y", "V1")][!is.na(V1)]
+pDTh[, rank := rank(-N), by=c("hex.x", "hex.y")]
+pDTh[rank == 1]
+ggplot(pDTh[rank == 1]) +
+  theme_bw(12) +
+  geom_hex(data=pDTx, aes(x=UMAP1, y=UMAP2), fill="lightgrey", bins=100) +
+  geom_point(aes(x=hex.x, y=hex.y, color=V1), size=0.2) + 
+  scale_color_manual(values = COLORS.CELLTYPES.scRNA) +
+  ggtitle(paste("Marker Signatures"))
+ggsave(out("UMAP_MarkerSignatures_Simple_hexpoints.pdf"), w=6,h=4)
+
+hex.fun.x <- function(x){
+  if(sum(x != "NA") >= 1) names(sort(table(setdiff(x, "NA")), decreasing=TRUE))[1] else NA
+}
+pDTx[, finalLabel := ifelse(is.na(V1), "NA", V1)]
+pDTx$finalLabel <- factor(pDTx$finalLabel)
+ggplot(pDTx, aes(x=UMAP1, y=UMAP2, z=finalLabel)) +
+  stat_summary_hex(fun=hex.fun.x, bins=100) +
+  theme_bw(12) +
+  scale_fill_manual(values = COLORS.CELLTYPES.scRNA) +
+  ggtitle(paste("Marker Signatures"))
+ggsave(out("UMAP_MarkerSignatures_Simple.pdf"), w=5,h=4)
+
+
+# Combine signatures with Antibodies --------------------------------------
+absDT <- merge(
+  pDT[,c("rn", "sig", "value.norm"), with=F],
+  abs[,c("rn", "Antibody", "Signal.norm"), with=F],
+  by="rn", allow.cartesian=TRUE)
+
+absC <- absDT[, cor(value.norm, Signal.norm, use="pairwise.complete.obs"), by=c("sig", "Antibody")][order(V1)]
+absC <- hierarch.ordering(absC, toOrder = "sig", orderBy = "Antibody", value.var = "V1")
+absC <- hierarch.ordering(absC, orderBy = "sig", toOrder = "Antibody", value.var = "V1")
+ggplot(absC,
+       aes(x=sig, y=Antibody, fill=V1)) + 
+  theme_bw(12) +
+  geom_tile() + 
+  scale_fill_gradient2(low="blue", high="red") +
+  xRot()
+ggsave(out("Antibodies_signatures_correlation.pdf"), w=5,h=5)
+
+
+ggplot(ann, aes(x=UMAP1, y=UMAP2)) + 
+  theme_bw(12) +
+  geom_hex(bins=100) +
+  scale_fill_hexbin() +
+  facet_grid(. ~ Phase)
+ggsave(out("CellCycle_UMAP.pdf"), w=16,h=5)

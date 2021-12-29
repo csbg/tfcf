@@ -150,7 +150,7 @@ COMPARISONS.healthy <- c(
 )
 
 
-cleanComparisons <- function(x, order=TRUE, ggtext=FALSE, dm="clean"){
+cleanComparisons <- function(x, order=TRUE, ggtext=FALSE, dm="clean", reverse=FALSE){
   transformPretty <- function(i, gg=ggtext){
     if(gg){
       i <- gsub("^(.+)\\.(.+)$", "<strong style='color:#832424;'>\\1</strong> vs <strong style='color:#3A3A98;'>\\2</strong>", i)
@@ -167,7 +167,12 @@ cleanComparisons <- function(x, order=TRUE, ggtext=FALSE, dm="clean"){
   }
   
   x <- transformPretty(x)
-  if(order) x <- factor(x, levels = intersect(transformPretty(names(COMPARISONS)), unique(x)))
+  if(order){
+    x <- factor(x, levels = c("Main branch", intersect(transformPretty(names(COMPARISONS)), unique(x))))
+    if(reverse){
+      x <- factor(x, levels=rev(levels(x)))
+    }
+  }
   x
 }
 
@@ -194,6 +199,7 @@ sapply(PATHS$POOLED$DATA, file.exists)
 
 PATHS$FULLINT <- list()
 PATHS$FULLINT$Monocle <- dirout_load("FULLINT_01_01_Integration")("MonocleObject.RData")
+PATHS$FULLINT$Citeseq <- dirout_load("FULLINT_01_01_Integration")("CITESEQ_Antibodies.RData")
 PATHS$FULLINT$DEG <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("DEG_Results_nebula.RData")
 PATHS$FULLINT$DEG.clean <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("DEG_Results_all.tsv")
 PATHS$FULLINT$DEG.clean.leukemia <- dirout_load("FULLINT_10_01_BasicAnalysis_leukemia")("DEG_Results_all.tsv")
@@ -207,5 +213,8 @@ PATHS$FULLINT$DEG.UMAP <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("R
 # COLORS ------------------------------------------------------------------
 COLOR.Genotypes = c(WT="#33a02c", Cas9="#6a3d9a")
 COLORS.HM.FUNC <- colorRampPalette(c("#6a3d9a", "#a6cee3", "white", "#fdbf6f", "#e31a1c"))
+COLORS.CELLTYPES.scRNA <- fread("metadata/markers.signatures.use.scRNA.tsv")
+COLORS.CELLTYPES.scRNA <- setNames(COLORS.CELLTYPES.scRNA$Color, COLORS.CELLTYPES.scRNA$FinalName)
+COLORS.CELLTYPES.scRNA["NA"] <- "lightgrey"
 
 scale_fill_hexbin <- function(...){scale_fill_gradientn(colours=c("#a6cee3", "#fdbf6f", "#ff7f00", "#e31a1c"), ...)}

@@ -304,8 +304,9 @@ if(file.exists(monocle.file)){
   set.seed(12121)
   monocle.obj = cluster_cells(monocle.obj)
   
-  additional.info <- additional.info["CITESEQ2"]
+  citeseq.MT <- additional.info[["CITESEQ2"]]
   # Store full dataset
-  save(monocle.obj, additional.info, file=monocle.file)
+  save(monocle.obj, file=monocle.file)
+  save(citeseq.MT, file=out("CITESEQ_Antibodies.RData"))
 }
 

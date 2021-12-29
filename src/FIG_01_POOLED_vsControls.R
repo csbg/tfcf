@@ -87,18 +87,22 @@ pDT[,cor(-log10(p_wt), -log10(p_ctr)), by=c("Genotype", "Library", "Comparison")
 pDT[,corS(-log10(p_wt), -log10(p_ctr)), by=c("Genotype", "Library", "Comparison")]
 
 # Ratio log2
-ggplot(pDT[Genotype == "Cas9"], aes(x=Ratio.log2_wt, y=Ratio.log2_ctr)) + 
-  theme_bw(12) +
+ggplot(pDT[Genotype == "Cas9"][Library %in% c("As", "B", "Br")], aes(x=Ratio.log2_wt, y=Ratio.log2_ctr)) + 
+  themeNF() +
   geom_point(shape=1) + 
-  facet_wrap(~ Comparison + Library, scales = "free")
-ggsave(out("Methods_comparison_WTvsCTRL_log2Ratio.pdf"), w=10,h=10)
+  xlab(TeX("Comparison to wildtype (log_{2}FC)")) +
+  ylab(TeX("Comparison to NTCs (log_{2}FC)")) +
+  facet_grid(Library ~ cleanComparisons(Comparison))
+  # geom_vline(xintercept = 0, color="blue") +
+  # geom_hline(yintercept = 0, color="blue") +
+ggsaveNF(out("Methods_comparison_WTvsCTRL_log2Ratio.pdf"), w=4,h=2, guides = TRUE)
 
-# log10 p-value
-ggplot(pDT[Genotype == "Cas9"], aes(x=sign(Ratio.log2_wt) * -log10(p_wt), y=sign(Ratio.log2_ctr) * -log10(p_ctr))) + 
-  theme_bw(12) +
-  geom_point(shape=1) + 
-  facet_wrap(~ Comparison + Library, scales = "free")
-ggsave(out("Methods_comparison_WTvsCTRL_log10p.pdf"), w=10,h=10)
+# # log10 p-value
+# ggplot(pDT[Genotype == "Cas9"], aes(x=sign(Ratio.log2_wt) * -log10(p_wt), y=sign(Ratio.log2_ctr) * -log10(p_ctr))) + 
+#   theme_bw(12) +
+#   geom_point(shape=1) + 
+#   facet_wrap(~ Comparison + Library, scales = "free")
+# ggsave(out("Methods_comparison_WTvsCTRL_log10p.pdf"), w=10,h=10)
 
 
 
@@ -191,21 +195,25 @@ colnames(mA)
 require(ggtern) # Has to stay here, otherwise breaks everything else - especially ggplot
 scale.hexgradient <- scale_fill_gradientn(colours=c("#a6cee3", "#fdbf6f", "#ff7f00"))  
 
-tx <- "leukemia"
+tx <- "healthy"
 for(tx in names(SAMPLES)){
   mx <- mAA[,unlist(SAMPLES[[tx]])]
   mx <- mx[rowSums(mx) > 0,]
   colnames(mx) <- gsub("Cas9_(DM\\.)?", "", colnames(mx))
   cx <- colnames(mx)
   mx2 <- apply(mx, 1, max) - mx + apply(mx, 1, min)
+  mx2 <- mx2^2
   
   pDT <- data.table(data.frame(mx2), keep.rownames = TRUE)
-  gg <- unique(RESULTS.AGG[Comparison %in% COMBINATIONS[[tx]]][hit == TRUE]$Gene)
-  ggtern(pDT, aes_string(x=cx[1], y=cx[2], z=cx[3])) + 
-    theme_bw() +
-    #geom_point(shape=1, color="#33a02c") +
-    geom_hex_tern() +
+  ggDT <- RESULTS.AGG[Comparison %in% COMBINATIONS[[tx]]][hit == TRUE]
+  gg.sig <- unique(ggDT$Gene)
+  gg.label <- unique(ggDT[order(abs(Ratio.log2), decreasing=TRUE)]$Gene)[1:20]
+  ggtern(pDT, aes_string(x=cx[1], y=cx[3], z=cx[2])) + 
+    themeNF() +
+    geom_point(data=pDT[!rn %in% gg.sig], shape=1, color="black", alpha=0.5) +
+    geom_point(data=pDT[rn %in% gg.sig], color="#1f78b4", alpha=0.5) +
+    #geom_hex_tern() +
     scale.hexgradient +
-    geom_text(data=pDT[rn %in% gg], aes(label=rn), color="black", size=2)
-  ggsave(out("Ternary_", tx, ".pdf"),w=8,h=8)
+    geom_text(data=pDT[rn %in% gg.label], aes(label=rn), color="#1f78b4", size=3)
+  ggsaveNF(out("Ternary_", tx, ".pdf"),w=2,h=2, guides = TRUE)
 }

@@ -90,6 +90,9 @@ tryCatch({
 # ChIP Targets
 (load(dirout_load("CHIP_20_01_Peaks_julen")("ChIP.Targets.RData")))
 
+# CITESEQ
+(load(PATHS$FULLINT$Citeseq)) # citeseq.MT
+
 # ANNOTATION ------------------------------------------------------
 sann <- fread("metadata/annotation.tsv", sep="\t")
 
@@ -402,7 +405,7 @@ if("cytoRes" %in% ls()){
 # ANTIBODIES --------------------------------------------------------------
 if("CITESEQ_leukemia_unsorted_d0_s2" %in% ann$sample){
   
-  abMT <- additional.info$CITESEQ2$`Antibody Capture`
+  abMT <- citeseq.MT$`Antibody Capture`
   abMT <- SCRNA.TPXToLog(SCRNA.RawToTPX(abMT, scale.factor = 1e6))
   ann.c1 <- ann[sample == "CITESEQ_leukemia_unsorted_d0_s2"]
 
@@ -422,6 +425,8 @@ if("CITESEQ_leukemia_unsorted_d0_s2" %in% ann$sample){
     facet_wrap(~Antibody) +
     theme_bw(12)
   ggsave(out("Antibodies_UMAP.pdf"), w=12+2, h=9+1)
+  
+  write.tsv(res, out("Antibodies.tsv"))
 
   # Correlations
   cMT <- corS(t(as.matrix(abMT)), use="pairwise.complete.obs")

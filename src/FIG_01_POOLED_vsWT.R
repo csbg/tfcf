@@ -22,12 +22,9 @@ RESULTS.wt.agg <- fread(inDir("Aggregated.tsv"))
 
 
 # Gene annotations --------------------------------------------------------
-ANN.genes <- fread("metadata/TFCF_Annotations.tsv")
-ANN.genes[,Complex_simple := make.names(COMPLEX)]
-ANN.genes[,Complex_simple := gsub("\\..*$", "", Complex_simple)]
-ANN.genes[Complex_simple == "X", Complex_simple := NA]
-ANN.genes[,rank := rank(Complex_simple), by="GENE"]
-ANN.genes <- ANN.genes[rank == 1][,-"rank"]
+ANN.genes <- fread("metadata/TFCF_Annotations_v2.tsv", check.names = TRUE)
+ANN.genes[,Complex_simple := BROAD.COMPLEX]
+ANN.genes <- unique(ANN.genes[!is.na(Complex_simple) & Complex_simple != ""][,c("GENE", "Complex_simple"), with=F])
 stopifnot(all(ANN.genes[,.N, by="GENE"]$N == 1))
 unique(ANN.genes$Complex_simple)
 
@@ -58,7 +55,7 @@ pDT.stats[,percSig := sig/n*100]
 stopifnot(all(pDT.stats$percSig >= 0))
 stopifnot(all(pDT.stats$percSig <= 100))
 pDT.stats[, hit := percSig >= 50]
-pDT.stats[, complete.screen := all(COMPARISONS.healthy %in% Comparison), by="Gene"]
+pDT.stats[, complete.screen := all(COMPARISONS.healthy[1:4] %in% Comparison), by="Gene"]
 RESULTS.wt.agg.gene <- copy(pDT.stats)
 
 # Did this keep all genes?
@@ -83,19 +80,38 @@ REPLICATES.SCORES <- fread(replicationDir("Results.tsv"))
 REPLICATES.SCORES <- REPLICATES.SCORES[grepl("vs", coef)]
 REPLICATES.SCORES[, Comparison := gsub("vs", ".", coef)]
 # unique(REPLICATES.SCORES[!toupper(Comparison) %in% toupper(names(COMPARISONS))]$Comparison)
-REPLICATES.SCORES.EXAMPLE <- REPLICATES.SCORES[coef == gsub("\\.", "vs", SCORES.EXAMPLE.comp)][grepl(SCORES.EXAMPLE.lib, analysis)]
+REPLICATES.SCORES.EXAMPLE <- REPLICATES.SCORES[coef == gsub("\\.", "vs", SCORES.EXAMPLE.comp)]#[grepl(SCORES.EXAMPLE.lib, analysis)]
 
 # Values
-REPLICATES.VALUES <- fread(replicationDir("analysis_", REPLICATES.SCORES.EXAMPLE$analysis[1], "/", "Data_DateRemoved.csv"))
-rns <- REPLICATES.VALUES$rn
-REPLICATES.VALUES <- as.matrix(REPLICATES.VALUES[, -"rn"])
-row.names(REPLICATES.VALUES) <- rns
-REPLICATES.VALUES <- REPLICATES.VALUES[unique(REPLICATES.SCORES.EXAMPLE[significant_TF == TRUE]$rn),ann[Library == SCORES.EXAMPLE.lib][Population %in% COMPARISONS[[SCORES.EXAMPLE.comp]]]$sample]
+ff <- lapply(unique(REPLICATES.SCORES.EXAMPLE$analysis), function(fx) fread(replicationDir("analysis_", fx, "/", "Data_DateRemoved.csv")))
+ff <- lapply(ff, function(fx){ melt(data.table(fx), id.vars="rn")})
+ff <- do.call(rbind, ff)
+REPLICATES.VALUES <- toMT(ff, row = "rn", col = "variable", val = "value")
+guidesx <- unique(REPLICATES.SCORES.EXAMPLE[gene %in% REPLICATES.SCORES.EXAMPLE[, sum(significant_TF) / .N, by="gene"][order(V1, decreasing=TRUE)][1:6]$gene]$rn)
+#guidesx <- guidesx[!grepl("Spi1", guidesx)]
+samplesx <- ann[Population %in% COMPARISONS[[SCORES.EXAMPLE.comp]]]$sample
+REPLICATES.VALUES <- REPLICATES.VALUES[guidesx,intersect(samplesx, colnames(REPLICATES.VALUES))]
 REPLICATES.VALUES <- melt(data.table(REPLICATES.VALUES, keep.rownames = TRUE), id.vars = "rn")
 REPLICATES.VALUES <- merge(ann, REPLICATES.VALUES, by.x="sample", by.y="variable")
 REPLICATES.VALUES[, Gene := gsub("_.+", "", rn)]
-REPLICATES.VALUES[, sample_i := rank(sample), by=c("Gene", "rn", "Genotype")]
-REPLICATES.VALUES[, guide_i := rank(rn), by=c("Gene")]
+REPLICATES.VALUES <- REPLICATES.VALUES[!is.na(value)]
+REPLICATES.VALUES[, sample_i := as.numeric(factor(sample)), by=c("Gene", "rn", "Genotype")]
+REPLICATES.VALUES[, guide_i := as.numeric(factor(rn)), by=c("Gene")]
+
+# # Values
+# REPLICATES.VALUES <- fread(replicationDir("analysis_", REPLICATES.SCORES.EXAMPLE$analysis[1], "/", "Data_DateRemoved.csv"))
+# rns <- REPLICATES.VALUES$rn
+# REPLICATES.VALUES <- as.matrix(REPLICATES.VALUES[, -"rn"])
+# row.names(REPLICATES.VALUES) <- rns
+# guidesx <- unique(REPLICATES.SCORES.EXAMPLE[gene %in% REPLICATES.SCORES.EXAMPLE[significant_TF == TRUE][,.N, by="gene"][N >= 2]$gene]$rn)
+# guidesx <- guidesx[!grepl("Spi1", guidesx)]
+# REPLICATES.VALUES <- REPLICATES.VALUES[guidesx,ann[Library == SCORES.EXAMPLE.lib][Population %in% COMPARISONS[[SCORES.EXAMPLE.comp]]]$sample]
+# REPLICATES.VALUES <- melt(data.table(REPLICATES.VALUES, keep.rownames = TRUE), id.vars = "rn")
+# REPLICATES.VALUES <- merge(ann, REPLICATES.VALUES, by.x="sample", by.y="variable")
+# REPLICATES.VALUES[, Gene := gsub("_.+", "", rn)]
+# REPLICATES.VALUES[, sample_i := rank(sample), by=c("Gene", "rn", "Genotype")]
+# REPLICATES.VALUES[, guide_i := rank(rn), by=c("Gene")]
+
 
 
 # SETUP ENDS HERE ---------------------------------------------------------
@@ -124,7 +140,7 @@ p <- ggplot(pDT, aes(x=Library, y=Guide, color=z, size=pmin(5, -log10(padj)))) +
 ggsave(out("Check_inconsistencies2.pdf"), w=10,h=25, plot=p)
 
 
-# Method validation with replicates ---------------------------------------
+# Method validation comparing analysis vs wildtype to analysis with replicates ---------------------------------------
 cols.merge <- c("Comparison", "Guide", "Gene")
 cols.vals <- c("Ratio.log2", "p")
 repDT <- copy(REPLICATES.SCORES)
@@ -141,33 +157,38 @@ pDT[,cor(Ratio.log2_rep, Ratio.log2_wt), by=c("Comparison")]
 pDT[,corS(Ratio.log2_rep, Ratio.log2_wt), by=c("Comparison")]
 pDT[,cor(-log10(p_rep), -log10(p_wt)), by=c("Comparison")]
 pDT[,corS(-log10(p_rep), -log10(p_wt)), by=c("Comparison")]
+pDT[, Comparison := cleanComparisons(Comparison)]
 
 # Ratio log2
-ggplot(pDT, aes(x=Ratio.log2_wt, y=Ratio.log2_rep)) + 
+ggplot(pDT[!Library %in% c("P1", "R1")], aes(x=Ratio.log2_wt, y=Ratio.log2_rep)) + 
   geom_vline(xintercept = 0, color="blue") +
   geom_hline(yintercept = 0, color="blue") +
-  theme_bw(12) +
-  geom_point(shape=1) + 
-  facet_wrap(~ Comparison + Library, scales = "free")
-ggsave(out("Methods_comparison_WTvsREP_log2Ratio.pdf"), w=10,h=10)
+  themeNF() +
+  xlab(TeX("Comparison to wildtype (log_{2}FC)")) + 
+  ylab(TeX("Replicate analysis (log_{2}FC)")) + 
+  geom_point(shape=1, alpha=0.3) + 
+  facet_grid(Comparison ~ Library, scales = "free")
+ggsaveNF(out("Methods_comparison_WTvsREP_log2Ratio.pdf"), w=2,h=2, guides = TRUE)
 
 # log10 p-value
-ggplot(pDT, aes(x=sign(Ratio.log2_wt) * -log10(p_wt), y=sign(Ratio.log2_rep) * -log10(p_rep))) + 
-  geom_vline(xintercept = 0, color="blue") +
-  geom_hline(yintercept = 0, color="blue") +
-  theme_bw(12) +
-  geom_point(shape=1) + 
-  facet_wrap(~ Comparison + Library, scales = "free")
-ggsave(out("Methods_comparison_WTvsREP_log10p.pdf"), w=10,h=10)
-
+# ggplot(pDT, aes(x=sign(Ratio.log2_wt) * -log10(p_wt), y=sign(Ratio.log2_rep) * -log10(p_rep))) + 
+#   geom_vline(xintercept = 0, color="blue") +
+#   geom_hline(yintercept = 0, color="blue") +
+#   theme_bw(12) +
+#   geom_point(shape=1) + 
+#   facet_wrap(~ Comparison + Library, scales = "free")
+# ggsave(out("Methods_comparison_WTvsREP_log10p.pdf"), w=10,h=10)
 
 
 # Number of genes ---------------------------------------------------------
-ggplot(RESULTS.wt[Genotype != "WT" & !grepl("NonT", Gene),length(unique(Guide)), by=c("Gene", "Comparison")], aes(x=Comparison, fill=factor(V1))) + 
-  theme_bw(12) +
+pDT <- RESULTS.wt[Genotype != "WT" & !grepl("NonT", Gene),length(unique(Guide)), by=c("Gene", "Comparison")]
+pDT[,Comparison := cleanComparisons(Comparison)]
+ggplot(pDT, aes(x=Comparison, fill=factor(V1))) + 
+  themeNF() +
   geom_bar() +
-  xRot()
-ggsave(out("Numbers.pdf"), w=5,h=5)
+  xRot() +
+  xlab("") + ylab("Number of genes")
+ggsaveNF(out("Numbers.pdf"), w=0.8, h=1)
 
 
 # Example calculation and scores -----------------------------------------------------
@@ -175,23 +196,29 @@ ggplot(SCORES.EXAMPLE, aes(x=Score)) +
   geom_density(data=data.table(Score=rnorm(10000, mean=SCORES.EXAMPLE.bg$mean, sd=SCORES.EXAMPLE.bg$sd)), fill="#b2df8a", color=NA) +
   scale_color_manual(values=COLOR.Genotypes) +
   geom_density(aes(color=Genotype)) +
-  theme_bw(12)
-ggsave(out("Scores_Example_Calculation.pdf"), w=5,h=3)
+  themeNF() +
+  xlab(TeX(paste(cleanComparisons(SCORES.EXAMPLE[1]$Comparison), "log_{2}FC"))) +
+  ylab("Density")
+ggsaveNF(out("Scores_Example_Calculation.pdf"), w=1.2)
 
 # Scores
 str(gg <- unique(RESULTS.wt[Comparison == SCORES.EXAMPLE.comp][Library == SCORES.EXAMPLE.lib][hit == TRUE]$Gene))
 pDT <- SCORES.EXAMPLE
 pDT[,Gene := gsub("_.+$", "", Guide)]
 pDT[, label := ifelse(Genotype == "WT", "WT", Gene)]
+pDT[grepl("NonT", label), label := "NTC"]
 pDT$label <- factor(pDT$label, levels = unique(c("WT", pDT[,median(Score), by=c("label")][order(V1)]$label)))
-ggplot(pDT[Gene %in% gg | grepl("^NonT", label) | Genotype == "WT"], aes(x=label, y=Score, color=grepl("^NonT", label))) + 
+pDT <- pDT[Gene %in% gg | grepl("^NTC", label) | Genotype == "WT"]
+ggplot(pDT, aes(x=label, y=Score, color=grepl("^NTC", label))) + 
   geom_boxplot(color="lightgrey") + 
   scale_color_manual(values=c("black", "red")) + 
-  theme_bw(12) +
+  themeNF() +
   geom_hline(color="lightblue", yintercept = 0) +
   geom_jitter(height=0, width=0.2, shape=1) +
-  xRot()
-ggsave(out("Scores_Example_Scores.pdf"), w=10,h=4)
+  xRot() +
+  ylab(TeX(paste(cleanComparisons(pDT[1]$Comparison), "log_{2}FC"))) +
+  xlab("")
+ggsaveNF(out("Scores_Example_Scores.pdf"), w=1.5)
 
 
 # Distribution
@@ -211,35 +238,44 @@ ggsave(out("Scores_Example_Distribution.pdf"), w=70,h=5, limitsize = FALSE)
 
 # Mean and SE
 pDT.median$Gene <- factor(pDT.median$Gene, levels=levels(pDT$Gene))
-ggplot(pDT.median, aes(x=Gene, y=z)) + 
-  theme_bw(12) +
-  geom_point(aes(color=hit)) +
-  geom_errorbar(aes(ymax=z-sd, ymin=z+sd)) +
-  xRot()
-ggsave(out("Scores_Example_Distribution_SD.pdf"), w=70,h=5, limitsize = FALSE)
+ggplot(pDT.median, aes(y=Gene, x=z)) + 
+  themeNF() +
+  geom_errorbarh(aes(xmax=z-sd, xmin=z+sd), size=0.5) +
+  geom_point(aes(color=hit), size=0.5) +
+  scale_color_manual(values=c("grey", "#e31a1c")) +
+  theme(axis.text.y = element_text(size=2)) +
+  theme(panel.grid = element_blank()) +
+  xlab("z-Scores")
+ggsaveNF(out("Scores_Example_Distribution_SD.pdf"), w=1,h=5, limitsize = FALSE)
 
 ggplot(pDT.median, aes(x=Gene, y=z)) + 
-  theme_bw(12) +
-  geom_point() +
-  geom_point(data=pDT.median[hit == TRUE], color="red") +
+  themeNF() +
+  geom_hline(yintercept = 0) +
+  geom_point(color="grey") +
+  geom_point(data=pDT.median[hit == TRUE], color="#e31a1c", shape=1) +
   theme(panel.grid = element_blank()) +
   theme(axis.text.x = element_blank()) +
   theme(axis.ticks.x = element_blank()) +
-  xlab("Target genes")
-ggsave(out("Scores_Example_Distribution_Simple.pdf"), w=5,h=4)
+  xlab("Target genes") +
+  ylab("z-Scores") +
+  expand_limits(x= c(-10, length(unique(pDT.median$Gene)) + 10))
+ggsaveNF(out("Scores_Example_Distribution_Simple.pdf"), w=1,h=1)
 
 
 # Result validation with replicates ----------------------------------------------
 pDT <- dcast.data.table(REPLICATES.VALUES, guide_i + sample_i + Population + Gene ~ Genotype, value.var = "value")
 pDT[, diff := Cas9 - WT]
-ggplot(pDT, aes(x=paste(Population, sample_i), shape=factor(sample_i), y=diff, fill=factor(guide_i))) + 
+ggplot(pDT, aes(x=factor(guide_i), y=diff, fill=factor(sample_i))) + 
   geom_bar(stat="identity", position="dodge") +
-  theme_bw(12) +
-  facet_wrap(~Gene, scales = "free") +
-  geom_vline(xintercept = 2.5) +
+  themeNF() +
+  facet_grid(Population~Gene, scales = "free", space = "free") +
+  #geom_vline(xintercept = 2.5) +
   geom_hline(yintercept = 0) +
-  xRot() 
-ggsave(out("Valiation_Replicates.pdf"), w=8,h=8)
+  scale_fill_brewer(palette = "Paired") +
+  #coord_flip() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
+  xlab("Guides") + ylab(TeX("Difference to WT (log_{2}FC)"))
+ggsaveNF(out("Valiation_Replicates.pdf"), w=2,h=1)
 
 
 # Networks in one dimension ---------------------------------------------------------------
@@ -263,16 +299,16 @@ pDT.stats <- merge(pDT.stats, ANN.genes[,c("GENE", "Complex_simple"),with=F], by
 
 # Plot
 ggplot(agDT[rn %in% pDT.stats$Gene], aes(x=Population, y=rn)) +
-  theme_bw(12) +
+  themeNF() +
   geom_point(aes(fill=log2FC), shape=21, color="white", size=5) +
-  facet_grid(Complex_simple ~ cleanComparisons2(Comparison.Group), scales = "free", space = "free") +
+  facet_grid(Complex_simple ~ cleanComparisons(Comparison.Group), scales = "free", space = "free") +
   geom_segment(data=pDT.stats, aes(xend=Population1, x=Population2, y=Gene, yend=Gene, color=z), arrow=arrow(type="closed", length = unit(0.3, "cm"))) +
   scale_fill_gradient2(name=TeX(r'($\\overset{\Delta_{Cas9-WT}}{(dots)}$)')) +
   #geom_point(aes(fill=log2FC), shape=21, color="white", size=2) +
   scale_color_gradient2(name=TeX(r'($\\overset{\Delta_{Populations}}{(arrows)}$)')) +
   theme(strip.text.y = element_text(angle=0)) + 
   xRot()
-ggsave(out("Aggregated_Edges.pdf"), w=8,h=18)
+ggsaveNF(out("Aggregated_Edges.pdf"), w=3,h=5, guide=TRUE)
 
 
 # Selected comparisons (David) --------------------------------------------
@@ -288,25 +324,28 @@ pDT.stats <- hierarch.ordering(pDT.stats, toOrder = "Gene", orderBy = "Compariso
 write.tsv(pDT.stats, out("SimpleHM.tsv"))
 
 # Plot
-ggplot(pDT.stats, aes(x=cleanComparisons(Comparison, ggtext = TRUE), y=Gene)) +
-  theme_bw(12) + 
-  geom_point(aes(color=z, size=percSig)) +
-  scale_color_gradient2(name=TeX(r'($\\overset{\Delta_{Cas9-WT}}$)')) + #, low="#e31a1c", high="#1f78b4") +
-  facet_grid(Complex_simple ~ ., scales = "free", space = "free") +
-  theme(strip.text.y = element_text(angle=0)) +
+pDT.stats[, z.cap := pmin(5, abs(z)) * sign(z)]
+ggplot(pDT.stats, aes(y=cleanComparisons(Comparison, ggtext = TRUE, reverse = TRUE), x=Gene)) +
+  themeNF() + 
+  geom_point(aes(fill=z.cap, size=percSig), shape=21, color="lightgrey") +
+  scale_fill_gradient2(name=TeX(r'($\\overset{\Delta_{Cas9-WT}}$)')) + #, low="#e31a1c", high="#1f78b4") +
+  facet_grid(. ~ Complex_simple, scales = "free", space = "free") +
+  theme(strip.text.x = element_text(angle=90)) +
+  scale_size_continuous(range = c(2,4)) +
   xRot() + 
   ylab("") +
-  theme(axis.text.x = element_markdown()) +
-  xlab("")
-ggsave(out("SimpleHM.pdf"), w=5,h=20)
+  theme(axis.text.y = element_markdown()) +
+  xlab("") +
+  theme(panel.spacing = unit(0.01, "cm"))
+ggsaveNF(out("SimpleHM.pdf"), w=4.5,h=1)
 
 
 # Vulcano plots -----------------------------------------------------------
-ggplot(RESULTS.wt[Comparison %in% COMPARISONS.healthy], aes(x=z, y=-log10(p))) + 
-  geom_hex() +
-  facet_grid(. ~ cleanComparisons(Comparison)) +
-  theme_bw(12)
-ggsave(out("Vulcano.pdf"), w=15,h=2)
+# ggplot(RESULTS.wt[Comparison %in% COMPARISONS.healthy], aes(x=z, y=-log10(p))) + 
+#   geom_hex() +
+#   facet_grid(. ~ cleanComparisons(Comparison)) +
+#   theme_bw(12)
+# ggsave(out("Vulcano.pdf"), w=15,h=2)
 
 
 # Comparison of two main populations --------------------------------------
@@ -319,29 +358,39 @@ pDT <- merge(pDT, pDT.sig, by="Gene", all.x=TRUE)
 pDT[, sig := V1]
 pDT[is.na(sig), sig := "None"]
 pDT$sig <- factor(pDT$sig, levels=c("Both", cleanComparisons(cx, order = FALSE), "None"))
+pDT[, colorCode := abs(get(cx[1])) + abs(get(cx[2])) > 5]
 
-xx <- 4
+# Turn around LSK vs CKIT
+if(cx[2] == "LSK.CKIT") cx[2] <- "CKIT.LSK"
+pDT[, CKIT.LSK := - LSK.CKIT]
 
+# Axis labels with axes
 formatArrows <- function(x){
   paste0(gsub("^(.+?)\\.(.+)$", "\\1", x),"  ", r'($\leftarrow$)',"  .  ",r'($\rightarrow$)',"  ", gsub("^(.+?)\\.(.+)$", "\\2", x))
 }
 
+pDT$Complex <- ANN.genes[match(pDT$Gene, GENE)]$Complex_simple
+pDT[is.na(Complex), Complex := "None"]
+
 dlim <- max(abs(c(pDT[[cx[1]]], pDT[[cx[2]]])))
-ggplot(pDT, aes_string(x=cx[1], y=cx[2], color="sig")) + 
-  #geom_rect(xmin=-xx, ymin=-xx, ymax=xx, xmax=xx, color=NA, fill="#eeeeee60") +
+ggplot(pDT, aes_string(x=cx[1], y=cx[2])) + 
+  themeNF() +
   geom_hline(yintercept = 0, color="lightgrey", alpha=0.5) +
   geom_vline(xintercept = 0, color="lightgrey", alpha=0.5) +
   # geom_hex() + 
   # scale_fill_gradient(low="lightgrey", high="lightblue") + 
-  geom_text_repel(data=pDT[sig != "None"], aes(label=Gene)) +
-  geom_point(alpha=0.5) +
-  scale_color_manual(name="Significant in", values=c("#e31a1c", "#1f78b4", "#6a3d9a", "grey")) +
-  #facet_grid(. ~ Genotype) +
-  theme_bw() +
+  geom_text_repel(data=pDT[colorCode == TRUE], aes(label=Gene, color=Complex)) +
+  geom_point(data=pDT[colorCode == FALSE & sig == "None"], alpha=0.5, color="black", shape=1) +
+  geom_point(data=pDT[colorCode == FALSE & sig != "None"], alpha=0.5, color="blue") +
+  geom_point(data=pDT[Gene == "NonTargetingControlGuideForMouse"], alpha=1, color="black") +
+  geom_point(data=pDT[colorCode == TRUE], aes(color=Complex, shape=Complex)) +
+  scale_shape_manual(values=rep(c(1,16,2,18,3,4), 20)) + 
+  #scale_color_brewer(palette="Paired") +
   xlab(TeX(formatArrows(cx[1]))) +
   ylab(TeX(formatArrows(cx[2]))) +
   ylim(-dlim, dlim) + xlim(-dlim,dlim)
-ggsave(out("Comparison_Scatter.pdf"), w=5.5,h=4.5)
+ggsaveNF(out("Comparison_Scatter.pdf"), w=2,h=2)
+
 
 
 # Plot networks ------------------------------------------------------------
