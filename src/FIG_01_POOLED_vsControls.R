@@ -197,23 +197,40 @@ scale.hexgradient <- scale_fill_gradientn(colours=c("#a6cee3", "#fdbf6f", "#ff7f
 
 tx <- "healthy"
 for(tx in names(SAMPLES)){
-  mx <- mAA[,unlist(SAMPLES[[tx]])]
-  mx <- mx[rowSums(mx) > 0,]
-  colnames(mx) <- gsub("Cas9_(DM\\.)?", "", colnames(mx))
-  cx <- colnames(mx)
-  mx2 <- apply(mx, 1, max) - mx + apply(mx, 1, min)
-  mx2 <- mx2^2
   
-  pDT <- data.table(data.frame(mx2), keep.rownames = TRUE)
+  pDT <- data.table()
+  gtx <- "WT"
+  for(gtx in c("Cas9", "WT")){
+    if(tx != "healthy" & gtx == "WT") next
+    sx <- unlist(SAMPLES[[tx]])
+    if(gtx == "WT") sx <- gsub("Cas9", "WT", sx)
+    mx <- mAA[,sx]
+    mx <- mx[rowSums(mx) > 0,]
+    colnames(mx) <- gsub("Cas9_(DM\\.)?", "", colnames(mx))
+    colnames(mx) <- gsub("WT_(DM\\.)?", "", colnames(mx))
+    cx <- colnames(mx)
+    mx2 <- apply(mx, 1, max) - mx + apply(mx, 1, min)
+    mx2 <- mx2^2
+    pDT <- rbind(pDT, data.table(data.frame(mx2, Genotype = gtx), keep.rownames = TRUE))
+  }
+
   ggDT <- RESULTS.AGG[Comparison %in% COMBINATIONS[[tx]]][hit == TRUE]
   gg.sig <- unique(ggDT$Gene)
   gg.label <- unique(ggDT[order(abs(Ratio.log2), decreasing=TRUE)]$Gene)[1:20]
-  ggtern(pDT, aes_string(x=cx[1], y=cx[3], z=cx[2])) + 
-    themeNF() +
+  pDT.wt <- pDT[Genotype == "WT"]
+  pDT <- pDT[Genotype == "Cas9"]
+  
+  p <- ggtern(pDT, aes_string(x=cx[1], y=cx[3], z=cx[2])) + 
+    themeNF()
+  
+  # if(nrow(pDT.wt) > 0) p <- p +
+  #   stat_density_tern(geom = "polygon", contour = TRUE, aes(fill = after_stat(level)), colour = NA, bins = 10) +
+  #   scale.hexgradient
+  
+  p <- p +
     geom_point(data=pDT[!rn %in% gg.sig], shape=1, color="black", alpha=0.5) +
-    geom_point(data=pDT[rn %in% gg.sig], color="#1f78b4", alpha=0.5) +
-    #geom_hex_tern() +
-    scale.hexgradient +
-    geom_text(data=pDT[rn %in% gg.label], aes(label=rn), color="#1f78b4", size=3)
+    geom_point(data=pDT[rn %in% gg.sig], color="#e31a1c", size=2, shape=4) + 
+    geom_text(data=pDT[rn %in% gg.label], aes(label=rn), color="black", size=3)
+  
   ggsaveNF(out("Ternary_", tx, ".pdf"),w=2,h=2, guides = TRUE)
 }

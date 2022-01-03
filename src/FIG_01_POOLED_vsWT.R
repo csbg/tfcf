@@ -43,20 +43,21 @@ FIGS.COMPARISONS <- copy(compDT)
 
 
 # Summarize results of differential analysis for each gene ----------------
-pDT.stats <- merge(RESULTS.wt[Genotype == "Cas9"], unique(FIGS.COMPARISONS[,c("Comparison", "Comparison.Group")]), by="Comparison", all.x=TRUE)
+pDT.stats <- merge(RESULTS.wt, unique(FIGS.COMPARISONS[,c("Comparison", "Comparison.Group")]), by="Comparison", all.x=TRUE)
 pDT.stats <- pDT.stats[, .(
   z=mean(z), 
   sig.up=length(unique(Guide[padj < 0.05 & z > 0])),
   sig.down=length(unique(Guide[padj < 0.05 & z < 0])),
   n=length(unique(Guide))
-  ), by=c("Gene", "Comparison",  "Comparison.Group", "Population1", "Population2")]
+  ), by=c("Gene", "Comparison",  "Comparison.Group", "Population1", "Population2", "Genotype")]
 pDT.stats[, sig := ifelse(z > 0, sig.up, sig.down)]
 pDT.stats[,percSig := sig/n*100]
 stopifnot(all(pDT.stats$percSig >= 0))
 stopifnot(all(pDT.stats$percSig <= 100))
 pDT.stats[, hit := percSig >= 50]
-pDT.stats[, complete.screen := all(COMPARISONS.healthy[1:4] %in% Comparison), by="Gene"]
-RESULTS.wt.agg.gene <- copy(pDT.stats)
+pDT.stats[, complete.screen := all(COMPARISONS.healthy[1:4] %in% Comparison), by=c("Gene", "Genotype")]
+RESULTS.wt.agg.gene <- pDT.stats[Genotype == "Cas9"]
+RESULTS.wt.agg.gene.wt <- pDT.stats[Genotype == "WT"]
 
 # Did this keep all genes?
 stopifnot(length(unique(RESULTS.wt.agg.gene$Gene)) == length(unique(RESULTS.wt$Gene)))
@@ -314,7 +315,7 @@ ggsaveNF(out("Aggregated_Edges.pdf"), w=3,h=5, guide=TRUE)
 # Selected comparisons (David) --------------------------------------------
 pDT.stats <- copy(RESULTS.wt.agg.gene)
 pDT.stats <- unique(pDT.stats[,-"Comparison.Group"])
-pDT.stats <- pDT.stats[Gene %in% pDT.stats[hit == TRUE][complete.screen == TRUE]$Gene]
+pDT.stats <- pDT.stats[Gene %in% c(pDT.stats[hit == TRUE][complete.screen == TRUE]$Gene, "Smarcd1")]
 pDT.stats <- pDT.stats[Comparison %in% COMPARISONS.healthy]
 pDT.stats <- merge(pDT.stats, ANN.genes, by.x="Gene", by.y="GENE", all.x=TRUE)
 # mx <- toMT(pDT.stats, row = "Gene", col = "Comparison", val = "z")
@@ -348,12 +349,15 @@ ggsaveNF(out("SimpleHM.pdf"), w=4.5,h=1)
 # ggsave(out("Vulcano.pdf"), w=15,h=2)
 
 
-# Comparison of two main populations --------------------------------------
+# Comparison of two main populations (2D - Scatterplot) --------------------------------------
+cap <- 5
 cx <- c("GMP.MEP", "LSK.CKIT")
-pDT <- RESULTS.wt.agg.gene[Comparison %in% cx]
-pDT.sig <- pDT[hit == TRUE][,paste(sort(unique(cleanComparisons(Comparison))), collapse = ","), by="Gene"]
+
+pDT <- rbind(RESULTS.wt.agg.gene.wt, RESULTS.wt.agg.gene)
+pDT <- pDT[Comparison %in% cx]
+pDT.sig <- pDT[Genotype == "Cas9"][hit == TRUE][,paste(sort(unique(cleanComparisons(Comparison))), collapse = ","), by="Gene"]
 pDT.sig[grepl(",", V1),V1 := "Both"]
-pDT <- dcast.data.table(pDT, Gene ~ Comparison, value.var = "z")
+pDT <- dcast.data.table(pDT, Gene + Genotype ~ Comparison, value.var = "z")
 pDT <- merge(pDT, pDT.sig, by="Gene", all.x=TRUE)
 pDT[, sig := V1]
 pDT[is.na(sig), sig := "None"]
@@ -363,6 +367,10 @@ pDT[, colorCode := abs(get(cx[1])) + abs(get(cx[2])) > 5]
 # Turn around LSK vs CKIT
 if(cx[2] == "LSK.CKIT") cx[2] <- "CKIT.LSK"
 pDT[, CKIT.LSK := - LSK.CKIT]
+pDT$dim1 <- pDT[[cx[1]]]
+pDT$dim2 <- pDT[[cx[2]]]
+pDT[,dim1 := pmin(cap, abs(dim1)) * sign(dim1)]
+pDT[,dim2 := pmin(cap, abs(dim2)) * sign(dim2)]
 
 # Axis labels with axes
 formatArrows <- function(x){
@@ -372,24 +380,27 @@ formatArrows <- function(x){
 pDT$Complex <- ANN.genes[match(pDT$Gene, GENE)]$Complex_simple
 pDT[is.na(Complex), Complex := "None"]
 
-dlim <- max(abs(c(pDT[[cx[1]]], pDT[[cx[2]]])))
-ggplot(pDT, aes_string(x=cx[1], y=cx[2])) + 
+write.tsv(pDT, out("Comparison_2D_Scatter.tsv"))
+
+scale.hexgradient <- scale_fill_gradientn(colours=c("white", "#a6cee3", "#fdbf6f"))  
+
+
+dlim <- cap
+ggplot(pDT, aes(x=dim1, y=dim2)) + 
   themeNF() +
   geom_hline(yintercept = 0, color="lightgrey", alpha=0.5) +
   geom_vline(xintercept = 0, color="lightgrey", alpha=0.5) +
-  # geom_hex() + 
-  # scale_fill_gradient(low="lightgrey", high="lightblue") + 
-  geom_text_repel(data=pDT[colorCode == TRUE], aes(label=Gene, color=Complex)) +
-  geom_point(data=pDT[colorCode == FALSE & sig == "None"], alpha=0.5, color="black", shape=1) +
-  geom_point(data=pDT[colorCode == FALSE & sig != "None"], alpha=0.5, color="blue") +
-  geom_point(data=pDT[Gene == "NonTargetingControlGuideForMouse"], alpha=1, color="black") +
-  geom_point(data=pDT[colorCode == TRUE], aes(color=Complex, shape=Complex)) +
-  scale_shape_manual(values=rep(c(1,16,2,18,3,4), 20)) + 
-  #scale_color_brewer(palette="Paired") +
+  stat_density_2d(geom = "polygon", contour = TRUE, aes(fill = after_stat(level)), colour = NA, bins = 10) +
+  #scale_fill_distiller(palette = "Blues", direction = 1) +
+  scale.hexgradient +
+  geom_point(data=pDT[Genotype == "Cas9" & sig == "None"], alpha=1, color="black", shape=1, size=1) +
+  geom_point(data=pDT[Genotype == "Cas9" & Gene == "NonTargetingControlGuideForMouse"], size=2, shape=4, color="#6a3d9a") +
+  geom_point(data=pDT[Genotype == "Cas9" & sig != "None"], alpha=1, color="#e31a1c", size=2, shape=4) +
+  geom_text_repel(data=pDT[Genotype == "Cas9" & colorCode == TRUE], aes(label=Gene, color=Complex)) +
   xlab(TeX(formatArrows(cx[1]))) +
   ylab(TeX(formatArrows(cx[2]))) +
   ylim(-dlim, dlim) + xlim(-dlim,dlim)
-ggsaveNF(out("Comparison_Scatter.pdf"), w=2,h=2)
+ggsaveNF(out("Comparison_2D_Scatter.pdf"), w=2,h=2)
 
 
 
