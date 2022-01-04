@@ -128,7 +128,7 @@ ggplot(pDT, aes(x="x", y=paste(Guide, Library), color=z, size=pmin(5, -log10(pad
   facet_wrap(~ Gene + Comparison, scales = "free") +
   #facet_grid(Gene ~ ., scales = "free", space = "free")
   xRot()
-ggsave(out("Check_inconsistencies.pdf"), w=10,h=29)
+ggsave(out("Check_inconsistencies.pdf"), w=20,h=29)
 
 inc <- RESULTS.wt[, var(z, na.rm = TRUE), by=c("Gene", "Comparison")][order(V1, decreasing = TRUE)][1:20]
 pDT <- merge(RESULTS.wt[Genotype == "Cas9"], inc, by=c("Gene", "Comparison"))
@@ -292,10 +292,8 @@ agDT <- hierarch.ordering(agDT, toOrder = "rn", orderBy = "id", value.var = "log
 agDT <- merge(agDT, ANN.genes, by.x="rn", by.y="GENE", all.x=TRUE)
 #agDT$rn <- factor(agDT$rn, levels=RESULTS.wt.mds$rn[hclust(dist(as.matrix(data.frame(RESULTS.wt.mds[,c("V1", "V2"), with=F]))))$order])
 
-# Only show genes where 50 % of guides are significant
+# Comparisons between popuulations
 pDT.stats <- RESULTS.wt.agg.gene[hit == TRUE][complete.screen == TRUE]
-
-# Annotate clusters
 pDT.stats <- merge(pDT.stats, ANN.genes[,c("GENE", "Complex_simple"),with=F], by.x="Gene", by.y="GENE", all.x=TRUE)
 
 # Plot
@@ -312,21 +310,19 @@ ggplot(agDT[rn %in% pDT.stats$Gene], aes(x=Population, y=rn)) +
 ggsaveNF(out("Aggregated_Edges.pdf"), w=3,h=5, guide=TRUE)
 
 
+
 # Selected comparisons (David) --------------------------------------------
 pDT.stats <- copy(RESULTS.wt.agg.gene)
 pDT.stats <- unique(pDT.stats[,-"Comparison.Group"])
 pDT.stats <- pDT.stats[Gene %in% c(pDT.stats[hit == TRUE][complete.screen == TRUE]$Gene, "Smarcd1")]
 pDT.stats <- pDT.stats[Comparison %in% COMPARISONS.healthy]
 pDT.stats <- merge(pDT.stats, ANN.genes, by.x="Gene", by.y="GENE", all.x=TRUE)
-# mx <- toMT(pDT.stats, row = "Gene", col = "Comparison", val = "z")
-# mx[is.na(mx)] <- 0
-# pDT.stats$Cluster <- cutree(hclust(dist(mx)), k = 7)[pDT.stats$Gene]
 pDT.stats <- hierarch.ordering(pDT.stats, toOrder = "Gene", orderBy = "Comparison", value.var="z")
 write.tsv(pDT.stats, out("SimpleHM.tsv"))
 
 # Plot
 pDT.stats[, z.cap := pmin(5, abs(z)) * sign(z)]
-ggplot(pDT.stats, aes(y=cleanComparisons(Comparison, ggtext = TRUE, reverse = TRUE), x=Gene)) +
+ggplot(pDT.stats[Genotype == "Cas9"], aes(y=cleanComparisons(Comparison, ggtext = TRUE, reverse = TRUE), x=Gene)) +
   themeNF() + 
   geom_point(aes(fill=z.cap, size=percSig), shape=21, color="lightgrey") +
   scale_fill_gradient2(name=TeX(r'($\\overset{\Delta_{Cas9-WT}}$)')) + #, low="#e31a1c", high="#1f78b4") +
@@ -340,6 +336,21 @@ ggplot(pDT.stats, aes(y=cleanComparisons(Comparison, ggtext = TRUE, reverse = TR
   theme(panel.spacing = unit(0.01, "cm"))
 ggsaveNF(out("SimpleHM.pdf"), w=4.5,h=1)
 
+cleanDev(); pdf(out("SimpleHM_Dendrogram.pdf"), w=15,h=5)
+plot(hclust(dist(toMT(pDT.stats[Genotype == "Cas9"], row = "Gene", col = "Comparison", val = "z"))))
+dev.off()
+
+require(umap)
+umObj <- toMT(pDT.stats[Genotype == "Cas9"], row = "Gene", col = "Comparison", val = "z")
+umObj[is.na(umObj)] <- 0
+umObj <- umap(umObj)
+umap <- data.table(umObj$layout, keep.rownames = TRUE)
+umap <- setNames(umap, c("Gene", "UMAP1", "UMAP2"))
+ggplot(umap, aes(x=UMAP1, y=UMAP2)) + 
+  themeNF() +
+  geom_point(color="#1f78b4") +
+  geom_text_repel(aes(label = Gene))
+ggsaveNF(out("SimpleHM_UMAP.pdf"), w=2,h=2, guides = TRUE)
 
 # Vulcano plots -----------------------------------------------------------
 # ggplot(RESULTS.wt[Comparison %in% COMPARISONS.healthy], aes(x=z, y=-log10(p))) + 
