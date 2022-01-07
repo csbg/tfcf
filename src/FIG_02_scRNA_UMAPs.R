@@ -1,5 +1,5 @@
 source("src/00_init.R")
-base.dir <- "FIG_02_scRNA_healthy/"
+base.dir <- "FIG_02_scRNA_UMAPs/"
 outBase <- dirout(base.dir)
 
 
@@ -31,13 +31,25 @@ marker.signatures <- lapply(ff, function(fx) as.matrix(read.csv(fx)))
 # Prep data
 markS <- lapply(unique(marker.signatures.use$DB), function(x) data.table(melt(data.table(marker.signatures[[x]], keep.rownames = TRUE), id.vars = "rn"), DB=x))
 markS <- merge(do.call(rbind, markS), marker.signatures.use, by.x=c("variable", "DB"), by.y=c("Celltype", "DB"))
+
 # Cell annotations
 annList <- lapply(names(inDir.funcs), function(inDir.current){
   ann <- fread(inDir.funcs[[inDir.current]]("Annotation.tsv"))
   ann[, perturbed := !(mixscape_class.global %in% c("NP", "NTC") | is.na(mixscape_class.global))]
+  ann[, gene := gsub("_.+", "", guide)]
   ann
   })
 names(annList) <- names(inDir.funcs)
+
+# Reannotated UMAPs
+umap.new <- list(
+  leukemia = fread(dirout_load("FULLINT_10_03_NewUMAPs")("NewUMAP_leukemia.tsv")),
+  in.vitro = fread(dirout_load("FULLINT_10_03_NewUMAPs")("NewUMAP_in.vitro.tsv"))
+)
+for(tissuex in names(umap.new)){
+  annList[[tissuex]] <- merge(annList[[tissuex]][,-c("UMAP1", "UMAP2")], umap.new[[tissuex]], by="rn")
+}
+
 
 
 # Marker signatures ---------------------------------------------------------
@@ -133,7 +145,7 @@ for(inDir.current in names(inDir.funcs)){
 # IN VIVO ---------------------------------------------------------
 inDir.current <- "in.vivo"
 out <- dirout(paste0(base.dir, "/", inDir.current))
-ann <- fread(inDir.funcs[[inDir.current]]("Annotation.tsv"))
+ann <- annList[[inDir.current]]
 
 
 # . UMAP of timepoint / markers ---------------------------------------------------------
@@ -158,7 +170,7 @@ pDT.ntc <- pDT.top[mixscape_class.global == "NTC"]
 pDT.final <- copy(pDT.ntc)
 pDT.final$plot <- "NTC"
 for(x in c("Wdr82", "Rcor1", "Ehmt1", "Men1", "Kmt2a")){
-  pDTg <- rbind(pDT.ntc, pDT.top[grepl(paste0("^", x), guide) & mixscape_class.global == "KO"])
+  pDTg <- rbind(pDT.ntc, pDT.top[grepl(paste0("^", x), guide) & perturbed == TRUE])
   pDTg$plot <- x
   pDT.final <- rbind(pDT.final, pDTg)
 }
@@ -177,7 +189,7 @@ pDT.ntc <- pDT.top[mixscape_class.global == "NTC"]
 pDT.final <- copy(pDT.ntc)
 pDT.final$plot <- "NTC"
 for(x in c("Brd9", "Gltscr1", "Phf10")){
-  pDTg <- rbind(pDT.ntc, pDT.top[grepl(paste0("^", x), guide) & mixscape_class.global == "KO"])
+  pDTg <- rbind(pDT.ntc, pDT.top[grepl(paste0("^", x), guide) & perturbed == TRUE])
   pDTg$plot <- x
   pDT.final <- rbind(pDT.final, pDTg)
 }
@@ -264,3 +276,23 @@ ggplot(pDT, aes(x=guide,y=perc,fill=Phase)) +
   theme(strip.text.x = element_text(angle=90)) +
   xRot()
 ggsave(out("CellCycle_Numbers.pdf"), w=10,h=5)
+
+
+# . Plot top guides ---------------------------------------------------------
+pDT.top <- copy(ann)
+pDT.ntc <- pDT.top[mixscape_class.global == "NTC"]
+pDT.final <- copy(pDT.ntc)
+pDT.final$plot <- "NTC"
+for(x in unique(pDT.top[perturbed == TRUE]$gene)){
+  pDTg <- rbind(pDT.ntc, pDT.top[grepl(paste0("^", x), guide) & mixscape_class.global == "KO"])
+  pDTg$plot <- x
+  pDT.final <- rbind(pDT.final, pDTg)
+}
+pDT.final$plot <- relevel(factor(pDT.final$plot),ref = "NTC")
+ggplot(pDT.final, aes(x=UMAP1, y=UMAP2)) + 
+  theme_bw() +
+  geom_hex(data=pDT.final[mixscape_class.global == "NTC"], bins=100, fill="lightgrey") +
+  geom_hex(data=pDT.final[mixscape_class.global != "NTC" | plot == "NTC"], bins=100) +
+  scale_fill_gradientn(colours=c("#6a3d9a", "#e31a1c", "#ff7f00", "#ffff99")) +
+  facet_wrap(~plot, ncol=3)
+ggsave(out("UMAP_Guides.pdf"), w=9,h=15)

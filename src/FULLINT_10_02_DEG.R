@@ -30,6 +30,8 @@ inDir.full <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")
 ff <- lapply(inDir.funcs, function(x) x("DEG_Results_all.tsv"))
 ff <- lapply(ff, fread)
 DE.RES <- do.call(rbind, ff)
+write.tsv(DE.RES[, -c("se", "convergence", "interaction", "estimate_raw"), with=F], out("DEG_Statistics.tsv"))
+
 DE.RES[, id := paste(guide, make.names(tissue))]
 FC.MT <- toMT(dt = DE.RES, col = "id", row = "gene_id", val = "estimate")
 write.csv(round(FC.MT, 3), out("FoldChanges.csv"))

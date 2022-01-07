@@ -12,6 +12,7 @@ cMT <- as.matrix(read.csv(inDir("DEG_Cor.csv"), row.names = 1))
 fcMT <- as.matrix(read.csv(inDir("FoldChanges.csv"), row.names=1))
 umapDT <- fread(inDir("RegulatoryMap_UMAP_","all",".tsv"))
 gseaDT <- fread(inDir("UMAP_GSEA.tsv"))
+deDT <- fread(inDir("DEG_Statistics.tsv"))
 
 umapDT.dim1 <- floor(max(abs(umapDT$UMAP1))) + 0.5
 umapDT.dim2 <- floor(max(abs(umapDT$UMAP2))) + 0.5
@@ -23,6 +24,12 @@ pUMAP.de <- merge(umapDT, setNames(melt(data.table(fcMT, keep.rownames = TRUE), 
 pUMAP.de[, guide := sub("\\..+$", "", term)]
 pUMAP.de[, tissue := sub("^.+?\\.", "", term)]
 pUMAP.de[, estimate_cap := pmin(umap.log2FC.cutoff, abs(estimate)) * sign(estimate)]
+
+
+GOI <- c("Kmt2a", "Kmt2d", "Men1", "Rbbp4", "Setdb1", "Smarcd2", "Wdr82")
+
+# SETUP ENDS HERE ---------------------------------------------------------
+
 
 
 
@@ -60,13 +67,20 @@ ggsaveNF(out("CorrelationHM_MDS.pdf"), w=2, h=2)
 
 
 
+
+# Vulcano plots -----------------------------------------------------------
+ggplot(deDT[guide %in% GOI], aes(x=estimate, y=pmin(30, -log10(p_value)))) + 
+  theme_bw(12) +
+  facet_grid(guide ~ tissue, scale="free_y") +
+  stat_binhex(aes(fill=log10(..count..)))
+ggsave(out("Vulcano.pdf"), w=12,h=16)
+
+
 # Plot values on UMAP -----------------------------------------------------
 # tn <- length(unique(pUMAP.de$guide))
-
 mean.umap <- function(x){mean(x, na.rm=TRUE)}
 
-gg <- c("Kmt2a", "Kmt2d", "Men1", "Rbbp4", "Setdb1", "Smarcd2", "Wdr82")
-ggplot(pUMAP.de[guide %in% gg], aes(x=UMAP1, y=UMAP2)) +
+ggplot(pUMAP.de[guide %in% GOI], aes(x=UMAP1, y=UMAP2)) +
   themeNF() + 
   stat_summary_hex(
     aes(z=estimate_cap),
