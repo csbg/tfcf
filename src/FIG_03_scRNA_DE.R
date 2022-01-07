@@ -27,6 +27,39 @@ pUMAP.de[, estimate_cap := pmin(umap.log2FC.cutoff, abs(estimate)) * sign(estima
 
 
 
+# Correlation heatmap ----------------------------------------------------
+pDT <- melt(data.table(cMT, keep.rownames = TRUE), id.vars = "rn")
+pDT[, guide1 := sub(" .+$", "", rn)]
+pDT[, tissue1 := sub("^.+? ", "", rn)]
+pDT[, guide2 := sub("\\..+$", "", variable)]
+pDT[, tissue2 := sub("^.+?\\.", "", variable)]
+
+pDT <- hierarch.ordering(pDT, toOrder = "guide1", orderBy = "variable", value.var = "value", aggregate = TRUE)
+pDT <- hierarch.ordering(pDT, toOrder = "guide2", orderBy = "rn", value.var = "value", aggregate = TRUE)
+
+ggplot(pDT, aes(x=guide1, y=guide2, fill=value)) + 
+  themeNF() +
+  geom_tile() + 
+  facet_grid(tissue2 ~ tissue1, space = "free", scales = "free") +
+  scale_fill_gradient2(low="blue", high="red") +
+  xlab("") + ylab("") +
+  xRot()
+ggsaveNF(out("CorrelationHM.pdf"), w=3,h=3)
+
+
+set.seed(1212)
+mds.res <- data.table(cmdscale(d=as.dist(1-cMT), k=2), keep.rownames=TRUE)
+mds.res <- cbind(mds.res, setNames(data.table(do.call(rbind, strsplit(mds.res$rn, " "))), c("gene", "tissue")))
+ggplot(mds.res, aes(x=V1, y=V2, color=tissue, label=gene)) + 
+  themeNF() +
+  geom_point(size=1) + 
+  ggrepel::geom_text_repel()+#color="black") + 
+  xlab("MDS dimension 1") +
+  ylab("MDS dimension 2")
+ggsaveNF(out("CorrelationHM_MDS.pdf"), w=2, h=2)
+
+
+
 # Plot values on UMAP -----------------------------------------------------
 # tn <- length(unique(pUMAP.de$guide))
 

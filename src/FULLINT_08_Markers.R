@@ -102,6 +102,12 @@ marker.lists[["IzzoEtAl"]] <- with(x, split(gene, cell))
 
 
 
+# Store markers -----------------------------------------------------------
+exportDT <- do.call(rbind, lapply(names(marker.lists), function(lnam){
+  data.table(melt(marker.lists[[lnam]]), db=lnam)
+}))
+write.tsv(exportDT, out("Markers.used.tsv"))
+
 # Calculate signatures ----------------------------------------------------
 dat <- SCRNA.TPXToLog(SCRNA.RawToTPX(counts(monocle.obj), scale.factor = 1e6))
 min.reads <- ncol(dat) * 0.001
