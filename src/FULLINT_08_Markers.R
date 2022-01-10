@@ -41,6 +41,25 @@ write.tsv(melt(markers), out("Markers_Larry.tsv"))
 marker.lists[["Larry"]] <- markers
 
 
+
+# Larry dataset - processed by David --------------------------------------
+marker.lists[["LarrySelf"]] <- with(fread("metadata/markers.LarryEtAl.david.tsv"), split(Gene, CellType))
+
+
+# This dataset (bulk) -----------------------------------------------------
+for(typex in c("Old", "New")){
+  infile <- if(typex == "Old")"metadata/INVITRO_BulkExpression.csv" else "metadata/INVITRO_BulkExpression_NEW.csv"
+  str(bulk.data <- as.matrix(read.table(infile, row.names = 1, sep=",", header = TRUE)))
+  bulk.data <- sapply(split(colnames(bulk.data), gsub(".\\d+$", "", colnames(bulk.data))), function(sx){rowMeans(bulk.data[,sx,drop=F])})
+  bulk.data <- bulk.data[apply(bulk.data, 1, max) > median(apply(bulk.data, 1, max)),]
+  bulk.data.fc <- sapply(colnames(bulk.data), function(cx){bulk.data[,cx] / apply(bulk.data[,colnames(bulk.data) != cx], 1, max)})
+  x <- lapply(apply(bulk.data.fc, 2, function(cx) which(cx > 3)), names)
+  x <- lapply(x, function(ii) gsub("\\.", "-", ii))
+  marker.lists[[paste0("Bulk", typex)]] <- x
+}
+
+
+
 # Enrichr ----------------------------------------------------------------
 enr.file <- out("EnrichR.RData")
 if(file.exists(enr.file)){

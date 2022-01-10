@@ -22,16 +22,8 @@ if(Sys.getenv("CODEBASE") == ""){
 
 # GFS points to where the data is stored and results will be written to
 if(dir.exists("/media/AGFORTELNY")){
-  print("Setting GFS")
-  
-  # Working without singularity on the CAME cluster
-  # if(dir.exists("/usr/local/AGFORTELNY/")) Sys.setenv(GFS="/usr/local/AGFORTELNY/")
-  
-  # Working in singularity on the CAME cluster
-  if(dir.exists("/media/AGFORTELNY")) Sys.setenv(GFS="/media/AGFORTELNY")
-  
-  # If it wasn't set by any of the above comments
-  if(Sys.getenv("GFS") == "") stop("Environmental variables missing")
+  print("Setting GFS within singularity to /media/AGFORTELNY")
+  Sys.setenv(GFS="/media/AGFORTELNY")
 }
 
 
@@ -41,6 +33,7 @@ if(dir.exists("/media/AGFORTELNY")){
 
 PATHS <- list()
 PATHS$LOCATIONS <- list()
+
 
 # Get paths from setup.sh
 ll <- readLines("setup.sh")
@@ -57,15 +50,13 @@ ll <- data.table(
   })
 )
 
+
 # define paths (from setup.sh or environmental variable if set)
 for(varx in ll$var){
-  pathx <- if(Sys.getenv(varx) == "") ll[var == varx]$path else Sys.getenv(ll[i]$var)
+  pathx <- if(Sys.getenv(varx) != "" & dir.exists(Sys.getenv(varx))) Sys.getenv(ll[var == varx]$var) else ll[var == varx]$path
   PATHS$LOCATIONS[[varx]] <- pathx
 }
-PATHS$LOCATIONS
-sapply(PATHS$LOCATIONS, dir.exists)
 stopifnot(all(sapply(PATHS$LOCATIONS, dir.exists)))
-
 
 
 # functions ----------------------------------------------------------------
@@ -111,7 +102,7 @@ getMainDatasets <- function(){
   ff <- ff[!grepl(".log$", ff)]
   ff <- ff[!grepl("_onlyRNA", ff)]
   ff <- ff[!grepl("RNAonly", ff)]
-  ff <- ff[grepl("^ECCITE", ff) | grepl("^CITESEQ", ff)]
+  #ff <- ff[grepl("^ECCITE", ff) | grepl("^CITESEQ", ff)]
   ff <- ff[!grepl("ECCITE4_INT", ff)]
   ff <- ff[!grepl("ECCITE1_", ff)]
   ff <- ff[!grepl("LINES", ff)]
@@ -218,3 +209,7 @@ COLORS.CELLTYPES.scRNA <- setNames(COLORS.CELLTYPES.scRNA$Color, COLORS.CELLTYPE
 COLORS.CELLTYPES.scRNA["NA"] <- "lightgrey"
 
 scale_fill_hexbin <- function(...){scale_fill_gradientn(colours=c("#a6cee3", "#fdbf6f", "#ff7f00", "#e31a1c"), ...)}
+
+
+
+message("-------------------> Project initiation completed")

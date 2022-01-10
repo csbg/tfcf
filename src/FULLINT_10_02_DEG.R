@@ -31,6 +31,7 @@ ff <- lapply(inDir.funcs, function(x) x("DEG_Results_all.tsv"))
 ff <- lapply(ff, fread)
 DE.RES <- do.call(rbind, ff)
 write.tsv(DE.RES[, -c("se", "convergence", "interaction", "estimate_raw"), with=F], out("DEG_Statistics.tsv"))
+write.tsv(DE.RES[, -c("se", "convergence", "interaction", "estimate_raw"), with=F][q_value < 0.05], out("DEG_Statistics_significant.tsv"))
 
 DE.RES[, id := paste(guide, make.names(tissue))]
 FC.MT <- toMT(dt = DE.RES, col = "id", row = "gene_id", val = "estimate")
