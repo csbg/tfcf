@@ -115,7 +115,7 @@ getMainDatasets <- function(){
 
 # Comparisons (POOLED) -------------------------------------------------------------
 COMPARISONS <- list(
-  LSK.CKIT=c("LSKd9", "cKit"),
+  CKIT.LSK=c("cKit", "LSKd9"),
   GMP.LSK=c("GMP", "LSKd7"),
   MEP.LSK=c("MEP", "LSKd7"),
   GMP.MEP=c("GMP", "MEP"),
@@ -132,7 +132,7 @@ COMPARISONS <- list(
 )
 
 COMPARISONS.healthy <- c(
-  "LSK.CKIT",
+  "CKIT.LSK",
   "GMP.LSK",
   "MEP.LSK",
   "GMP.MEP",
@@ -141,10 +141,10 @@ COMPARISONS.healthy <- c(
 )
 
 
-cleanComparisons <- function(x, order=TRUE, ggtext=FALSE, dm="clean", reverse=FALSE){
+cleanComparisons <- function(x, order=TRUE, ggtext=FALSE, dm="clean", reverse=FALSE, colors=c("832424", "3A3A98")){
   transformPretty <- function(i, gg=ggtext){
     if(gg){
-      i <- gsub("^(.+)\\.(.+)$", "<strong style='color:#832424;'>\\1</strong> vs <strong style='color:#3A3A98;'>\\2</strong>", i)
+      i <- gsub("^(.+)\\.(.+)$", paste0("<strong style='color:#",colors[1],";'>\\1</strong> vs <strong style='color:#",colors[2],";'>\\2</strong>"), i)
     } else {
       i <- gsub("\\.", " vs ", i)
     }

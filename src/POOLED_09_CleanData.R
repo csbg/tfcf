@@ -31,7 +31,6 @@ qc$cor.rep
 qc$cor.pop
 qc$cor.all
 
-?Gini
 qc$Gini <- apply(m, 2, Gini, corr=T)
 
 pDT <- melt.data.table(qc, measure.vars = c("Gini", "reads", grep("^cor.rep", colnames(qc), value=TRUE)), id.vars=c("sample", "Genotype", "Population", "Library", "System"))

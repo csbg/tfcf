@@ -76,6 +76,24 @@ ggplot(deDT[guide %in% GOI], aes(x=estimate, y=pmin(30, -log10(p_value)))) +
 ggsave(out("Vulcano.pdf"), w=12,h=16)
 
 
+
+
+# Regulatory Map UMAP -----------------------------------------------------
+ggplot(umapDT, aes(x=UMAP1, y=UMAP2, color=factor(Cluster))) + 
+  geom_point(shape=1) + 
+  theme_bw(12) +
+  geom_label(data=umapDT[, .(UMAP1=median(UMAP1), UMAP2=median(UMAP2)), by="Cluster"], aes(label=Cluster))
+ggsave(out("UMAP","_Clusters.pdf"), w=6,h=5)
+
+#HEX
+ggplot(umapDT, aes(x=UMAP1, y=UMAP2)) + 
+  geom_hex(bins=100) +
+  theme_bw(12) +
+  geom_label(data=umapDT[, .(UMAP1=median(UMAP1), UMAP2=median(UMAP2)), by="Cluster"], aes(label=Cluster))
+ggsave(out("UMAP","_Clusters_hex.pdf"), w=6,h=5)
+
+
+
 # Plot values on UMAP -----------------------------------------------------
 # tn <- length(unique(pUMAP.de$guide))
 mean.umap <- function(x){mean(x, na.rm=TRUE)}

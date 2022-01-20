@@ -18,7 +18,7 @@ stopifnot(all(ann$sample == colnames(m)))
 inDir <- dirout_load("POOLED_10_03_IndividualAnalysis_NormFactors_Controls")
 list.files(inDir(""), pattern=".tsv")
 RESULTS.wt <- fread(inDir("Results_Pvalues.tsv"))[Library != "A"][Comparison %in% COMPARISONS.healthy]
-RESULTS.wt.agg <- fread(inDir("Aggregated.tsv"))
+RESULTS.wt.agg <- fread(inDir("ComparisonToWT.tsv"))
 
 
 # Gene annotations --------------------------------------------------------
@@ -54,7 +54,7 @@ pDT.stats[, sig := ifelse(z > 0, sig.up, sig.down)]
 pDT.stats[,percSig := sig/n*100]
 stopifnot(all(pDT.stats$percSig >= 0))
 stopifnot(all(pDT.stats$percSig <= 100))
-pDT.stats[, hit := percSig >= 50]
+pDT.stats[, hit := percSig >= 50 & n > 1]
 pDT.stats[, complete.screen := all(COMPARISONS.healthy[1:4] %in% Comparison), by=c("Gene", "Genotype")]
 RESULTS.wt.agg.gene <- pDT.stats[Genotype == "Cas9"]
 RESULTS.wt.agg.gene.wt <- pDT.stats[Genotype == "WT"]
@@ -182,7 +182,7 @@ ggsaveNF(out("Methods_comparison_WTvsREP_log2Ratio.pdf"), w=2,h=2, guides = TRUE
 
 
 # Number of genes ---------------------------------------------------------
-pDT <- RESULTS.wt[Genotype != "WT" & !grepl("NonT", Gene),length(unique(Guide)), by=c("Gene", "Comparison")]
+pDT <- RESULTS.wt[Genotype != "WT" & !grepl("NTC", Gene),length(unique(Guide)), by=c("Gene", "Comparison")]
 pDT[,Comparison := cleanComparisons(Comparison)]
 ggplot(pDT, aes(x=Comparison, fill=factor(V1))) + 
   themeNF() +
@@ -193,7 +193,7 @@ ggsaveNF(out("Numbers.pdf"), w=0.8, h=1)
 
 
 # Example calculation and scores -----------------------------------------------------
-ggplot(SCORES.EXAMPLE, aes(x=Score)) + 
+ggplot(SCORES.EXAMPLE[!(Genotype == "Cas9" & grepl("^NTC", Gene))], aes(x=Score)) + 
   geom_density(data=data.table(Score=rnorm(10000, mean=SCORES.EXAMPLE.bg$mean, sd=SCORES.EXAMPLE.bg$sd)), fill="#b2df8a", color=NA) +
   scale_color_manual(values=COLOR.Genotypes) +
   geom_density(aes(color=Genotype)) +
@@ -207,7 +207,7 @@ str(gg <- unique(RESULTS.wt[Comparison == SCORES.EXAMPLE.comp][Library == SCORES
 pDT <- SCORES.EXAMPLE
 pDT[,Gene := gsub("_.+$", "", Guide)]
 pDT[, label := ifelse(Genotype == "WT", "WT", Gene)]
-pDT[grepl("NonT", label), label := "NTC"]
+pDT[grepl("^NTC", Gene), label := "NTC"]
 pDT$label <- factor(pDT$label, levels = unique(c("WT", pDT[,median(Score), by=c("label")][order(V1)]$label)))
 pDT <- pDT[Gene %in% gg | grepl("^NTC", label) | Genotype == "WT"]
 ggplot(pDT, aes(x=label, y=Score, color=grepl("^NTC", label))) + 
@@ -224,7 +224,7 @@ ggsaveNF(out("Scores_Example_Scores.pdf"), w=1.5)
 
 # Distribution
 compx <- "MYE.UND"
-pDT <- RESULTS.wt[Genotype == "Cas9"][Comparison == compx][!grepl("NonT", Gene)]
+pDT <- RESULTS.wt[Genotype == "Cas9"][Comparison == compx][!grepl("NTC", Gene)]
 pDT.median <- pDT[,.(z=mean(z), sd=sd(z), n=.N), by=c("Gene")]
 pDT.median[, se := sd/sqrt(n)]
 pDT.median[Gene %in% RESULTS.wt.agg.gene[Comparison == compx][hit == TRUE]$Gene, hit := TRUE]
@@ -285,29 +285,29 @@ compDT2 <- unique(melt(FIGS.COMPARISONS[,-"Comparison",with=F], id.vars = "Compa
 # Aggregated data annotated with comparisons
 agDT <- copy(RESULTS.wt.agg)
 mainBranchOrdering <- c("Und", "MEP", "LSKd7", "GMP", "Mye")
-agDT$Population <- factor(agDT$variable, levels=c(mainBranchOrdering, setdiff(agDT$variable, mainBranchOrdering)))
-agDT <- merge(agDT, compDT2, by.y="value", by.x="variable", allow.cartesian=TRUE)
-agDT[,id := paste(rn, Population,Comparison.Group)]
-agDT <- hierarch.ordering(agDT, toOrder = "rn", orderBy = "id", value.var = "log2FC")
-agDT <- merge(agDT, ANN.genes, by.x="rn", by.y="GENE", all.x=TRUE)
+agDT$Population <- factor(agDT$Population, levels=c(mainBranchOrdering, setdiff(agDT$Population, mainBranchOrdering)))
+agDT <- merge(agDT, compDT2, by.x="Population", by.y="value", allow.cartesian=TRUE)
+agDT[,id := paste(Gene, Population,Comparison.Group)]
+agDT <- hierarch.ordering(agDT, toOrder = "Gene", orderBy = "id", value.var = "log2FC")
+agDT <- merge(agDT, ANN.genes, by.x="Gene", by.y="GENE", all.x=TRUE)
 #agDT$rn <- factor(agDT$rn, levels=RESULTS.wt.mds$rn[hclust(dist(as.matrix(data.frame(RESULTS.wt.mds[,c("V1", "V2"), with=F]))))$order])
 
 # Comparisons between popuulations
-pDT.stats <- RESULTS.wt.agg.gene[hit == TRUE][complete.screen == TRUE]
+pDT.stats <- RESULTS.wt.agg.gene[hit == TRUE][complete.screen == TRUE][!grepl("^NTC", Gene)]
 pDT.stats <- merge(pDT.stats, ANN.genes[,c("GENE", "Complex_simple"),with=F], by.x="Gene", by.y="GENE", all.x=TRUE)
 
 # Plot
-ggplot(agDT[rn %in% pDT.stats$Gene], aes(x=Population, y=rn)) +
+ggplot(agDT[Gene %in% pDT.stats$Gene], aes(x=Population, y=Gene)) +
   themeNF() +
-  geom_point(aes(fill=log2FC), shape=21, color="white", size=5) +
+  geom_point(aes(fill=pmin(2, abs(log2FC)) * sign(log2FC)), shape=21, color="white", size=5) +
   facet_grid(Complex_simple ~ cleanComparisons(Comparison.Group), scales = "free", space = "free") +
-  geom_segment(data=pDT.stats, aes(xend=Population1, x=Population2, y=Gene, yend=Gene, color=z), arrow=arrow(type="closed", length = unit(0.3, "cm"))) +
+  geom_segment(data=pDT.stats, aes(xend=Population1, x=Population2, y=Gene, yend=Gene, color=pmin(5, abs(z)) * sign(z)), arrow=arrow(type="closed", length = unit(0.3, "cm"))) +
   scale_fill_gradient2(name=TeX(r'($\\overset{\Delta_{Cas9-WT}}{(dots)}$)')) +
   #geom_point(aes(fill=log2FC), shape=21, color="white", size=2) +
   scale_color_gradient2(name=TeX(r'($\\overset{\Delta_{Populations}}{(arrows)}$)')) +
-  theme(strip.text.y = element_text(angle=0)) + 
+  theme(strip.text.y = element_text(angle=0)) +
   xRot()
-ggsaveNF(out("Aggregated_Edges.pdf"), w=3,h=5, guide=TRUE)
+ggsaveNF(out("Aggregated_Edges.pdf"), w=3,h=6, guide=TRUE)
 
 
 
@@ -322,19 +322,22 @@ write.tsv(pDT.stats, out("SimpleHM.tsv"))
 
 # Plot
 pDT.stats[, z.cap := pmin(5, abs(z)) * sign(z)]
-ggplot(pDT.stats[Genotype == "Cas9"], aes(y=cleanComparisons(Comparison, ggtext = TRUE, reverse = TRUE), x=Gene)) +
-  themeNF() + 
-  geom_point(aes(fill=z.cap, size=percSig), shape=21, color="lightgrey") +
-  scale_fill_gradient2(name=TeX(r'($\\overset{\Delta_{Cas9-WT}}$)')) + #, low="#e31a1c", high="#1f78b4") +
-  facet_grid(. ~ Complex_simple, scales = "free", space = "free") +
-  theme(strip.text.x = element_text(angle=90)) +
-  scale_size_continuous(range = c(2,4)) +
-  xRot() + 
-  ylab("") +
-  theme(axis.text.y = element_markdown()) +
-  xlab("") +
-  theme(panel.spacing = unit(0.01, "cm"))
-ggsaveNF(out("SimpleHM.pdf"), w=4.5,h=1)
+p <- ggplot(pDT.stats[Genotype == "Cas9"], aes(
+  y=cleanComparisons(Comparison, ggtext = TRUE, reverse = TRUE, colors=c("e31a1c", "1f78b4")), 
+  x=Gene)
+  ) +
+    themeNF() + 
+    geom_point(aes(fill=z.cap, size=percSig), shape=21, color="lightgrey") +
+    facet_grid(. ~ Complex_simple, scales = "free", space = "free") +
+    theme(strip.text.x = element_text(angle=90)) +
+    scale_size_continuous(range = c(2,4)) +
+    xRot() + 
+    ylab("") +
+    theme(axis.text.y = element_markdown()) +
+    xlab("") +
+    theme(panel.spacing = unit(0.01, "cm"))
+ggsaveNF(out("SimpleHM_RedBlue.pdf"), w=4.5,h=1, plot = p + scale_fill_gradient2(name=TeX(r'($\\overset{\Delta_{Cas9-WT}}$)'), low="#e31a1c", high="#1f78b4"))
+ggsaveNF(out("SimpleHM_GreenPurple.pdf"), w=4.5,h=1, plot = p + scale_fill_gradient2(name=TeX(r'($\\overset{\Delta_{Cas9-WT}}$)'), low="#33a02c", high="#6a3d9a"))
 
 cleanDev(); pdf(out("SimpleHM_Dendrogram.pdf"), w=15,h=5)
 plot(hclust(dist(toMT(pDT.stats[Genotype == "Cas9"], row = "Gene", col = "Comparison", val = "z"))))
@@ -362,8 +365,9 @@ ggsaveNF(out("SimpleHM_UMAP.pdf"), w=2,h=2, guides = TRUE)
 
 # Comparison of two main populations (2D - Scatterplot) --------------------------------------
 cap <- 5
-cx <- c("GMP.MEP", "LSK.CKIT")
+cx <- c("GMP.MEP", "CKIT.LSK")
 
+# Prepare data
 pDT <- rbind(RESULTS.wt.agg.gene.wt, RESULTS.wt.agg.gene)
 pDT <- pDT[Comparison %in% cx]
 pDT.sig <- pDT[Genotype == "Cas9"][hit == TRUE][,paste(sort(unique(cleanComparisons(Comparison))), collapse = ","), by="Gene"]
@@ -375,9 +379,7 @@ pDT[is.na(sig), sig := "None"]
 pDT$sig <- factor(pDT$sig, levels=c("Both", cleanComparisons(cx, order = FALSE), "None"))
 pDT[, colorCode := abs(get(cx[1])) + abs(get(cx[2])) > 5]
 
-# Turn around LSK vs CKIT
-if(cx[2] == "LSK.CKIT") cx[2] <- "CKIT.LSK"
-pDT[, CKIT.LSK := - LSK.CKIT]
+# Define dimensions
 pDT$dim1 <- pDT[[cx[1]]]
 pDT$dim2 <- pDT[[cx[2]]]
 pDT[,dim1 := pmin(cap, abs(dim1)) * sign(dim1)]
@@ -388,13 +390,11 @@ formatArrows <- function(x){
   paste0(gsub("^(.+?)\\.(.+)$", "\\1", x),"  ", r'($\leftarrow$)',"  .  ",r'($\rightarrow$)',"  ", gsub("^(.+?)\\.(.+)$", "\\2", x))
 }
 
+# Define complexes
 pDT$Complex <- ANN.genes[match(pDT$Gene, GENE)]$Complex_simple
 pDT[is.na(Complex), Complex := "None"]
 
 write.tsv(pDT, out("Comparison_2D_Scatter.tsv"))
-
-scale.hexgradient <- scale_fill_gradientn(colours=c("white", "#a6cee3", "#fdbf6f"))  
-
 
 dlim <- cap
 ggplot(pDT, aes(x=dim1, y=dim2)) + 
@@ -403,11 +403,11 @@ ggplot(pDT, aes(x=dim1, y=dim2)) +
   geom_vline(xintercept = 0, color="lightgrey", alpha=0.5) +
   stat_density_2d(geom = "polygon", contour = TRUE, aes(fill = after_stat(level)), colour = NA, bins = 10) +
   #scale_fill_distiller(palette = "Blues", direction = 1) +
-  scale.hexgradient +
-  geom_point(data=pDT[Genotype == "Cas9" & sig == "None"], alpha=1, color="black", shape=1, size=1) +
-  geom_point(data=pDT[Genotype == "Cas9" & Gene == "NonTargetingControlGuideForMouse"], size=2, shape=4, color="#6a3d9a") +
-  geom_point(data=pDT[Genotype == "Cas9" & sig != "None"], alpha=1, color="#e31a1c", size=2, shape=4) +
-  geom_text_repel(data=pDT[Genotype == "Cas9" & colorCode == TRUE], aes(label=Gene, color=Complex)) +
+  scale_fill_gradientn(colours=c("white", "#a6cee3", "#fdbf6f")) +
+  geom_point(data=pDT[Genotype == "Cas9" & grepl("NTC", Gene)], size=1, shape=3, color="#1f78b4") +
+  geom_point(data=pDT[Genotype == "Cas9" & !grepl("NTC", Gene) & sig != "None"], alpha=1, color="#e31a1c", size=2, shape=4) +
+  geom_point(data=pDT[Genotype == "Cas9" & !grepl("NTC", Gene) & sig == "None"], alpha=0.5, color="#000000", size=1, shape=16) +
+  geom_text_repel(data=pDT[Genotype == "Cas9" & !grepl("NTC", Gene) & colorCode == TRUE], aes(label=Gene)) +
   xlab(TeX(formatArrows(cx[1]))) +
   ylab(TeX(formatArrows(cx[2]))) +
   ylim(-dlim, dlim) + xlim(-dlim,dlim)
@@ -421,22 +421,22 @@ genex <- "Kmt2d"
 for(genex in unique(RESULTS.wt.agg.gene[hit == TRUE][complete.screen == TRUE]$Gene)){
   COLORS.graph <- c("#fb9a99", "lightgrey", "#a6cee3")
   
-  agx <- RESULTS.wt.agg[rn == genex]
-  agx <- unique(agx[,c("variable", "log2FC"), with=F])
+  agx <- RESULTS.wt.agg[Gene == genex]
+  agx <- unique(agx[,c("Population", "log2FC"), with=F])
   
   statx <- RESULTS.wt.agg.gene[Gene == genex]
   
   el <- data.table(do.call(rbind, COMPARISONS), keep.rownames = TRUE)
   #statx <- statx[match(row.names(el), Comparison)][!is.na(Gene)]
   statx <- merge(statx, el, by.x="Comparison", by.y="rn")
-  statx[Comparison == "LSK.CKIT", V1 := "LSKd7"]
-  statx[Comparison == "LSK.CKIT", V2 := "LSKd7"]
+  statx[Comparison == "CKIT.LSK", V1 := "LSKd7"]
+  statx[Comparison == "CKIT.LSK", V2 := "LSKd7"]
   # statx[Comparison == "GMPcd11.DN", V2 := "MEP"]
   # statx[Comparison == "GMPcd11.DN", V1 := "Und"]
   # statx  <- statx[Comparison != "UND.MEP"]
   
   g <- graph.edgelist(as.matrix(statx[,c("V2", "V1")]))
-  V(g)$log2FC <- agx[match(V(g)$name, variable),]$log2FC
+  V(g)$log2FC <- agx[match(V(g)$name, Population),]$log2FC
   E(g)$z <- statx$z
   E(g)$up <- statx$sig.up
   E(g)$dn <- statx$sig.down

@@ -232,11 +232,21 @@ ggsave(out("Displasia_Numbers_bars.pdf"), w=5,h=3)
 inDir.current <- "leukemia"
 out <- dirout(paste0(base.dir, "/", inDir.current))
 ann <- annList[[inDir.current]]
+abs <- fread(inDir.funcs[[inDir.current]]("Antibodies.tsv"))
+abs <- merge(abs[,-c("UMAP1", "UMAP2")], umap.new[[inDir.current]], by="rn")
+
+
+# . Antibodies on UMAP ----------------------------------------------------
+ggplot(abs, aes(x=UMAP1, y=UMAP2)) +
+  stat_summary_hex(bins = 100, aes(z=pmin(abs(Signal.norm), 2) * sign(Signal.norm)),fun=mean) +
+  scale_fill_gradient2(low="blue", high="red") +
+  facet_wrap(~Antibody) +
+  theme_bw(12)
+ggsave(out("Antibodies_UMAP.pdf"), w=12+2, h=9+1)
 
 # . Combine signatures with Antibodies --------------------------------------
 pDT <- merge(ann[perturbed == FALSE][,c("rn", "UMAP1", "UMAP2"),with=F], markS, by="rn")
 pDT[, value.norm := scale(value), by="FinalName"]
-abs <- fread(inDir.funcs[[inDir.current]]("Antibodies.tsv"))
 absDT <- merge(
   pDT[,c("rn", "sig", "value.norm"), with=F],
   abs[,c("rn", "Antibody", "Signal.norm"), with=F],

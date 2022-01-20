@@ -203,6 +203,8 @@ dev.off()
 # pheatmap(m, cluster_rows = F, cluster_cols = F, fontsize_row = 2)
 # dev.off()
 
+
+# Check different guides --------------------------------------------------
 rn <- row.names(m)
 rn[grepl("^NonTargetingControlGuideForMouse_\\d+$", rn)] <- paste0(rn[grepl("^NonTargetingControlGuideForMouse_\\d+$", rn)], "_X_0")
 rn <- gsub("NonTargetingControlGuideForMouse_(\\d+)_(.+?)_\\d+$", "NTC_\\2", rn)
@@ -215,6 +217,8 @@ unique(gsub("^.+?_(.+?)_.+$", "\\1", rn))
 # pheatmap(grp.cnts)
 # dev.off()
 
+
+# Finalize and export data ------------------------------------------------
 ann$sample <- make.names(ann$sample)
 colnames(m) <- make.names(colnames(m))
 stopifnot(all(ann$sample == colnames(m)))
@@ -225,5 +229,10 @@ ann[Date2 == "Feb2021" & Library == "R2", Date := "10022021"]
 # Clean up system for DM
 ann[System == "DM" & grepl("^CFSE", Population), System := "DM.CFSE"]
 ann[System == "DM" & grepl("^CD34", Population), System := "DM.CD34"]
+
+# Rename Non-targeting controls
+row.names(m) <- gsub("NonTargetingControlGuideForMouse_", "NTC",  row.names(m))
+
+# Export data
 write.table(m[,ann$sample], quote = F, sep = ",", row.names = TRUE, col.names = TRUE, file = out("Matrix.csv"))
 write.tsv(ann, out("Annotation.tsv"))
