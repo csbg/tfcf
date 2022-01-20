@@ -11,16 +11,13 @@ require(ggtext)
 
 # Load data ---------------------------------------------------------------
 
-# Individual sampels and guides
-m <- as.matrix(read.csv(PATHS$POOLED$DATA$matrix))
-ann <- fread(PATHS$POOLED$DATA$annotation)
-
 # Samples of libraries aggregated 
 mA <- as.matrix(read.csv(PATHS$POOLED$DATA$matrix.aggregated))
 annA <- fread(PATHS$POOLED$DATA$annotation.aggregated)
-# Aggregate by guide
-mA <- t(sapply(split(row.names(mA) , gsub("_.+$", "", row.names(mA))), function(gx){
-  colSums(mA[gx,], na.rm = TRUE)
+
+# Aggregate by gene
+mA <- t(sapply(split(row.names(mA), gsub("_.+$", "", row.names(mA))), function(gx){
+  colSums(mA[gx,,drop=F], na.rm = TRUE)
 }))
 # cpm transformed
 mA.cpm <- t(t(mA) / colSums(mA, na.rm = TRUE)) * 1e6
@@ -199,7 +196,7 @@ tx <- "healthy"
 for(tx in names(SAMPLES)){
   
   pDT <- data.table()
-  gtx <- "WT"
+  gtx <- "Cas9"
   for(gtx in c("Cas9", "WT")){
     if(tx != "healthy" & gtx == "WT") next
     sx <- unlist(SAMPLES[[tx]])
@@ -218,8 +215,9 @@ for(tx in names(SAMPLES)){
   gg.sig <- unique(ggDT$Gene)
   gg.label <- unique(ggDT[order(abs(Ratio.log2), decreasing=TRUE)]$Gene)[1:20]
   pDT.wt <- pDT[Genotype == "WT"]
-  pDT <- pDT[Genotype == "Cas9"]
+  pDT.cas9 <- pDT[Genotype == "Cas9"]
   
+  pDT <- pDT.cas9[!grepl("NTC", rn)]
   p <- ggtern(pDT, aes_string(x=cx[1], y=cx[3], z=cx[2])) + 
     themeNF()
   
@@ -230,6 +228,7 @@ for(tx in names(SAMPLES)){
   p <- p +
     geom_point(data=pDT[!rn %in% gg.sig], shape=1, color="black", alpha=0.5) +
     geom_point(data=pDT[rn %in% gg.sig], color="#e31a1c", size=2, shape=4) + 
+    geom_point(data=pDT.cas9[grepl("NTC", rn)], shape=3, color="blue", alpha=0.5) +
     geom_text(data=pDT[rn %in% gg.label], aes(label=rn), color="black", size=3)
   
   ggsaveNF(out("Ternary_", tx, ".pdf"),w=2,h=2, guides = TRUE)
