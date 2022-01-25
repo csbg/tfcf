@@ -119,7 +119,6 @@ neb.file <- out("DEG_Results_nebula.RData")
 
 
 
-
 # Output annotation -------------------------------------------------------
 write.tsv(ann, out("Annotation.tsv"))
 
@@ -147,31 +146,6 @@ for(qcm in c("percent.mt", "nFeature_RNA", "nCount_RNA")){
   ggsave(out("QC_", qcm, "_UMAP.pdf"), w=5,h=4)
   }
 ann$measure <- NULL
-
-
-# TRANSFER / PREDICT CLUSTERS IN FULL DATASET ----------------------------------------
-# transf.file <- out("TransferClusters.tsv")
-# if(baseDir.add == "in vivo"){
-#   if(file.exists(transf.file)){
-#     
-#   } else {
-#     print("Transferring cell clusters to full datatset")
-#     fullDS <- function(){load(PATHS$FULLINT$Monocle); return(monocle.obj)}
-#     monocle.full <- fullDS()
-#     
-#     ref=SummarizedExperiment(
-#       assays = SimpleList(logcounts=SCRNA.TPXToLog(SCRNA.RawToTPX(counts(monocle.obj), 1e6))), 
-#       colData=DataFrame(label.main=ann$Clusters, row.names = ann$rn))
-#     
-#     res <- SingleR(
-#       test = counts(monocle.full),
-#       ref = ref,
-#       labels = ann$Clusters)
-#     
-#     write.tsv(data.table(labels=res$labels, res@rownames), transf.file)
-#   }
-# }
-
 
 
 # SAMPLES -----------------------------------------------------------------
@@ -490,17 +464,27 @@ for(sx in unique(ann[!is.na(mixscape_class)]$sample)){
 }
 
 
-# . Guides per cluster - MIXSCAPE ------------------------------------------------------
+# . Guides on UMAP - NTCs ---------------------------------------------
+ggplot(ann[mixscape_class == "NTC"], aes(x=UMAP1, y=UMAP2)) + 
+  geom_hex(bins=50) +
+  theme_bw(12) +
+  scale_fill_gradient(low="lightgrey", high="blue") +
+  facet_wrap(~ sample + CRISPR_Cellranger)
+ggsave(out("Guides_UMAP_", "NTCs", ".pdf"), w=20,h=20)
+
+
+# . Guides in cluster - NTCs ----------------------------------------------
 res <- data.table()
-pDT1 <- ann[!is.na(mixscape_class)][mixscape_class.global != "NP"]
+pDT1 <- ann[mixscape_class == "NTC"]
+sx <- pDT1$sample[1]
 for(sx in unique(pDT1$sample)){
   pDT2 <- pDT1[sample == sx]
-  for(gx in unique(pDT2[mixscape_class != "NTC"]$mixscape_class)){
+  for(gx in unique(pDT2$CRISPR_Cellranger)){
     for(cx in unique(pDT2$Clusters)){
       #message(gx, "-", cx)
-      mx <- as.matrix(with(pDT2[mixscape_class %in% c(gx, "NTC")], table(Clusters == cx, mixscape_class == gx)))
+      mx <- as.matrix(with(pDT2, table(Clusters == cx, CRISPR_Cellranger == gx)))
       #print(mx)
-      if(dim(mx) == c(2,2)){
+      if(all(dim(mx) == c(2,2))){
         fish <- fisher.test(mx)
         res <- rbind(res, data.table(Clusters=cx, mixscape_class=gx, p=fish$p.value, OR=fish$estimate, sample=sx, total.cells=sum(mx)))
       }
@@ -514,16 +498,57 @@ res <- hierarch.ordering(res, toOrder = "grp", orderBy = "Clusters", value.var =
 #res <- hierarch.ordering(res, toOrder = "Clusters", orderBy = "grp", value.var = "log2OR")
 ggplot(res, aes(
   x=Clusters,
-  y=sample, 
+  y=mixscape_class, 
   color=log2OR, 
   size=pmin(-log10(padj), 5))) + 
   geom_point(shape=16) +
   scale_color_gradient2(name="log2OR", low="blue", high="red") +
   scale_size_continuous(name="padj") + 
-  facet_grid(mixscape_class ~ ., space = "free", scales = "free") +
+  facet_grid(sample ~ ., space = "free", scales = "free") +
   theme_bw(12) +
-  theme(strip.text.y = element_text(angle=0))
-ggsave(out("Guides_Fisher_Mixscape.pdf"), w=10, h=length(unique(res$grp)) * 0.25 + 1, limitsize = FALSE)
+  theme(strip.text.y = element_text(angle=0)) +
+  xRot()
+ggsave(out("Guides_Fisher_NTCs.pdf"), w=10, h=length(unique(res$grp)) * 0.25 + 1, limitsize = FALSE)
+
+
+# . Guides per cluster - MIXSCAPE ------------------------------------------------------
+res <- data.table()
+pDT1 <- ann[!is.na(mixscape_class)][mixscape_class.global != "NP"]
+stopifnot(sum(is.na(pDT1$CRISPR_Cellranger)) == 0)
+sx <- pDT1$sample[1]
+for(sx in unique(pDT1$sample)){
+  pDT2 <- pDT1[sample == sx]
+  gx <- pDT2$CRISPR_Cellranger[1]
+  for(gx in unique(pDT2$CRISPR_Cellranger)){
+    for(cx in unique(pDT2$Clusters)){
+      for(ntc in unique(pDT2[mixscape_class == "NTC" & CRISPR_Cellranger != gx][,.N, by="CRISPR_Cellranger"][N > 20]$CRISPR_Cellranger)){
+        mx <- as.matrix(with(pDT2[CRISPR_Cellranger %in% c(gx, ntc)], table(Clusters == cx, CRISPR_Cellranger == gx)))
+        if(all(dim(mx) == c(2,2))){
+          fish <- fisher.test(mx)
+          res <- rbind(res, data.table(Clusters=cx, mixscape_class=gx, ntc=ntc, p=fish$p.value, OR=fish$estimate, sample=sx, total.cells=sum(mx)))
+        }
+      }
+    }
+  }
+}
+res[,padj := p.adjust(p, method="BH")]
+res[, log2OR := log2(pmin(5, OR + min(res[OR != 0]$OR)))]
+res[,grp := paste(mixscape_class, sample)]
+res <- hierarch.ordering(res, toOrder = "grp", orderBy = "Clusters", value.var = "log2OR", aggregate = TRUE)
+#res <- hierarch.ordering(res, toOrder = "Clusters", orderBy = "grp", value.var = "log2OR")
+ggplot(res, aes(
+  x=Clusters,
+  y=ntc, 
+  color=log2OR, 
+  size=pmin(-log10(padj), 5))) + 
+  geom_point(shape=16) +
+  scale_color_gradient2(name="log2OR", low="blue", high="red") +
+  scale_size_continuous(name="padj") + 
+  facet_grid(mixscape_class + sample ~ ., space = "free", scales = "free") +
+  theme_bw(12) +
+  theme(strip.text.y = element_text(angle=0)) +
+  xRot()
+ggsave(out("Guides_Fisher_Mixscape.pdf"), w=10, h=length(unique(res$grp)) * 0.50 + 1, limitsize = FALSE)
 write.tsv(res[,-c("grp"), with=F], out("Guides_Fisher_Mixscape.tsv"))
 
 
