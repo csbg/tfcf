@@ -78,8 +78,16 @@ if(file.exists(ref.file)){
   ref@misc$projecTILs="in vivo"
   
   # Add labels
-  cell.types <- fread(dirout_load("FULLINT_05_01_SingleR")("cell_types_marrow10x_label.main.csv"))
+  cell.types <- fread(dirout_load("FULLINT_05_01_SingleR")("cell_types_izzo_label.main.csv"))
   ref <- AddMetaData(ref, as.factor(cell.types[match(colnames(ref), cell),]$labels), col.name = "functional.cluster")
+  
+  # Export table
+  write.tsv(
+    merge(
+      data.table(ref@meta.data, keep.rownames = TRUE),
+      data.table(ref@reductions$UMAP@cell.embeddings, keep.rownames = TRUE),
+      by="rn"
+    ), out("Output_in.vivo",".tsv"))
   
   # Save
   saveRDS(ref, ref.file)
@@ -127,3 +135,51 @@ for(tx in c("in.vitro", "leukemia")){
 }
 
 
+
+
+# Summarize results -------------------------------------------------------
+ff <- list.files(out(""), pattern="Output_")
+ff <- lapply(ff, function(fx) fread(out(fx)))
+pDT <- rbindlist(ff, fill=TRUE)
+
+# Hex plot
+ggplot(pDT, aes(x=UMAP_1, y=UMAP_2)) + 
+  theme_bw(12) +
+  geom_hex(data=pDT[tissue == "in vivo"], bins=100) + 
+  geom_density_2d(data=pDT[tissue != "in vivo"], aes(color=tissue))
+ggsave(out("Hexplot.pdf"), w=6,h=5)
+
+# Hexplot by tissue
+ggplot(pDT, aes(x=UMAP_1, y=UMAP_2)) + 
+  theme_bw(12) +
+  stat_binhex(aes(fill=log10(..count..)), bins=100) + 
+  facet_grid(. ~ tissue)
+ggsave(out("Hexplot.byTissue.pdf"), w=16,h=5)
+
+# Celltypes
+ggplot(pDT, aes(x=UMAP_1, y=UMAP_2, color=functional.cluster)) + 
+  theme_bw(12) +
+  scale_color_brewer(palette = "Paired") +
+  geom_point(shape=1, alpha=0.3)
+ggsave(out("Celltypes.png"), w=7,h=5)
+
+# Numbers of cell types
+ggplot(pDT, aes(x=functional.cluster)) + 
+  theme_bw(12) +
+  geom_bar() + 
+  facet_grid(. ~ tissue) +
+  xRot() +
+  scale_y_log10()
+ggsave(out("Celltypes.numbers.pdf"), w=9,h=4)
+
+
+# Antibodies
+inDir.current <- "leukemia"
+abs <- fread(inDir.funcs[[inDir.current]]("Antibodies.tsv"))
+absDT <- merge(pDT, abs[,c("Antibody", "Signal.norm", "rn"), with=F], by="rn")
+ggplot(absDT, aes(x=UMAP_1, y=UMAP_2)) +
+  stat_summary_hex(bins = 100, aes(z=pmin(abs(Signal.norm), 2) * sign(Signal.norm)),fun=mean) +
+  scale_fill_gradient2(low="blue", high="red") +
+  facet_wrap(~Antibody) +
+  theme_bw(12)
+ggsave(out("Antibodies_UMAP.pdf"), w=12+2, h=9+1)

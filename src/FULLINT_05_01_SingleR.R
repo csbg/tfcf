@@ -7,6 +7,7 @@ library(celldex)
 library(tidyverse)
 library(CytoTRACE)
 library(doMC)
+library(GEOquery)
 
 # LOAD DATA ---------------------------------------------------------------
 # Human/mouse map
@@ -31,8 +32,59 @@ row.names(count_matrix_human) <- hm2$Human.gene.name
 
 
 
+# Download Izzo et al data ------------------------------------------------
+izzo.file <- out("izzo.RData")
+if(file.exists(izzo.file)){
+  (load(izzo.file))
+} else {
+  geo_accs <- c("GSM4172942", "GSM3554952", "GSM3554951", "GSM3554950")
+  for(geo_acc in geo_accs){
+    getGEOSuppFiles(geo_acc, fetch_files=TRUE, baseDir = out(""))
+  }
+  ff <- list.files(out(""), pattern="*Chromium10X_WT._UMItab.csv.gz", recursive = TRUE, full.names = TRUE)
+  fx <- ff[1]
+  mats <- list()
+  for(fx in ff){
+    x <- fread(fx)
+    stopifnot(all(sapply(x[,-"V1"], is.integer)))
+    g <- x$V1
+    x <- as.matrix(x[,-"V1"])
+    row.names(x) <- g
+    x <- as(x,"dgCMatrix")
+    mats[[basename(fx)]] <- x
+  }
+  names(mats) <- gsub("^.+Chromium10X_(WT\\d)_.+$", "\\1", names(mats))
+  izzo.ann <- fread("metadata/IzzoEtAl.metadata.csv")
+  izzo.ann <- izzo.ann[grepl("^WT\\d$", orig.ident),]
+  izzo.ann[, V1 := gsub("WT6", "WT4", V1)]
+  g <- unique(do.call(c, lapply(mats, row.names)))
+  mats <- lapply(names(mats), function(mnam){
+    m <- mats[[mnam]]
+    colnames(m) <- paste0(mnam, "_", colnames(m))
+    m <- SCRNA.addGenesToSparseMT(m, setdiff(g, row.names(m)))
+    m
+  })
+  izzoMT <- do.call(cbind, mats)
+  stopifnot(length(setdiff(colnames(izzoMT), izzo.ann$V1))==0)
+  izzoMT <- izzoMT[,izzo.ann$V1]
+  stopifnot(all(colnames(izzoMT) == izzo.ann$V1))
+  
+  save(izzoMT, izzo.ann, file=izzo.file)
+}
+
+
 # Reference data ----------------------------------------------------------
 reference_cell_types <- list(
+  # Izzo et al
+  izzo = SummarizedExperiment(
+    assays = SimpleList(logcounts=SCRNA.TPXToLog(SCRNA.RawToTPX(izzoMT, 1e6))), 
+    colData=DataFrame(
+      label.main=gsub("\\-?\\d$", "", izzo.ann$clusterName), 
+      label.fine=izzo.ann$clusterName,
+      row.names = izzo.ann$V1
+    )
+  ),
+  
   # two general purpose datasets
   # hpca = HumanPrimaryCellAtlasData(),
   blueprint = BlueprintEncodeData(),
