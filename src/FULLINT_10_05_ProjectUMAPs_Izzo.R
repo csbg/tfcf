@@ -23,6 +23,16 @@ for(tissuex in c("in.vitro", "leukemia", "in.vivo")){
 }
 
 
+# Load izzo dataset -------------------------------------------------------
+(load(dirout_load("FULLINT_05_01_SingleR")("izzo.RData")))
+izzoCDS <- new_cell_data_set(expression_data = izzoMT, cell_metadata = data.frame(row.names=colnames(izzoMT), tissue=rep("Izzo", ncol(izzoMT))))
+
+ggplot(izzo.ann, aes(x=UMAP1, y=UMAP2, color=gsub("\\-\\d+$", "", clusterName))) +
+  theme_bw(12) +
+  geom_point()
+ggsave(out("Izzo_UMAP.pdf"), w=6,h=5)
+
+
 # Function to transform monocle3 to Seurat objects ----------------------------------
 x <- mobjs$in.vivo
 as.Seurat.NF <- function(x){
@@ -32,11 +42,6 @@ as.Seurat.NF <- function(x){
   x <- RenameAssays(x, RNA = "integrated")
   x
 }
-
-
-# Load izzo dataset -------------------------------------------------------
-(load(dirout_load("FULLINT_05_01_SingleR")("izzo.RData")))
-izzoCDS <- new_cell_data_set(expression_data = izzoMT, cell_metadata = data.frame(row.names=colnames(izzoMT), tissue=rep("Izzo", ncol(izzoMT))))
 
 # Prepare reference -------------------------------------------------------
 ref.file <- out("reference.rds")
@@ -193,3 +198,21 @@ ggplot(absDT, aes(x=UMAP_1, y=UMAP_2)) +
   facet_wrap(~Antibody) +
   theme_bw(12)
 ggsave(out("Antibodies_UMAP.pdf"), w=12+2, h=9+1)
+
+# Izzo umap
+xDT <- pDT[tissue == "Izzo"]
+xDT[, group := gsub("_.+$", "", rn)]
+ggplot(xDT, aes(x=UMAP_1, y=UMAP_2)) + 
+  theme_bw(12) +
+  stat_binhex(aes(fill=log10(..count..)), bins=100) + 
+  facet_grid(. ~ group)
+ggsave(out("Izzo.Hexplot.byTissue.pdf"), w=21,h=5)
+
+# Izzo cell types
+ggplot(xDT, aes(x=functional.cluster)) + 
+  theme_bw(12) +
+  geom_bar() + 
+  facet_grid(. ~ group) +
+  xRot() +
+  scale_y_log10()
+ggsave(out("Izzo.Celltypes.numbers.pdf"), w=12,h=4)

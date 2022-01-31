@@ -183,3 +183,24 @@ ggplot(absDT, aes(x=UMAP_1, y=UMAP_2)) +
   facet_wrap(~Antibody) +
   theme_bw(12)
 ggsave(out("Antibodies_UMAP.pdf"), w=12+2, h=9+1)
+
+# Compare to SingleR ------------------------------------------------------
+singleR.predictions <- fread(dirout_load("FULLINT_05_01_SingleR")("cell_types_izzo_label.main.csv"))
+xDT <- merge(pDT, singleR.predictions, by.x="rn", by.y="cell")
+
+jDT <- data.table()
+for(tx in unique(xDT$tissue)){
+  jMT <- jaccard.twolists(
+    l1=with(xDT[tissue == tx], split(rn, functional.cluster)), 
+    l2=with(xDT[tissue == tx], split(rn, labels))
+    )
+  
+  jDT <- rbind(jDT, data.table(melt(data.table(jMT, keep.rownames = TRUE), id.vars = "rn"), tissue=tx))
+}
+ggplot(jDT, aes(x=rn, y=variable, fill=value)) + 
+  theme_bw(12) + 
+  geom_tile() + 
+  facet_grid(. ~ tissue) + 
+  xRot() +
+  scale_fill_gradient(low="white", high="blue")
+ggsave(out("ComparisonToSingleR.pdf"), w=13,h=5)
