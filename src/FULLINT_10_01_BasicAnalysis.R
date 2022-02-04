@@ -80,6 +80,8 @@ marker.signatures <- lapply(ff, function(fx) as.matrix(read.csv(fx)))
 ff <- list.files(dirout_load("FULLINT_05_01_SingleR")(""), pattern = "cell_types_.*.csv", full.names = TRUE)
 singleR.res <- setNames(lapply(ff, fread), gsub("cell_types_(.+).csv", "\\1", basename(ff)))
 
+
+
 # CytoTRACE
 tryCatch({
   (load(dirout_load("FULLINT_06_01_CytoTRACE")("CytoTRACE.RData")))

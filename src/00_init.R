@@ -188,17 +188,18 @@ PATHS$POOLED$DATA <- list(
 sapply(PATHS$POOLED$DATA, file.exists)
 
 
-PATHS$FULLINT <- list()
-PATHS$FULLINT$Monocle <- dirout_load("FULLINT_01_01_Integration")("MonocleObject.RData")
-PATHS$FULLINT$Citeseq <- dirout_load("FULLINT_01_01_Integration")("CITESEQ_Antibodies.RData")
-PATHS$FULLINT$DEG <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("DEG_Results_nebula.RData")
-PATHS$FULLINT$DEG.clean <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("DEG_Results_all.tsv")
-PATHS$FULLINT$DEG.clean.leukemia <- dirout_load("FULLINT_10_01_BasicAnalysis_leukemia")("DEG_Results_all.tsv")
-PATHS$FULLINT$DEG.clean.invitro <- dirout_load("FULLINT_10_01_BasicAnalysis_in.vitro")("DEG_Results_all.tsv")
-PATHS$FULLINT$DEG.clean.invivo <- dirout_load("FULLINT_10_01_BasicAnalysis_in.vivo")("DEG_Results_all.tsv")
-PATHS$FULLINT$DEG.ann <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("DEG_Annnotation.tsv")
-PATHS$FULLINT$DEG.logFCMT <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("DEG_Results_logFCMT.csv")
-PATHS$FULLINT$DEG.UMAP <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("RegulatoryMap_UMAP_top.genes.tsv")
+PATHS$SCRNA <- list()
+PATHS$SCRNA$ANN <- dirout_load("SCRNA_01_01_Seurat")("SampleAnnotation.tsv")
+# PATHS$FULLINT$Monocle <- dirout_load("FULLINT_01_01_Integration")("MonocleObject.RData")
+# PATHS$FULLINT$Citeseq <- dirout_load("FULLINT_01_01_Integration")("CITESEQ_Antibodies.RData")
+# PATHS$FULLINT$DEG <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("DEG_Results_nebula.RData")
+# PATHS$FULLINT$DEG.clean <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("DEG_Results_all.tsv")
+# PATHS$FULLINT$DEG.clean.leukemia <- dirout_load("FULLINT_10_01_BasicAnalysis_leukemia")("DEG_Results_all.tsv")
+# PATHS$FULLINT$DEG.clean.invitro <- dirout_load("FULLINT_10_01_BasicAnalysis_in.vitro")("DEG_Results_all.tsv")
+# PATHS$FULLINT$DEG.clean.invivo <- dirout_load("FULLINT_10_01_BasicAnalysis_in.vivo")("DEG_Results_all.tsv")
+# PATHS$FULLINT$DEG.ann <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("DEG_Annnotation.tsv")
+# PATHS$FULLINT$DEG.logFCMT <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("DEG_Results_logFCMT.csv")
+# PATHS$FULLINT$DEG.UMAP <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("RegulatoryMap_UMAP_top.genes.tsv")
 
 
 # COLORS ------------------------------------------------------------------

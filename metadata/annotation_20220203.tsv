@@ -1,0 +1,77 @@
+Technology	sample	New_Name	atCIMA	tissue	seq_direction	markers	timepoint	Comments	md5sum	md5sumFile	Guides
+											
+CITE-seq	CITESEQ1	DM_CITEseq-1_NA_NM_1	NO	leukemia	3prime	noMarker	NA	Low specificty in the Atibody staining			noGuide
+											
+CITE-seq	CITESEQ2	DM_CITEseq-2_NA_NM_1	NO	leukemia	3prime	noMarker	NA	Good antibody staining			noGuide
+											
+ECCITE-seq	ECCITE1	DM_Test_NM_6d_1	NO	leukemia	5prime	noMarker	6d				Spi1, Kmt2d, Kmt2a, Smarcb1,NTC
+											
+Perturb-seq (10X)	ECCITE2	DM_Test2_NM_6d_1	NO	leukemia	3prime	noMarker	6d				Gata2,NTC
+											
+Perturb-seq (10X)	ECCITE3_high_14d	inVivo_Test_ckit_14d_1	YES	inVivo	3prime	ckit+	14d		fe33b36f3c2cee9c7aced5d73329ed57	inVivo_Test_ckit_14d_1/outs/metrics_summary.csv	Spi1, Kmt2d, Kmt2a, NTC
+											
+Perturb-seq (10X)	ECCITE3_high_7d	inVivo_Test_ckit_7d_1	YES	inVivo	3prime	ckit+	7d		045986a9cd694440a83e365c2a3667d5	inVivo_Test_ckit_7d_1/outs/metrics_summary.csv	Spi1, Kmt2d, Kmt2a, NTC
+											
+Perturb-seq (10X)	ECCITE3_low_14d	inVivo_Test_ckit_14d_2	YES	inVivo	3prime	ckit+	14d		81c421ddd369a40380f33bebb6682f3d	inVivo_Test_ckit_14d_2/outs/metrics_summary.csv	Spi1, Kmt2d, Kmt2a, NTC
+											
+Perturb-seq (10X)	ECCITE3_low_7d	inVivo_Test_ckit_7d_2	YES	inVivo	3prime	ckit+	7d		e1d4522b50eea9ce5fc614d8fb65dd46	inVivo_Test_ckit_7d_2/outs/metrics_summary.csv	Spi1, Kmt2d, Kmt2a, NTC
+											
+Perturb-seq (10X)	ECCITE4_Cas9	LSK_OP0_NM_7d_1	YES	exVivo1	3prime	noMarker	7d		f167871d5cf9a204a93e1c24df8d14f0	LSK_OP0_NM_7d_1/outs/metrics_summary.csv	NTC_0005 NTC_0011 Kmt2a_AS_44476 Kmt2a_Br_53969 Smarcd2_AS_14163 Smarcd2_Br_45401 Smarcd1_AS_15167 Smarcd1_AS_15166 Men1_AS_40514 Stag2_B_13071 Chd4_AS_66308 Chd4_AS_66310 Bcl11a_Br_5217 Brd9_AS_70306 Setd1b_Br_52333 Setd1b_AS_17785 Wdr82_Br_43556 Wdr82_Br_43558 
+											
+Perturb-seq (10X)	ECCITE4_WT	WT-LSK_OP0_NM_7d_1	YES	exVivo1	3prime	noMarker	7d		2c1a89d79c8fe9102753073e5c1af730	WT-LSK_OP0_NM_7d_1/outs/metrics_summary.csv	NTC_0005 NTC_0011 Kmt2a_AS_44476 Kmt2a_Br_53969 Smarcd2_AS_14163 Smarcd2_Br_45401 Smarcd1_AS_15167 Smarcd1_AS_15166 Men1_AS_40514 Stag2_B_13071 Chd4_AS_66308 Chd4_AS_66310 Bcl11a_Br_5217 Brd9_AS_70306 Setd1b_Br_52333 Setd1b_AS_17785 Wdr82_Br_43556 Wdr82_Br_43558 
+											
+Perturb-seq (10X)	ECCITE5	DM_OP0_NM_6d_1	YES	leukemia	3prime	noMarker	6d		30a842983c8442cc45120bdec781c61c	DM_OP0_NM_6d_1/outs/metrics_summary.csv	NTC_0005 NTC_0011 Kmt2a_AS_44476 Kmt2a_Br_53969 Smarcd2_AS_14163 Smarcd2_Br_45401 Smarcd1_AS_15167 Smarcd1_AS_15166 Men1_AS_40514 Stag2_B_13071 Chd4_AS_66308 Chd4_AS_66310 Bcl11a_Br_5217 Brd9_AS_70306 Setd1b_Br_52333 Setd1b_AS_17785 Wdr82_Br_43556 Wdr82_Br_43558 
+											
+Perturb-seq (10X)	ECCITE6	inVivo_NTC_lin-andckit_14d_1	YES	inVivo	3prime	Lin-,ckit+	14d		36b68c8c91bacbc57f7d8d5751f36cc3	inVivo_NTC_lin-andckit_14d_1/outs/metrics_summary.csv	NTC
+											
+Perturb-seq (10X)	ECCITE7_Lib1Rep1	DM_OP1_NM_6d_1	NO	leukemia	3prime	noMarker	6d				Smarcb1_As_15177 Smarcb1_As_15178 Brd9_As_70306 Brd9_Br_480051 Gltscr1_As_53231 Gltscr1_Br_62866 Smarcd1_As_15166 Smarcd1_Br_45407 Smarcd2_As_15163 Phf10_As_27365 Phf10_As_27367 Kmt2d_As_44463 Kmt2d_Br_72116 Wdr82_Br_43556 Wdr82_Br_43559 Kmt2a_As_44476 Kmt2a_Br_53968 Men1_AsA_40514 Men1_As_40513 NTC_0005 NTC_0006
+											
+Perturb-seq (10X)	ECCITE7_Lib1Rep2	DM_OP1_NM_6d_1	NO	leukemia	3prime	noMarker	6d				Smarcb1_As_15177 Smarcb1_As_15178 Brd9_As_70306 Brd9_Br_480051 Gltscr1_As_53231 Gltscr1_Br_62866 Smarcd1_As_15166 Smarcd1_Br_45407 Smarcd2_As_15163 Phf10_As_27365 Phf10_As_27367 Kmt2d_As_44463 Kmt2d_Br_72116 Wdr82_Br_43556 Wdr82_Br_43559 Kmt2a_As_44476 Kmt2a_Br_53968 Men1_AsA_40514 Men1_As_40513 NTC_0005 NTC_0006
+											
+Perturb-seq (10X)	ECCITE7_Lib2	DM_OP2_NM_6d_1	NO	leukemia	3prime	noMarker	6d				Mbd2_As_41068 Mbd2_Br_10401 Mbd3_As_41065 Rbbp4_Br_14486 Rbbp4_As_22098 Chd4_As_66308 Chd4_As_66310 Hdac1_Br_74137 Hdac1_Br_74139 Rcor1_As_21750 Rcor1_As_21752 Hdac3_Br_7433 Hdac3_Br-A_7434 Atf7ip_TF1.Br_23438 Atf7ip_TF1.Br_23441 Cbx3_Brie_68896 Cbx3_B_68895 Setdb1_B_17753 Setdb1_B_17754 NTC_0008 NTC_0010
+											
+Perturb-seq (10X)	ECCITE7_Lib2	DM_OP2_NM_d6_2	YES	leukemia	3prime	noMarker	6d		059d05b8e1e36b39b2ad3486a024d799	DM_OP2_NM_d6_2/outs/metrics_summary.csv	Mbd2_As_41068 Mbd2_Br_10401 Mbd3_As_41065 Rbbp4_Br_14486 Rbbp4_As_22098 Chd4_As_66308 Chd4_As_66310 Hdac1_Br_74137 Hdac1_Br_74139 Rcor1_As_21750 Rcor1_As_21752 Hdac3_Br_7433 Hdac3_Br-A_7434 Atf7ip_TF1.Br_23438 Atf7ip_TF1.Br_23441 Cbx3_Brie_68896 Cbx3_B_68895 Setdb1_B_17753 Setdb1_B_17754 NTC_0008 NTC_0010
+											
+Perturb-seq (10X)	ECCITE7_Lib2	DM_OP2_NM_d6_3	YES	leukemia	3prime	noMarker	6d		1eb39c5e1921985b566a3cc7d7ef42e6	DM_OP2_NM_d6_3/outs/metrics_summary.csv	Mbd2_As_41068 Mbd2_Br_10401 Mbd3_As_41065 Rbbp4_Br_14486 Rbbp4_As_22098 Chd4_As_66308 Chd4_As_66310 Hdac1_Br_74137 Hdac1_Br_74139 Rcor1_As_21750 Rcor1_As_21752 Hdac3_Br_7433 Hdac3_Br-A_7434 Atf7ip_TF1.Br_23438 Atf7ip_TF1.Br_23441 Cbx3_Brie_68896 Cbx3_B_68895 Setdb1_B_17753 Setdb1_B_17754 NTC_0008 NTC_0010
+											
+Perturb-seq (10X)		ECCITE9_OP3_NM_6d_1	YES			noMarker	6d		2d1f160e3bf5e54c5310cc3102b71687	ECCITE9_OP3_NM_6d_1/outs/metrics_summary.csv	
+											
+Perturb-seq (10X)		ECCITE10_OP4_NM_6d_1	YES			noMarker	6d		7876ffea969a0ac67929556fdff5061c	ECCITE10_OP4_NM_6d_1/outs/metrics_summary.csv	
+											
+Perturb-seq (10X)	ECCITE8_IRR_OP1_d28_rep1	inVivo_OP1_lin-_28d_1	YES	inVivo	3prime	Lin-	28d		f741454755a26d41e08e2964da652f7e	inVivo_OP1_lin-_28d_1/outs/metrics_summary.csv	Smarcb1_As_15177 Smarcb1_As_15178 Brd9_As_70306 Brd9_Br_480051 Gltscr1_As_53231 Gltscr1_Br_62866 Smarcd1_As_15166 Smarcd1_Br_45407 Smarcd2_As_15163 Phf10_As_27365 Phf10_As_27367 Kmt2d_As_44463 Kmt2d_Br_72116 Wdr82_Br_43556 Wdr82_Br_43559 Kmt2a_As_44476 Kmt2a_Br_53968 Men1_AsA_40514 Men1_As_40513 NTC_0005 NTC_0006
+											
+Perturb-seq (10X)	ECCITE8_IRR_OP1_d28_rep2	inVivo_OP1_lin-_28d_2	YES	inVivo	3prime	Lin-	28d		063e519a50cfa0d694005812020431c4	inVivo_OP1_lin-_28d_2/outs/metrics_summary.csv	Smarcb1_As_15177 Smarcb1_As_15178 Brd9_As_70306 Brd9_Br_480051 Gltscr1_As_53231 Gltscr1_Br_62866 Smarcd1_As_15166 Smarcd1_Br_45407 Smarcd2_As_15163 Phf10_As_27365 Phf10_As_27367 Kmt2d_As_44463 Kmt2d_Br_72116 Wdr82_Br_43556 Wdr82_Br_43559 Kmt2a_As_44476 Kmt2a_Br_53968 Men1_AsA_40514 Men1_As_40513 NTC_0005 NTC_0006
+											
+Perturb-seq (10X)	ECCITE8_IRR_d14	inVivo_OP1_lin-_14d_1	YES	inVivo	3prime	Lin-	14d		c8520925fa5b99ae1de8fcc2039f3ff9	inVivo_OP1_lin-_14d_1/outs/metrics_summary.csv	Smarcb1_As_15177 Smarcb1_As_15178 Brd9_As_70306 Brd9_Br_480051 Gltscr1_As_53231 Gltscr1_Br_62866 Smarcd1_As_15166 Smarcd1_Br_45407 Smarcd2_As_15163 Phf10_As_27365 Phf10_As_27367 Kmt2d_As_44463 Kmt2d_Br_72116 Wdr82_Br_43556 Wdr82_Br_43559 Kmt2a_As_44476 Kmt2a_Br_53968 Men1_AsA_40514 Men1_As_40513 NTC_0005 NTC_0006
+											
+Perturb-seq (10X)	ECCITE8_OP1_d7	LSK_OP1_NM_7d_1	YES	exVivo1	3prime	noMarker	7d		a0292da5c7c5079e3480f720b56eb902	LSK_OP1_NM_7d_1/outs/metrics_summary.csv	Smarcb1_As_15177 Smarcb1_As_15178 Brd9_As_70306 Brd9_Br_480051 Gltscr1_As_53231 Gltscr1_Br_62866 Smarcd1_As_15166 Smarcd1_Br_45407 Smarcd2_As_15163 Phf10_As_27365 Phf10_As_27367 Kmt2d_As_44463 Kmt2d_Br_72116 Wdr82_Br_43556 Wdr82_Br_43559 Kmt2a_As_44476 Kmt2a_Br_53968 Men1_AsA_40514 Men1_As_40513 NTC_0005 NTC_0006
+											
+Perturb-seq (10X)	ECCITE8_OP1_d9	LSK_OP1_NM_9d_1	YES	exVivo1	3prime	noMarker	9d		928a71ca43470d3723c5e4df666dcb4f	LSK_OP1_NM_9d_1/outs/metrics_summary.csv	Smarcb1_As_15177 Smarcb1_As_15178 Brd9_As_70306 Brd9_Br_480051 Gltscr1_As_53231 Gltscr1_Br_62866 Smarcd1_As_15166 Smarcd1_Br_45407 Smarcd2_As_15163 Phf10_As_27365 Phf10_As_27367 Kmt2d_As_44463 Kmt2d_Br_72116 Wdr82_Br_43556 Wdr82_Br_43559 Kmt2a_As_44476 Kmt2a_Br_53968 Men1_AsA_40514 Men1_As_40513 NTC_0005 NTC_0006
+											
+Perturb-seq (10X)	ECCITE8_OP2_d7	LSK_OP2_NM_7d_1	YES	exVivo1	3prime	noMarker	7d		56acd2925f10bcb58ba39c312c49c6e9	LSK_OP2_NM_7d_1/outs/metrics_summary.csv	Mbd2_As_41068 Mbd2_Br_10401 Mbd3_As_41065 Rbbp4_Br_14486 Rbbp4_As_22098 Chd4_As_66308 Chd4_As_66310 Hdac1_Br_74137 Hdac1_Br_74139 Rcor1_As_21750 Rcor1_As_21752 Hdac3_Br_7433 Hdac3_Br-A_7434 Atf7ip_TF1.Br_23438 Atf7ip_TF1.Br_23441 Cbx3_Brie_68896 Cbx3_B_68895 Setdb1_B_17753 Setdb1_B_17754 NTC_0008 NTC_0010
+											
+Perturb-seq (10X)	ECCITE8_OP2_d9	LSK_OP2_NM_9d_1	YES	exVivo1	3prime	noMarker	9d		3d8484cc049712a02df7efb6629da778	LSK_OP2_NM_9d_1/outs/metrics_summary.csv	Mbd2_As_41068 Mbd2_Br_10401 Mbd3_As_41065 Rbbp4_Br_14486 Rbbp4_As_22098 Chd4_As_66308 Chd4_As_66310 Hdac1_Br_74137 Hdac1_Br_74139 Rcor1_As_21750 Rcor1_As_21752 Hdac3_Br_7433 Hdac3_Br-A_7434 Atf7ip_TF1.Br_23438 Atf7ip_TF1.Br_23441 Cbx3_Brie_68896 Cbx3_B_68895 Setdb1_B_17753 Setdb1_B_17754 NTC_0008 NTC_0010
+											
+Perturb-seq (10X)	ECCITE8_OP3_d7	LSK_OP3_NM_7d_1	YES	exVivo1	3prime	noMarker	7d		2788fc1232f7323c745502bb29f1aad3	LSK_OP3_NM_7d_1/outs/metrics_summary.csv	Ehmt1_B_59111 Ehmt1_B_59112  Ehmt2_B_59106  Ehmt2_B_59108 Prmt1_B_24468  Prmt1_B_24470 Carm1_B_69142 Carm1_B_69143  Prmt5_B_244511 Prmt5_B_24454 Chmp2a_B_66196 Chmp2a_B_66198 Smc4_B_15133 Smc4_B_15134 Smc2_B_15141 Smc2_B_15144 Smc3_B_15137 Smc3_B_15138  Setdb2_B_17748 Setdb2_B_17750 NTC_0003 NTC_0004
+											
+Perturb-seq (10X)	ECCITE8_OP3_d9	LSK_OP3_NM_9d_1	YES	exVivo1	3prime	noMarker	9d		aa762fe03c2d94c3df6db5496670d07c	LSK_OP3_NM_9d_1/outs/metrics_summary.csv	Ehmt1_B_59111 Ehmt1_B_59112  Ehmt2_B_59106  Ehmt2_B_59108 Prmt1_B_24468  Prmt1_B_24470 Carm1_B_69142 Carm1_B_69143  Prmt5_B_244511 Prmt5_B_24454 Chmp2a_B_66196 Chmp2a_B_66198 Smc4_B_15133 Smc4_B_15134 Smc2_B_15141 Smc2_B_15144 Smc3_B_15137 Smc3_B_15138  Setdb2_B_17748 Setdb2_B_17750 NTC_0003 NTC_0004
+											
+Perturb-seq (10X)	ECCITE8_Toxin_d14	T-inVivo_OP1_lin-_14d_1	NO	inVivo	3prime	Lin-	14d				Smarcb1_As_15177 Smarcb1_As_15178 Brd9_As_70306 Brd9_Br_480051 Gltscr1_As_53231 Gltscr1_Br_62866 Smarcd1_As_15166 Smarcd1_Br_45407 Smarcd2_As_15163 Phf10_As_27365 Phf10_As_27367 Kmt2d_As_44463 Kmt2d_Br_72116 Wdr82_Br_43556 Wdr82_Br_43559 Kmt2a_As_44476 Kmt2a_Br_53968 Men1_AsA_40514 Men1_As_40513 NTC_0005 NTC_0006
+											
+Perturb-seq (10X)	ECCITE8_Linneg-OP2_d14	inVivo_OP2_lin-_14d_1	YES	inVivo	3prime	Lin-	14d		1651cdaaa64403768ab85c51dd2d67dd	inVivo_OP2_lin-_14d_1/outs/metrics_summary.csv	Mbd2_As_41068 Mbd2_Br_10401 Mbd3_As_41065 Rbbp4_Br_14486 Rbbp4_As_22098 Chd4_As_66308 Chd4_As_66310 Hdac1_Br_74137 Hdac1_Br_74139 Rcor1_As_21750 Rcor1_As_21752 Hdac3_Br_7433 Hdac3_Br-A_7434 Atf7ip_TF1.Br_23438 Atf7ip_TF1.Br_23441 Cbx3_Brie_68896 Cbx3_B_68895 Setdb1_B_17753 Setdb1_B_17754 NTC_0008 NTC_0010
+											
+Perturb-seq (10X)	ECCITE8_Linneg-OP3_d14	inVivo_OP3_lin-_14d_1	YES	inVivo	3prime	Lin-	14d		1ee14e8deb9b5b9cb47dcb63f9000812	inVivo_OP3_lin-_14d_1/outs/metrics_summary.csv	Ehmt1_B_59111 Ehmt1_B_59112  Ehmt2_B_59106  Ehmt2_B_59108 Prmt1_B_24468  Prmt1_B_24470 Carm1_B_69142 Carm1_B_69143  Prmt5_B_244511 Prmt5_B_24454 Chmp2a_B_66196 Chmp2a_B_66198 Smc4_B_15133 Smc4_B_15134 Smc2_B_15141 Smc2_B_15144 Smc3_B_15137 Smc3_B_15138  Setdb2_B_17748 Setdb2_B_17750 NTC_0003 NTC_0004
+											
+Perturb-seq (10X)	ECCITE8_cKit-OP2_d14	inVivo_OP2_ckit_14d_1	YES	inVivo	3prime	Lin+,ckit+	14d		5885a5b18c09c272e1b9f0e4e2d56d8b	inVivo_OP2_ckit_14d_1/outs/metrics_summary.csv	Mbd2_As_41068 Mbd2_Br_10401 Mbd3_As_41065 Rbbp4_Br_14486 Rbbp4_As_22098 Chd4_As_66308 Chd4_As_66310 Hdac1_Br_74137 Hdac1_Br_74139 Rcor1_As_21750 Rcor1_As_21752 Hdac3_Br_7433 Hdac3_Br-A_7434 Atf7ip_TF1.Br_23438 Atf7ip_TF1.Br_23441 Cbx3_Brie_68896 Cbx3_B_68895 Setdb1_B_17753 Setdb1_B_17754 NTC_0008 NTC_0010
+											
+Perturb-seq (10X)	ECCITE8_cKit-OP3_d14	inVivo_OP3_ckit_14d_1	YES	inVivo	3prime	Lin+,ckit+	14d		8a9f32a1e0eebe2b79ed85c8596b1857	inVivo_OP3_ckit_14d_1/outs/metrics_summary.csv	Ehmt1_B_59111 Ehmt1_B_59112  Ehmt2_B_59106  Ehmt2_B_59108 Prmt1_B_24468  Prmt1_B_24470 Carm1_B_69142 Carm1_B_69143  Prmt5_B_244511 Prmt5_B_24454 Chmp2a_B_66196 Chmp2a_B_66198 Smc4_B_15133 Smc4_B_15134 Smc2_B_15141 Smc2_B_15144 Smc3_B_15137 Smc3_B_15138  Setdb2_B_17748 Setdb2_B_17750 NTC_0003 NTC_0004
+											
+Perturb-seq (10X)		inVivo_OP2_Lin-_28d_1	PENDING	inVivo	3prime	Lin-	28d				Mbd2_As_41068 Mbd2_Br_10401 Mbd3_As_41065 Rbbp4_Br_14486 Rbbp4_As_22098 Chd4_As_66308 Chd4_As_66310 Hdac1_Br_74137 Hdac1_Br_74139 Rcor1_As_21750 Rcor1_As_21752 Hdac3_Br_7433 Hdac3_Br-A_7434 Atf7ip_TF1.Br_23438 Atf7ip_TF1.Br_23441 Cbx3_Brie_68896 Cbx3_B_68895 Setdb1_B_17753 Setdb1_B_17754 NTC_0008 NTC_0010
+											
+Perturb-seq (10X)		inVivo_OP2_Lin-_28d_2	PENDING	inVivo	3prime	Lin-	28d				Mbd2_As_41068 Mbd2_Br_10401 Mbd3_As_41065 Rbbp4_Br_14486 Rbbp4_As_22098 Chd4_As_66308 Chd4_As_66310 Hdac1_Br_74137 Hdac1_Br_74139 Rcor1_As_21750 Rcor1_As_21752 Hdac3_Br_7433 Hdac3_Br-A_7434 Atf7ip_TF1.Br_23438 Atf7ip_TF1.Br_23441 Cbx3_Brie_68896 Cbx3_B_68895 Setdb1_B_17753 Setdb1_B_17754 NTC_0008 NTC_0010
+											
+Perturb-seq (10X)		inVivo_OP3_Lin-_28d_1	PENDING	inVivo	3prime	Lin-	28d				Ehmt1_B_59111 Ehmt1_B_59112  Ehmt2_B_59106  Ehmt2_B_59108 Prmt1_B_24468  Prmt1_B_24470 Carm1_B_69142 Carm1_B_69143  Prmt5_B_244511 Prmt5_B_24454 Chmp2a_B_66196 Chmp2a_B_66198 Smc4_B_15133 Smc4_B_15134 Smc2_B_15141 Smc2_B_15144 Smc3_B_15137 Smc3_B_15138  Setdb2_B_17748 Setdb2_B_17750 NTC_0003 NTC_0004
+											
+Perturb-seq (10X)		inVivo_OP3_Lin-_28d_2	PENDING	inVivo	3prime	Lin-	28d				Ehmt1_B_59111 Ehmt1_B_59112  Ehmt2_B_59106  Ehmt2_B_59108 Prmt1_B_24468  Prmt1_B_24470 Carm1_B_69142 Carm1_B_69143  Prmt5_B_244511 Prmt5_B_24454 Chmp2a_B_66196 Chmp2a_B_66198 Smc4_B_15133 Smc4_B_15134 Smc2_B_15141 Smc2_B_15144 Smc3_B_15137 Smc3_B_15138  Setdb2_B_17748 Setdb2_B_17750 NTC_0003 NTC_0004
+											
+Perturb-seq (10X)		Mye_OP2-OP3_NM_4d_1	YES	exVivo2	3prime	noMarker	4d		fc9f2ea943faefd6c9dce864cddf0282	Mye_OP2-OP3_NM_4d_1/outs/metrics_summary.csv	Ehmt1_B_59111 Ehmt1_B_59112  Ehmt2_B_59106  Ehmt2_B_59108 Prmt1_B_24468  Prmt1_B_24470 Carm1_B_69142 Carm1_B_69143  Prmt5_B_244511 Prmt5_B_24454 Chmp2a_B_66196 Chmp2a_B_66198 Smc4_B_15133 Smc4_B_15134 Smc2_B_15141 Smc2_B_15144 Smc3_B_15137 Smc3_B_15138  Setdb2_B_17748 Setdb2_B_17750 NTC_0003 NTC_0004
