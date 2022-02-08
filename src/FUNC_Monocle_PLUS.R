@@ -22,7 +22,7 @@ DotPlotData <- function(cds, markers, cols, pseudocount = 1, scale_max = 3, scal
 
 
 getCL <- function(obj){
-  as.character(monocle3::clusters(obj))
+  as.character(monocle3::clusters(obj)[colnames(obj)])
 }
 
 NF_TPM_Matrix <- function(cds, genes){

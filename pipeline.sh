@@ -1,13 +1,11 @@
-# Rscript src/FULLINT_01_01_Integration.R
-# Rscript src/FULLINT_05_01_SingleR.R
-# Rscript src/FULLINT_06_01_CytoTRACE.R
-# Rscript src/FULLINT_08_Markers.R
 
-for tissue in "in vivo" "leukemia" "in vitro"; do
-  echo "$tissue"
-	Rscript src/FULLINT_10_01_BasicAnalysis.R "$tissue"
-done
-
-# Rscript src/FULLINT_10_01_BasicAnalysis.R
-#
-# Rscript src/FULLINT_10_02_DEG.R
+# Rscript src/SCRNA_01_01_Seurat.R
+# Rscript src/SCRNA_02_01_MonocleIntegration.R
+# Rscript src/SCRNA_05_01_SingleR.R
+# Rscript src/SCRNA_06_01_Markers.R
+# Rscript src/SCRNA_06_02_MergeMarkers.R
+Rscript src/SCRNA_08_01_ProjectionInvivo.R
+# Rscript src/SCRNA_08_02_ProjectionIzzo.R
+# Rscript src/SCRNA_08_03_ProjectionIzzo_separate.R
+Rscript src/SCRNA_10_collect_UMAPs.R
+Rscript src/SCRNA_20_02_RunSummaries.R

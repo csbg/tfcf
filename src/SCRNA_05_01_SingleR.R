@@ -15,7 +15,7 @@ library(GEOquery)
 # Human/Mouse gene mapping ------------------------------------------------
 hm.map <- fread(PATHS$RESOURCES$HM.MAP, check.names = T)
 SANN <- fread(PATHS$SCRNA$ANN)
-
+inDir <- dirout_load("SCRNA_01_01_Seurat")
 
 # Download Izzo et al data ------------------------------------------------
 izzo.file <- out("izzo.RData")
@@ -186,6 +186,19 @@ for(dx in unique(res$dataset)){
 sx <- SANN$sample[1]
 for(sx in SANN$sample){
   
+  print(sx)
+  
+  # Check if sample needs to be processed
+  md5sum.new <- SANN[sample == sx]$md5sumFound
+  md5sum.file <- out("md5sum_",sx,".txt")
+  if(file.exists(md5sum.file)){
+    if(md5sum.new == fread(md5sum.file, header=FALSE)$V1){
+      print(" - already processed")
+      next
+    }
+  }
+  print(" - processing")
+  
   # Load matrix
   fx <- inDir("SeuratObj_", sx, ".RData")
   if(!file.exists(fx)) stop(fx, " seurat object not found")
@@ -261,4 +274,7 @@ for(sx in SANN$sample){
     }
     TRUE
   }
+  
+  # write md5sum to show that this sample has been processed
+  write(md5sum.new, md5sum.file)
 }
