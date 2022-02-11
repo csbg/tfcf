@@ -47,3 +47,5 @@ renv/*
 
 pipeline*log
 .Rprofile
+
+Rplots.pdf
