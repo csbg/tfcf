@@ -1,7 +1,7 @@
 source("src/00_init.R")
 out <- dirout("SCRNA_06_02_MergeMarkers")
 
-
+source("src/FUNC_Monocle_PLUS.R")
 
 # load datasets -----------------------------------------------------------
 mobjs <- list()
@@ -35,8 +35,9 @@ for(tx in names(mobjs)){
 
 
 # merge results -----------------------------------------------------------
-tx <- names(mobjs)[1]
+(tx <- names(mobjs)[1])
 tx <- "in.vivo"
+goi <- c("Gata1", "Gata2", "S100a8", "Mecom", "Hoxa7", "Hoxa9")
 for(tx in names(mobjs)){
   
   monocle.obj <- mobjs[[tx]]
@@ -46,12 +47,11 @@ for(tx in names(mobjs)){
   sx$Cluster <- as.character(monocle.obj@clusters$UMAP$clusters[sx$cellname])
   sx <- sx[!is.na(Cluster)]
   
-  # get clsuters where tabula muris (10x) predictions are useful (manually defined)
+  # get clusters where tabula muris (10x) predictions are useful (manually defined)
   sxn <- sx[,.N, by=c("Cluster", "db", "labels")]
   sxn[,total := sum(N), by=c("db", "Cluster")]
   sxn[,fraction := N/total]
   cl.tm <- sxn[db == "marrow10x_label.main" & labels %in% c("Granulocyte progenitors", "Granulocytes", "Immature B cells")][fraction > 0.8]$Cluster
-  
   # Combine both predictions
   xDT <- rbind(
     sx[Cluster %in% cl.tm][db == "marrow10x_label.main"],
@@ -61,7 +61,17 @@ for(tx in names(mobjs)){
   
   # clean up labels
   xDT[labels == "IMP", labels := "Mono"]
-  xDT[labels == "Neu", labels := "CMP"]
+  xDT[labels == "Neu", labels := "GMP"]
+  xDT[labels %in% c("Eo", "Ba", "E/B"), labels := "Eo/Ba"]
+  xDT[, labels := gsub("progenitors?", "P", labels, ignore.case = TRUE)]
+  xDT[, labels := gsub("granulocytes?", "Gran.", labels, ignore.case = TRUE)]
+  xDT[, labels := gsub("immature", "Imm.", labels, ignore.case = TRUE)]
+  xDT[, labels := gsub("B.cells?", "B-cell", labels, ignore.case = TRUE)]
+  
+  # Add expression of key genes
+  mt <- log1p(NF_TPM_Matrix(monocle.obj, goi))
+  xDT <- cbind(xDT, data.table(scale(t(mt[,xDT$cellname]))))
+  
   
   # Split Erys into Ery and MEPs
   xDT.ery <- xDT[grepl("Ery", labels, ignore.case = TRUE)]
@@ -81,21 +91,50 @@ for(tx in names(mobjs)){
   ggplot(xDT.vote, aes(x=Cluster, y=fraction, color=labels, shape=labels)) + geom_point() + theme_bw(12) +
     scale_shape_manual(values=rep(c(1,16,2,18,3,4), 20))
   ggsave(out("CellTypes_", tx, ".pdf"), w=10, h=5)
-  
   # Figure out which cells to reassign (< 10% in a cluster)
   xDT.majority <- xDT.vote[order(fraction, decreasing = TRUE)][,head(.SD, n=1), by="Cluster"][, c("Cluster", "labels")]
   xDT.keep <- xDT.vote[fraction >= 0.1][, c("Cluster", "labels"), with=F]
   xDT.reassign <- xDT.vote[fraction < 0.1][, c("Cluster", "labels"), with=F]
-  
   # finalize
   xDT.reassign <- merge(xDT.reassign, xDT, by=c("Cluster", "labels"))[,-"labels"]
   xDT.reassign <- merge(xDT.reassign, xDT.majority, by=c("Cluster"))
   xDT.keep <- merge(xDT.keep, xDT, by=c("Cluster", "labels"))
-  xDT.final <- rbind(xDT.keep, xDT.reassign)
-  stopifnot(nrow(xDT.final) == nrow(xDT))
+  xDT.majvote <- rbind(xDT.keep, xDT.reassign)
+  stopifnot(nrow(xDT.majvote) == nrow(xDT))
   
-  # Majority vote by cluster
-  xDT.vote <- xDT.final[,.N, by=c("Cluster", "labels")]
+  # Reassign MEPs
+  # 1 by Gata expression
+  gata2.cluster <- xDT.majvote[labels == "MEP"][,.(Gata1 = mean(Gata1), Gata2 = mean(Gata2)), by="Cluster"][Gata2 > Gata1]$Cluster
+  xDT.majvote[Cluster %in% gata2.cluster & labels == "MEP", labels := "MEP (early)"]
+  # 2 by cell cycle
+  stopifnot(all(xDT.majvote$cellname == colnames(monocle.obj)[match(xDT.majvote$cellname, colnames(monocle.obj))]))
+  xDT.majvote$Phase <- monocle.obj$Phase[match(xDT.majvote$cellname, colnames(monocle.obj))]
+  ccDT <- xDT.majvote[labels == "MEP"][,.N,by=c("Cluster", "Phase")]
+  ccDT[, sum := sum(N), by=c("Cluster")]
+  ccDT[, frac := N/sum]
+  ccDT <- ccDT[frac > 0.95][Phase != "G2M"]
+  if(nrow(ccDT) > 0){
+    for(i in 1:nrow(ccDT)){
+      xDT.majvote[labels == "MEP" & Cluster == ccDT[i]$Cluster, labels := paste0("MEP ", "(", ccDT[i]$Phase, ")")]
+    }
+  }
+  # 3 separate perturbed cluster
+  xDT.majvote$guide <- monocle.obj$guide[match(xDT.majvote$cellname, colnames(monocle.obj))]
+  rcor.cluster <- xDT.majvote[labels == "MEP"][,.N, by=c("Cluster", "guide")][grepl("Rcor1", guide)][,sum(N), by="Cluster"][order(V1, decreasing = TRUE)]$Cluster[1]
+  rcor.samples <- unique(xDT.majvote[grepl("^Rcor", guide)]$sample)
+  rcor.cnt <- xDT.majvote[Cluster == rcor.cluster & labels == "MEP"][sample %in% rcor.samples]
+  if(nrow(rcor.cnt) > 0 & nrow(rcor.cnt[grepl("^Rcor", guide)]) / nrow(rcor.cnt) > 0.25) xDT.majvote[Cluster == rcor.cluster & labels == "MEP", labels := "MEP (pert.)"]
+  
+  # Reassign GMPs based on S100a8 expression (in matured ones)
+  gmp.mat.clusters <- xDT.majvote[labels=="GMP"][,mean(S100a8), by=c("Cluster")][V1 > 1]$Cluster
+  xDT.majvote[labels=="GMP" & Cluster %in% gmp.mat.clusters, labels := "GMP (late)"]
+  
+  # Reassign HSCs to EBMP (more mature)
+  ebmp.clusters <- xDT.majvote[labels=="HSC"][,.(mean(Mecom + Hoxa7 + Hoxa9)/3), by=c("Cluster")][V1 < 0.2]$Cluster
+  xDT.majvote[labels=="HSC" & Cluster %in% ebmp.clusters, labels := "EBMP"]
+  
+  # Plot after voting
+  xDT.vote <- xDT.majvote[,.N, by=c("Cluster", "labels")]
   xDT.vote[, sum := sum(N), by="Cluster"]
   xDT.vote[, fraction := N/sum]
   ggplot(xDT.vote, aes(x=Cluster, y=fraction, color=labels, shape=labels)) + geom_point() + theme_bw(12) +
@@ -103,8 +142,17 @@ for(tx in names(mobjs)){
     ylim(0,1)
   ggsave(out("CellTypes_", tx, "_final.pdf"), w=10, h=5)
   
-  # check that each cell only occurs once
-  stopifnot(!any(duplicated(xDT.final$cellname)))
+  # UMAP Plot
+  if(!"U1" %in% colnames(xDT.majvote)) xDT.majvote <- cbind(xDT.majvote, setNames(data.table(reducedDims(monocle.obj)$UMAP[xDT.majvote$cellname,]), c("U1", "U2")))
+  p <- ggplot(xDT.majvote, aes(x=U1, y=U2, color=labels)) + 
+    theme_bw(12) +
+    geom_point(size=0.5) +
+    geom_text(data=xDT.majvote[,.(U1=median(U1), U2=median(U2)), by="labels"], aes(label=labels), color="black")
+  ggsave(out("CellTypes_", tx, "_UMAP.jpg"), w=7,h=5, plot=p)
   
-  saveRDS(xDT.final, out("CellTypes_", tx, ".RDS"))
+  # check that each cell only occurs once
+  stopifnot(!any(duplicated(xDT.majvote$cellname)))
+  
+  xDT.majvote <- xDT.majvote[,-c("U1", "U2", "guide", "Phase", goi), with=F]
+  saveRDS(xDT.majvote, out("CellTypes_", tx, ".RDS"))
 }

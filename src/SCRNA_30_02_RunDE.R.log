@@ -195,3 +195,19 @@ Setting output directory: /media/AGFORTELNY/PROJECTS/TfCf/Analysis//SCRNA_30_DE/
  $ ClusterDE: chr  "31" "30" "31" "16" ...
 Remove  3964  genes having low expression.
 Analyzing  13339  genes with  9  subjects and  44446  cells.
+`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+Setting output directory: /media/AGFORTELNY/PROJECTS/TfCf/Analysis//SCRNA_30_DE/in.vivo_myeloid/
+'data.frame':	21262 obs. of  2 variables:
+ $ GuideDE  : Factor w/ 28 levels "NTC","Brd9","Carm1",..: 25 24 28 1 13 16 24 17 24 13 ...
+ $ ClusterDE: chr  "17" "17" "23" "4" ...
+Remove  2602  genes having low expression.
+Analyzing  13423  genes with  3  subjects and  21262  cells.
+`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+Setting output directory: /media/AGFORTELNY/PROJECTS/TfCf/Analysis//SCRNA_30_DE/leukemia_myeloid/
+'data.frame':	21883 obs. of  2 variables:
+ $ GuideDE  : Factor w/ 29 levels "NTC","Atf7ip",..: 17 17 1 1 1 1 1 1 17 17 ...
+ $ ClusterDE: chr  "3" "17" "17" "6" ...
+Remove  2753  genes having low expression.
+Analyzing  13855  genes with  7  subjects and  21883  cells.
+`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+There were 12 warnings (use warnings() to see them)

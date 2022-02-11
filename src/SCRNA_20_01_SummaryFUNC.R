@@ -72,6 +72,13 @@ for(sx in unique(ann$sample)){
     ann[sample == sx, CRISPR_Cellranger := CRISPR.Guide.Capture] 
   }
 }
+for(colx in c(
+  grep("CRISPR", colnames(ann), value=T),
+  grep("mixscape", colnames(ann), value=T),
+  grep("guide", colnames(ann), value=T))){
+  message("Setting all NAs in ", colx, " from sample WT-LSK_OP0_NM_7d_1")
+  ann[sample == "WT-LSK_OP0_NM_7d_1", (colx) := NA]
+}
 
 
 # SETUP ENDS HERE ---------------------------------------------------------
@@ -87,8 +94,8 @@ qcm <- "nCount_RNA"
 for(qcm in c("percent.mt", "nFeature_RNA", "nCount_RNA")){
   print(qcm)
   ann$measure <- ann[[qcm]]
-  p <- ggplot(ann, aes(y=measure + 0.1, x=factor(Clusters))) + 
-    geom_violin(color=NA, fill="lightblue") + 
+  p <- ggplot(ann, aes(y=measure + 0.1, x=factor(Clusters))) +
+    geom_violin(color=NA, fill="lightblue") +
     geom_boxplot(fill=NA, coef=Inf) +
     scale_y_log10() +
     theme_bw(12) +
@@ -96,8 +103,8 @@ for(qcm in c("percent.mt", "nFeature_RNA", "nCount_RNA")){
     ggtitle(qcm) +
     xRot()
   ggsave(out("QC_", qcm, "_Clusters.pdf"), w=5,h=4, plot=p)
-  
-  ggplot(ann, aes(x=UMAP1, y=UMAP2)) + 
+
+  ggplot(ann, aes(x=UMAP1, y=UMAP2)) +
     theme_bw(12) +
     stat_summary_hex(bins=100, aes(z=measure),fun=mean) +
     scale_fill_hexbin() +
@@ -115,14 +122,14 @@ ggplot(ann, aes(x=sample)) +
   geom_bar()
 ggsave(out("Samples_Numbers.pdf"), w=0.5 * length(unique(ann$sample)) + 1, h=6)
 
-ggplot(ann, aes(x=UMAP1, y=UMAP2)) + 
+ggplot(ann, aes(x=UMAP1, y=UMAP2)) +
   theme_bw(12) +
   geom_hex(bins=100) +
   scale_fill_gradient(low="lightgrey", high="blue") +
   facet_wrap(~sample, ncol=5)
 ggsave(out("Samples_UMAP.pdf"), w=5*2+2,h=ceiling(length(unique(ann$sample))/5) * 2 + 1)
 
-ggplot(ann[mixscape_class.global == "NTC"], aes(x=UMAP1, y=UMAP2)) + 
+ggplot(ann[mixscape_class.global == "NTC"], aes(x=UMAP1, y=UMAP2)) +
   theme_bw(12) +
   geom_hex(bins=100) +
   scale_fill_gradient(low="lightgrey", high="blue") +
@@ -135,15 +142,15 @@ pDT[,sumC := sum(N), by="Clusters"]
 pDT[,percentS := N/sumS*100]
 pDT[,percentC := N/sumC*100]
 ggplot(pDT, aes(y=sample,x=factor(as.numeric(Clusters)), size=percentS, color=percentC)) +
-  scale_size_continuous(name="% of sample") + 
-  scale_color_gradient(name="% of cluster", low="black", high="red") + 
-  theme_bw() + 
+  scale_size_continuous(name="% of sample") +
+  scale_color_gradient(name="% of cluster", low="black", high="red") +
+  theme_bw() +
   geom_point()
 ggsave(out("Samples_Clusters.pdf"), w=8,h=length(unique(pDT$sample)) * 0.3+1)
 
 
 # broad samples -----------------------------------------------------------------
-ggplot(ann, aes(x=UMAP1, y=UMAP2)) + 
+ggplot(ann, aes(x=UMAP1, y=UMAP2)) +
   theme_bw(12) +
   geom_hex(bins=100) +
   scale_fill_gradient(low="lightgrey", high="blue") +
@@ -156,15 +163,15 @@ pDT[,sumC := sum(N), by="Clusters"]
 pDT[,percentS := N/sumS*100]
 pDT[,percentC := N/sumC*100]
 ggplot(pDT, aes(y=sample_broad,x=factor(as.numeric(Clusters)), size=percentS, color=percentC)) +
-  scale_size_continuous(name="% of sample_broad") + 
-  scale_color_gradient(name="% of cluster", low="black", high="red") + 
-  theme_bw() + 
+  scale_size_continuous(name="% of sample_broad") +
+  scale_color_gradient(name="% of cluster", low="black", high="red") +
+  theme_bw() +
   geom_point()
 ggsave(out("SamplesBroad_Clusters.pdf"), w=8,h=length(unique(pDT$sample_broad)) * 1+1)
 
 
 # Cell cycle --------------------------------------------------------------
-ggplot(ann, aes(x=UMAP1, y=UMAP2)) + 
+ggplot(ann, aes(x=UMAP1, y=UMAP2)) +
   theme_bw(12) +
   geom_hex(bins=100) +
   scale_fill_hexbin() +
@@ -175,14 +182,14 @@ ggsave(out("CellCycle_UMAP.pdf"), w=16,h=5)
 
 # CLUSTERS ----------------------------------------------------
 # UMAP
-ggplot(ann, aes(x=UMAP1, y=UMAP2)) + 
+ggplot(ann, aes(x=UMAP1, y=UMAP2)) +
   theme_bw(12) +
   geom_hex(bins=100) +
   scale_fill_gradient(low="lightgrey", high="blue") +
   geom_label(data=ann[,.(UMAP1=median(UMAP1), UMAP2=median(UMAP2)), by="Clusters"], aes(label=Clusters), fill="#ffffffaa")
 ggsave(out("Clusters_UMAP.pdf"), w=6,h=5)
 
-p <- ggplot(ann, aes(x=UMAP1, y=UMAP2, color=Clusters)) + 
+p <- ggplot(ann, aes(x=UMAP1, y=UMAP2, color=Clusters)) +
   theme_bw(12) +
   geom_point(size=0.5) +
   geom_text(data=ann[,.(UMAP1=median(UMAP1), UMAP2=median(UMAP2)), by="Clusters"], aes(label=Clusters), color="black")
@@ -208,7 +215,7 @@ srx <- singleR.res$db[1]
 for(srx in unique(singleR.res$db)){
   print(srx)
   singleR.resX <- singleR.res[db == srx]
-  
+
   # Predicted cells on UMAP
   pDT.pc <- merge(
     singleR.resX[,c("cellname", "labels"), with=F],
@@ -217,35 +224,35 @@ for(srx in unique(singleR.res$db)){
   pDT.pc <- pDT.pc[labels %in% pDT.pc[,.N, by="labels"][N > 10]$labels]
   p <- ggplot(pDT.pc, aes(x=UMAP1, y=UMAP2)) +
     theme_bw(12) +
-    geom_hex(bins=100) + 
+    geom_hex(bins=100) +
     scale_fill_hexbin() +
     facet_wrap(~labels, ncol=5) +
     theme_bw(12) +
     ggtitle(srx)
   ggsave(
-    out("SingleR_", srx, "_UMAP_Predicted",".pdf"), 
-    w=5*3+2, 
-    h=ceiling(length(unique(pDT.pc$labels))/5)*3+1, 
+    out("SingleR_", srx, "_UMAP_Predicted",".pdf"),
+    w=5*3+2,
+    h=ceiling(length(unique(pDT.pc$labels))/5)*3+1,
     limitsize = FALSE,
     plot=p)
-  
+
   # Clusters - Predictions
   pDT.ann <- merge(singleR.resX[,c("labels", "cellname")],ann, by.x="cellname", by.y="rn")
   pDT.ann <- pDT.ann[,.N, by=c("Clusters", "labels", "tissue")]
   pDT.ann[,sum := sum(N), by=c("Clusters", "tissue")]
   pDT.ann[,percent := N/sum*100]
   if(!any(is.na(as.numeric(pDT.ann$Clusters)))) pDT.ann[, Clusters := as.numeric(Clusters)]
-  ggplot(pDT.ann, aes(x=factor(Clusters), y=labels, fill=percent)) + 
+  ggplot(pDT.ann, aes(x=factor(Clusters), y=labels, fill=percent)) +
     theme_bw(12) +
     geom_tile() +
     facet_grid(. ~ tissue) +
     scale_fill_gradient(limits=c(0,100), low="white", high="red") +
     ggtitle(srx)
-  ggsave(out("SingleR_", srx, "_Clusters_", "PercPredicted", ".pdf"),          
+  ggsave(out("SingleR_", srx, "_Clusters_", "PercPredicted", ".pdf"),
          h=length(unique(pDT.ann$labels)) * 0.3+1,
          w=length(unique(pDT.ann$Clusters)) * 0.3 * 3+2,
          limitsize = FALSE)
-  
+
   pDT.ann$dataset <- srx
   singleR.sum <- rbind(singleR.sum, pDT.ann)
 }
@@ -253,13 +260,13 @@ singleR.sum[,id := paste(dataset, labels, tissue)]
 pDT <- merge(singleR.sum[,max(percent), by=c("id")][V1 > 1][,c("id")], singleR.sum, by=c("id"))
 pDT <- hierarch.ordering(pDT, toOrder = "Clusters", orderBy = "labels", value.var = "percent", aggregate = TRUE)
 pDT <- hierarch.ordering(pDT, toOrder = "labels", orderBy = "Clusters", value.var = "percent", aggregate = TRUE)
-ggplot(pDT, aes(y=Clusters, x=labels, fill=percent)) + 
-  theme_bw(12) + 
+ggplot(pDT, aes(y=Clusters, x=labels, fill=percent)) +
+  theme_bw(12) +
   geom_tile() +
-  facet_grid(tissue ~ gsub("_", "\n", dataset), scales = "free", space = "free") + 
+  facet_grid(tissue ~ gsub("_", "\n", dataset), scales = "free", space = "free") +
   scale_fill_gradient(limits=c(0,100), low="white", high="red") +
   xRot()
-ggsave(out("SingleR_0_Clusters_", "PercPredicted", ".pdf"),          
+ggsave(out("SingleR_0_Clusters_", "PercPredicted", ".pdf"),
        w=nrow(pDT[,.N, by=c("dataset", "labels")]) * 0.2+2,
        h=length(unique(pDT$Clusters)) * 0.2 * 3+1,
        limitsize = FALSE)
@@ -270,14 +277,14 @@ ggsave(out("SingleR_0_Clusters_", "PercPredicted", ".pdf"),
 mnam <- names(marker.signatures)[1]
 for(mnam in names(marker.signatures)){
   mx <- marker.signatures[[mnam]]
-  
+
   stopifnot(all(ann$rn %in% row.names(mx)))
-  
+
   pDT <- merge(ann[,c("rn", "UMAP1", "UMAP2")], melt(data.table(mx, keep.rownames = TRUE), id.vars = "rn"), by="rn")
   pDT[, value.norm := scale(value), by="variable"]
   # filter what to show?
   # pDT[value.norm > 2][,.(UMAP1 = sd(UMAP1), UMAP2 = sd(UMAP2)), by="variable"][,.(mean(UMAP1, UMAP2)), by="variable"][order(V1)]
-  
+
   ggplot(pDT, aes(x=UMAP1, y=UMAP2)) +
     stat_summary_hex(aes(z=value),fun=mean, bins=100) +
     #scale_fill_gradient2(low="blue", midpoint = 0, high="red") +
@@ -286,7 +293,7 @@ for(mnam in names(marker.signatures)){
     facet_wrap(~variable) +
     ggtitle(paste("Marker Signatures", mnam))
   ggsave(out("Markers_Signatures_",mnam,"_UMAP_raw.pdf"), w=12,h=12)
-  
+
   ggplot(pDT, aes(x=UMAP1, y=UMAP2)) +
     stat_summary_hex(aes(z=pmin(3, value.norm)),fun=mean, bins=100) +
     scale_fill_gradient2(low="blue", midpoint = 0, high="red") +
@@ -295,7 +302,7 @@ for(mnam in names(marker.signatures)){
     facet_wrap(~variable) +
     ggtitle(paste("Marker Signatures", mnam))
   ggsave(out("Markers_Signatures_",mnam,"_UMAP_scaled.pdf"), w=12,h=12)
-  
+
   cleanDev(); pdf(out("Markers_Signatures_",mnam,"_Clusters.pdf"),w=8,h=6)
   pheatmap(sapply(with(ann, split(rn, Clusters)), function(cx) colMeans(mx[cx,,drop=F])))
   dev.off()
@@ -304,7 +311,7 @@ for(mnam in names(marker.signatures)){
 
 # ANTIBODIES --------------------------------------------------------------
 if("DM_CITEseq-2_NA_NM_1" %in% ann$sample){
-  
+
   abMT <- citeseq.MT$`Antibody Capture`
   abMT <- SCRNA.TPXToLog(SCRNA.RawToTPX(abMT, scale.factor = 1e6))
   ann.c1 <- ann[sample == "DM_CITEseq-2_NA_NM_1"]
@@ -325,7 +332,7 @@ if("DM_CITEseq-2_NA_NM_1" %in% ann$sample){
     facet_wrap(~Antibody) +
     theme_bw(12)
   ggsave(out("Antibodies_UMAP.pdf"), w=12+2, h=9+1)
-  
+
   write.tsv(res, out("Antibodies.tsv"))
 
   # Correlations
@@ -362,36 +369,52 @@ if("DM_CITEseq-2_NA_NM_1" %in% ann$sample){
 
 # . Number of guides --------------------------------------------------------
 # Number of cells per guide / mixscape
-ggplot(ann[!is.na(mixscape_class.global)], aes(x=guide, fill=mixscape_class.global)) + 
-  geom_bar(position="dodge") + 
+ggplot(ann[!is.na(mixscape_class.global)], aes(x=guide, fill=mixscape_class.global)) +
+  geom_bar(position="dodge") +
   facet_wrap(~sample, scales = "free") +
   theme_bw(12) + xRot() +
   ylab("Cells")
 ggsave(out("Guides_Counts.pdf"), w=12,h=10)
 # % of cells assigned
-ggplot(ann[,sum(!is.na(guide))/.N*100, by="sample"], aes(x=sample, y=V1)) + 
-  geom_bar(stat="identity") + 
+ggplot(ann[,sum(!is.na(guide))/.N*100, by="sample"], aes(x=sample, y=V1)) +
+  geom_bar(stat="identity") +
   theme_bw(12) + xRot() +
   ylab("Percent of cells with assigned guide (NP or KO)")
 ggsave(out("Guides_Counts_PercAssigned.pdf"), w=6,h=4)
 
 # . Guides in UMAP ----------------------------------------------------------
-sx <- "ECCITE1"
-for(sx in unique(ann[!is.na(mixscape_class)]$sample_broad)){
-  pDT <- ann[sample_broad == sx][!is.na(mixscape_class.global)]
-  if(nrow(pDT) == 0) next
-  grps <- length(unique(pDT$mixscape_class))
-  ggplot(pDT, aes(x=UMAP1, y=UMAP2)) + 
+pDT <- ann[!is.na(guide)]
+pDT[, gene := gsub("_.+","", guide)]
+(gx <- pDT[gene != "NTC"]$gene[1])
+for(gx in unique(pDT[gene != "NTC"]$gene)){
+  xDT <- pDT[gene %in% c(gx, "NTC")]
+  cols <- length(unique(paste(xDT$CRISPR_Cellranger, xDT$mixscape_class.global)))
+  rows <- length(unique(xDT$sample_broad))
+  ggplot(xDT, aes(x=UMAP1, y=UMAP2)) + 
     geom_hex(bins=50) +
     scale_fill_gradient(low="lightgrey", high="blue") +
-    facet_wrap(~mixscape_class + mixscape_class.global, ncol = 7) +
+    facet_grid(sample_broad~CRISPR_Cellranger + mixscape_class.global) +
+    geom_text(data=xDT[,.N, by=c("sample_broad", "CRISPR_Cellranger", "mixscape_class.global")],
+              aes(label=N), x=0, y=0) +
     theme_bw(12)
-  ggsave(out("Guides_UMAP_", sx, ".pdf"), w=7*4,h=ceiling(grps/7)*4+1)
+  ggsave(out("Guides_UMAP_", gx, "_samplebroad.pdf"), w=cols * 2 + 2,h=rows * 2 + 1, limitsize = FALSE)
+  
+  cols <- length(unique(paste(xDT$CRISPR_Cellranger, xDT$mixscape_class.global)))
+  rows <- length(unique(xDT$sample))
+  ggplot(xDT, aes(x=UMAP1, y=UMAP2)) + 
+    geom_hex(bins=50) +
+    scale_fill_gradient(low="lightgrey", high="blue") +
+    facet_grid(sample~CRISPR_Cellranger + mixscape_class.global) +
+    geom_text(data=xDT[,.N, by=c("sample", "CRISPR_Cellranger", "mixscape_class.global")],
+              aes(label=N), x=0, y=0) +
+    theme_bw(12)
+  ggsave(out("Guides_UMAP_", gx, "_sample.pdf"), w=cols * 2 + 2,h=rows * 2 + 1, limitsize = FALSE)
 }
 
 
+
 # . Guides on UMAP - NTCs ---------------------------------------------
-ggplot(ann[mixscape_class == "NTC"], aes(x=UMAP1, y=UMAP2)) + 
+ggplot(ann[mixscape_class == "NTC"], aes(x=UMAP1, y=UMAP2)) +
   geom_hex(bins=50) +
   theme_bw(12) +
   scale_fill_gradient(low="lightgrey", high="blue") +
@@ -424,12 +447,12 @@ res <- hierarch.ordering(res, toOrder = "grp", orderBy = "Clusters", value.var =
 #res <- hierarch.ordering(res, toOrder = "Clusters", orderBy = "grp", value.var = "log2OR")
 ggplot(res, aes(
   x=Clusters,
-  y=mixscape_class, 
-  color=log2OR, 
-  size=pmin(-log10(padj), 5))) + 
+  y=mixscape_class,
+  color=log2OR,
+  size=pmin(-log10(padj), 5))) +
   geom_point(shape=16) +
   scale_color_gradient2(name="log2OR", low="blue", high="red") +
-  scale_size_continuous(name="padj") + 
+  scale_size_continuous(name="padj") +
   facet_grid(sample ~ ., space = "free", scales = "free") +
   theme_bw(12) +
   theme(strip.text.y = element_text(angle=0)) +
@@ -464,18 +487,19 @@ res <- hierarch.ordering(res, toOrder = "grp", orderBy = "Clusters", value.var =
 #res <- hierarch.ordering(res, toOrder = "Clusters", orderBy = "grp", value.var = "log2OR")
 ggplot(res, aes(
   x=Clusters,
-  y=ntc, 
-  color=log2OR, 
-  size=pmin(-log10(padj), 5))) + 
+  y=ntc,
+  color=log2OR,
+  size=pmin(-log10(padj), 5))) +
   geom_point(shape=16) +
   scale_color_gradient2(name="log2OR", low="blue", high="red") +
-  scale_size_continuous(name="padj") + 
+  scale_size_continuous(name="padj") +
   facet_grid(mixscape_class + sample ~ ., space = "free", scales = "free") +
   theme_bw(12) +
   theme(strip.text.y = element_text(angle=0)) +
   xRot()
 ggsave(out("Guides_Fisher_Mixscape.pdf"), w=10, h=length(unique(res$grp)) * 0.50 + 1, limitsize = FALSE)
 write.tsv(res[,-c("grp"), with=F], out("Guides_Fisher_Mixscape.tsv"))
+
 
 
 # Guides Signature differential analysis ----------------------------------
@@ -501,9 +525,9 @@ resSDA <- foreach(sx = unique(ann$sample_broad)) %dopar% {
       x <- mMT[annS[guide == guidex & mixscape_class.global == "KO"]$rn, sigx]
       resSDA <- rbind(resSDA, data.table(
         sample=sx,
-        guide=guidex, 
-        sig=sigx, 
-        p=wilcox.test(x, xNTC)$p.value, 
+        guide=guidex,
+        sig=sigx,
+        p=wilcox.test(x, xNTC)$p.value,
         d=median(x) - median(xNTC)
       ))
     }
@@ -516,7 +540,7 @@ resSDA[, gene := gsub("_.+", "", guide)]
 write.tsv(resSDA, out("SigDA.tsv"))
 
 # Plot stats
-ggplot(resSDA, aes(x=paste(sample, guide),y=sig, color=d, size=pmin(5, -log10(padj)))) + 
+ggplot(resSDA, aes(x=paste(sample, guide),y=sig, color=d, size=pmin(5, -log10(padj)))) +
   theme_bw(12) +
   geom_point() +
   scale_color_gradient2(low="blue", high="red") +
@@ -525,10 +549,10 @@ ggplot(resSDA, aes(x=paste(sample, guide),y=sig, color=d, size=pmin(5, -log10(pa
 ggsave(out("SigDA_Stats.pdf"), w=29,h=20)
 
 
-# Guides in UMAP
+# Signatures on UMAP
 pDT <- ann[mixscape_class.global %in% c("KO", "NTC") & guide %in% c(guides, "NTC")]
 grps <- length(unique(pDT$guide))
-ggplot(pDT, aes(x=UMAP1, y=UMAP2)) + 
+ggplot(pDT, aes(x=UMAP1, y=UMAP2)) +
   geom_hex(bins=50) +
   scale_fill_gradient(low="lightgrey", high="blue") +
   facet_wrap(~guide, ncol = 7) +

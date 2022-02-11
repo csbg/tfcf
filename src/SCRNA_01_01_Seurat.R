@@ -258,7 +258,6 @@ for(dsx in SANN$sample_found){
         message("RunPCA failed, running with only 10 PCs next")
         eccite <- RunPCA(eccite, npcs = 10, verbose = FALSE)
       })
-      
 
       # CalcPerturbSig
       for(nn in seq(from = 20,to = 5, by = -5)){

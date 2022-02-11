@@ -2,6 +2,40 @@ source("src/00_init.R")
 out <- dirout("SCRNA_10_collect_UMAPs/")
 
 
+# Original UMAPs ----------------------------------------------------------
+mobjs <- list()
+for(tissuex in PATHS$SCRNA$MONOCLE.NAMES){
+  (load(PATHS$SCRNA$MONOCLE.DIR(tissuex)))
+  mobjs[[tissuex]] <- monocle.obj
+}
+
+res <- data.table()
+tx <- names(mobjs)[1]
+for(tx in names(mobjs)){
+  monocle.obj <- mobjs[[tx]]
+  dDT.umap <- cbind(
+    data.table(reducedDims(monocle.obj)$UMAP, keep.rownames = TRUE),
+    data.table(
+      sample=monocle.obj$sample,
+      tissue=monocle.obj$tissue
+    ))
+  res <- rbind(res, dDT.umap)
+}
+colnames(res)[colnames(res) %in% c("V1", "V2")] <- c("UMAP_1", "UMAP_2")
+saveRDS(res, out("ProjMonocle.RDS"))
+
+# celltypes from singleR after manual curation
+ff <- list.files(dirout_load("SCRNA_06_02_MergeMarkers")(""), pattern="CellTypes_*", full.names = TRUE)
+ff <- ff[grepl(".RDS$", ff)]
+singleR.cell.types <- do.call(rbind, lapply(ff, readRDS))
+singleR.cell.types[, conf := tuning_scores_first - tuning_scores_second]
+singleR.cell.types <- setNames(
+  singleR.cell.types[, c("cellname", "sample", "labels", "conf"),with=F],
+  c("rn", "sample", "functional.cluster", "functional.cluster.conf")
+  )
+saveRDS(singleR.cell.types, out("ProjMonocle_celltypes.RDS"))
+
+
 # Projection_Invivo -------------------------------------------------------
 ff <- list.files(dirout_load("SCRNA_08_01_ProjectionInvivo")(""), pattern="Output_", full.names = TRUE)
 dL <- lapply(ff, fread)
@@ -22,7 +56,3 @@ saveRDS(dDT.umap, out("ProjIzzo.RDS"))
 
 dDT.ct <- dDT[,c("rn", "sample", "functional.cluster", "functional.cluster.conf"), with=F]
 saveRDS(dDT.ct, out("ProjIzzo_celltypes.RDS"))
-
-
-# Transfer to original Izzo UMAP
-#(load(dirout_load("SCRNA_05_01_SingleR")("izzo.RData")))

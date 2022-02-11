@@ -7,30 +7,35 @@ outBase <- dirout(base.dir)
 ds <- function(path){load(path); return(monocle.obj)}
 
 
-# Folders -----------------------------------------------------------------
-list.files(dirout_load("")(""))
-inDir.funcs <- list(
-  "in.vivo"=dirout_load("FULLINT_10_01_BasicAnalysis_in.vivo"),
-  "in.vitro"=dirout_load("FULLINT_10_01_BasicAnalysis_in.vitro"),
-  "leukemia"=dirout_load("FULLINT_10_01_BasicAnalysis_leukemia")
-)
-inDir.full <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")
+# SETTINGS ----------------------------------------------------------------
+ff <- list.files(dirout_load("SCRNA_20_Summary")(""))
+TISSUES <- gsub("_.+", "", ff[grepl("_monocle$", ff)])
+SIGS.USE <- fread("metadata/markers.signatures.use.scRNA.tsv")
+SIGS.USE[, sig := paste(DB, Celltype)]
 
+# Folders -----------------------------------------------------------------
+inDir.funcs <- list()
+for(tx in TISSUES){inDir.funcs[[tx]] <- dirout_load(paste0("SCRNA_20_Summary/", tx, "_monocle.singleR"))}
 
 
 # Load data ---------------------------------------------------------------
-marker.signatures.use <- fread("metadata/markers.signatures.use.scRNA.tsv")
-marker.signatures.use[, sig := paste(DB, Celltype)]
+
+SANN <- fread(PATHS$SCRNA$ANN)
 
 # Load signatures
-ff <- list.files(dirout_load("FULLINT_08_01_Markers")(""), pattern="Signatures_")
-ff <- dirout_load("FULLINT_08_01_Markers")(ff)
-names(ff) <- gsub("^Signatures_(.+?).csv$", "\\1", basename(ff))
-ff <- ff[!grepl("Augmented_2021", ff)]
-marker.signatures <- lapply(ff, function(fx) as.matrix(read.csv(fx)))
-# Prep data
-markS <- lapply(unique(marker.signatures.use$DB), function(x) data.table(melt(data.table(marker.signatures[[x]], keep.rownames = TRUE), id.vars = "rn"), DB=x))
-markS <- merge(do.call(rbind, markS), marker.signatures.use, by.x=c("variable", "DB"), by.y=c("Celltype", "DB"))
+marker.signatures <- lapply(TISSUES, function(tissue.name){
+  ff <- list.files(dirout_load("SCRNA_06_01_Markers")(tissue.name), pattern="Signatures_", full.names = TRUE)
+  names(ff) <- gsub("^Signatures_(.+?).csv$", "\\1", basename(ff))
+  ff <- ff[unique(SIGS.USE$DB)]
+  lapply(ff, function(fx) as.matrix(read.csv(fx)))
+})
+names(marker.signatures) <- TISSUES
+marker.signatures <- rbindlist(lapply(marker.signatures, function(ltx){
+  rbindlist(lapply(ltx, function(dt){
+      dt <- melt(data.table(dt, keep.rownames = TRUE), id.vars = "rn")
+    }), idcol = "DB")
+  }), idcol = "tissue")
+marker.signatures <- merge(marker.signatures, SIGS.USE, by.x=c("DB", "variable"), by.y=c("DB", "Celltype"))
 
 # Cell annotations
 annList <- lapply(names(inDir.funcs), function(inDir.current){
@@ -39,105 +44,133 @@ annList <- lapply(names(inDir.funcs), function(inDir.current){
   ann[, gene := gsub("_.+", "", guide)]
   ann
   })
-names(annList) <- names(inDir.funcs)
+annList <- rbindlist(annList, fill=TRUE)
 
-# Reannotated UMAPs
-umap.new <- list(
-  leukemia = fread(dirout_load("FULLINT_10_03_NewUMAPs")("NewUMAP_leukemia.tsv")),
-  in.vitro = fread(dirout_load("FULLINT_10_03_NewUMAPs")("NewUMAP_in.vitro.tsv"))
+# Other projections
+umap.proj <- list(
+  original=readRDS(dirout_load("SCRNA_10_collect_UMAPs")("ProjMonocle.RDS")),
+  izzo = readRDS(dirout_load("SCRNA_10_collect_UMAPs")("ProjIzzo.RDS")),
+  in.vivo = readRDS(dirout_load("SCRNA_10_collect_UMAPs")("ProjVivo.RDS"))
 )
-for(tissuex in names(umap.new)){
-  annList[[tissuex]] <- merge(annList[[tissuex]][,-c("UMAP1", "UMAP2")], umap.new[[tissuex]], by="rn")
-}
+
+
+# SETUP ENDS HERE ---------------------------------------------------------
 
 
 
-# Marker signatures ---------------------------------------------------------
-inDir.current <- "in.vivo"
-inDir.current <- "leukemia"
-inDir.current <- "in.vitro"
-for(inDir.current in names(inDir.funcs)){
+
+# UMAP Projections ---------------------------------------------------------
+tx <- "in.vivo"
+tx <- "leukemia"
+tx <- "ex.vitro"
+for(tx in names(inDir.funcs)){
   # out directory
-  out <- dirout(paste0(base.dir, "/", inDir.current))
+  out <- dirout(paste0(base.dir, "/", tx))
   
   # Prepare data
-  ann <- annList[[inDir.current]]
-  sda <- fread(inDir.funcs[[inDir.current]]("SigDA.tsv"))
-  sda <- merge(sda, unique(ann[,c("timepoint", "markers", "sample")]), c("sample"))
+  ann <- annList[tissue ==  tx]
   
-  # Prepare plots
-  pDT <- merge(ann[perturbed == FALSE][,c("rn", "UMAP1", "UMAP2"),with=F], markS, by="rn")
-  pDT[, value.norm := scale(value), by="FinalName"]
-  
-  # Nomalized signatures split by cell type
-  ggplot(pDT, aes(x=UMAP1, y=UMAP2)) +
-    stat_summary_hex(aes(z=pmin(3, value.norm)),fun=mean, bins=100) +
-    scale_fill_gradient2(low="blue", midpoint = 0, high="red") +
-    #scale_fill_hexbin() +
-    theme_bw(12) +
-    facet_wrap(~FinalName) +
-    ggtitle(paste("Marker Signatures"))
-  ggsave(out("UMAP_MarkerSignatures.pdf"), w=12,h=12)
-  
-  # Points (overplotted)
-  pDTx <- pDT[value.norm > 2][,paste(FinalName, collapse="xxx"), by=c("rn")][!grepl("xxx", V1)]
-  pDTx <- merge(ann, pDTx, by="rn", all=TRUE)
-  ggplot(pDTx[!is.na(V1)], aes(x=UMAP1, y=UMAP2, color=V1)) +
-    geom_hex(data=pDTx[is.na(V1)], fill="lightgrey", bins=100) +
-    geom_point(size=0.2) +
-    scale_color_manual(values=COLORS.CELLTYPES.scRNA) +
-    theme_bw(12) +
-    ggtitle(paste("Marker Signatures"))
-  ggsave(out("UMAP_MarkerSignatures_Simple_points.pdf"), w=5,h=4)
-  
-  # Hexpoints (best?)
-  hex.obj <- hexbin::hexbin(x=pDTx$UMAP1, y=pDTx$UMAP2, xbins = 100, IDs=TRUE)
-  pDTh <- cbind(pDTx, data.table(hex.x=hex.obj@xcm, hex.y=hex.obj@ycm, hex.cell=hex.obj@cell)[match(hex.obj@cID, hex.cell),])[,.N, by=c("hex.x", "hex.y", "V1")][!is.na(V1)]
-  pDTh[, rank := rank(-N), by=c("hex.x", "hex.y")]
-  pDTh[rank == 1]
-  ggplot(pDTh[rank == 1]) +
-    theme_bw(12) +
-    geom_hex(data=pDTx, aes(x=UMAP1, y=UMAP2), fill="lightgrey", bins=100) +
-    geom_point(aes(x=hex.x, y=hex.y, color=V1), size=0.2) + 
-    scale_color_manual(values = COLORS.CELLTYPES.scRNA) +
-    ggtitle(paste("Marker Signatures"))
-  ggsave(out("UMAP_MarkerSignatures_Simple_hexpoints.pdf"), w=6,h=4)
-  
-  # Hex but with factor (problematic)
-  hex.fun.x <- function(x){
-    if(sum(x != "NA") >= 1) names(sort(table(setdiff(x, "NA")), decreasing=TRUE))[1] else NA
+  # Hexpoints
+  for(x in names(umap.proj)){
+    xDT <- umap.proj[[x]][match(ann$rn, rn)]
+    hex.obj <- hexbin::hexbin(x=xDT$UMAP_1, y=xDT$UMAP_2, xbins = 100, IDs=TRUE)
+    pDT <- cbind(ann, data.table(hex.x=hex.obj@xcm, hex.y=hex.obj@ycm, hex.cell=hex.obj@cell)[match(hex.obj@cID, hex.cell),])
+    pDT <- pDT[,.N, by=c("hex.x", "hex.y", "Clusters")]
+    pDT[, sum := sum(N), by=c("hex.x", "hex.y")]
+    pDT[, frac := N / sum]
+    pDT <- pDT[frac > 0.25]
+    ggplot(pDT, aes(x=hex.x, y=hex.y)) +
+      theme_bw(12) +
+      #geom_hex(fill="lightgrey", bins=100) +
+      geom_point(aes(color=Clusters, shape=Clusters), size=1) + 
+      scale_shape_manual(values=rep(c(1,16,2,18,3,4), 20))
+    ggsave(out("UMAP_Celltypes_",x,".pdf"), w=6,h=4)
   }
-  pDTx[, finalLabel := ifelse(is.na(V1), "NA", V1)]
-  pDTx$finalLabel <- factor(pDTx$finalLabel)
-  ggplot(pDTx, aes(x=UMAP1, y=UMAP2, z=finalLabel)) +
-    stat_summary_hex(fun=hex.fun.x, bins=100) +
+} 
+
+
+# Signatures --------------------------------------------------------------
+tx <- "in.vivo"
+tx <- "leukemia"
+tx <- "ex.vitro"
+for(tx in names(inDir.funcs)){
+  # out directory
+  out <- dirout(paste0(base.dir, "/", tx))
+  
+  # annotation
+  ann <- annList[tissue ==  tx & timepoint != "28d"]
+  
+  # Plot signatures scores in each cluster
+  pDT <- merge(
+    ann[, c("rn", "Clusters"),with=F],
+    marker.signatures[, c("rn", "DB", "value", "FinalName"),with=F],
+    by="rn")
+  pDT <- pDT[, mean(value), by=c("Clusters", "FinalName")]
+  pDT[, V1 := scale(V1), by="FinalName"]
+  pDT <- hierarch.ordering(pDT, "Clusters", "FinalName", "V1")
+  pDT <- hierarch.ordering(pDT, "FinalName", "Clusters", "V1")
+  ggplot(pDT, aes(x=FinalName, y=Clusters, fill=V1)) + 
+    geom_tile() +
+    scale_fill_gradient2(low="blue", high="red") +
     theme_bw(12) +
-    scale_fill_manual(values = COLORS.CELLTYPES.scRNA) +
-    ggtitle(paste("Marker Signatures"))
-  ggsave(out("UMAP_MarkerSignatures_Simple.pdf"), w=5,h=4)
+    xRot()
+  ggsave(out("Supp_Signatures.pdf"), w=6,h=5)
   
+  # Plot expression of marker genes in each cluster
   
-  # Plot enrichment scores
-  pDT <- sda[, .(
-    d=mean(d), 
-    sig.pos=sum(padj < 0.05 & d > 0),
-    sig.neg=sum(padj < 0.05 & d < 0),
-    total = .N
-  ), by=c("guide", "gene", "timepoint", "markers", "sig")]
-  pDT <- merge(pDT, marker.signatures.use, by="sig")
-  pDT[, sig.perc := ifelse(d > 0, sig.pos, sig.neg)/total * 100]
-  pDT <- hierarch.ordering(pDT, toOrder = "gene", orderBy = "FinalName", value.var = "d", aggregate = TRUE)
-  pDT <- hierarch.ordering(pDT, toOrder = "FinalName", orderBy = "guide", value.var = "d", aggregate = TRUE)
+  # Plot fraction of predicted cells in each cluster
+}
+
+# Cluster enrichment analyses ---------------------------------------------
+tx <- "ex.vivo"
+for(tx in names(inDir.funcs)){
+  # out directory
+  out <- dirout(paste0(base.dir, "/", tx))
   
-  if(inDir.current == "in.vivo") pDT <- pDT[timepoint == "14d" & markers == "Lin-"]
-  ggplot(pDT, aes(x=FinalName, y=guide, size=sig.perc, color=d)) + 
+  # Collect enrichment scores
+  fish <- fread(inDir.funcs[[tx]]("Guides_Fisher_Mixscape.tsv"))
+  fish <- merge(fish, unique(SANN[,c("sample_broad", "timepoint"),with=F]), by.x="sample", by.y="sample_broad")
+  fish <- fish[timepoint != "28d"]
+  
+  # summarize across NTCs
+  fish <- fish[, .(
+    log2OR=mean(log2OR), 
+    dir=length(unique(sign(log2OR)))==1, 
+    padj=sum(padj < 0.01), 
+    N=.N), by=c("sample", "Clusters", "mixscape_class")]
+  fish[dir == FALSE, padj := 0]
+  fish[dir == FALSE, log2OR := NA]
+  
+  # Summarize across guides
+  fish[, gene := gsub("_.+", "", mixscape_class)]
+  fish <- fish[, .(
+    log2OR=mean(log2OR, na.rm=TRUE), 
+    dir=length(unique(sign(log2OR[!is.na(log2OR)])))==1, 
+    padj=sum(padj), 
+    N=sum(N)), by=c("sample", "Clusters", "gene")]
+  
+  # summarize across samples
+  fish[dir == FALSE, padj := 0]
+  fish[dir == FALSE, log2OR := NA]
+  fish <- fish[, .(
+    log2OR=mean(log2OR, na.rm=TRUE), 
+    dir=length(unique(sign(log2OR[!is.na(log2OR)])))==1, 
+    padj=sum(padj), 
+    N=sum(N)), by=c("Clusters", "gene")]
+  
+  # setup for plotting
+  fish[padj == 0 | is.na(log2OR), log2OR := 0]
+  fish[, sig.perc := padj / N]
+  fish[,log2OR_cap := pmin(abs(log2OR), 5) * sign(log2OR)]
+  fish <- hierarch.ordering(dt = fish, toOrder = "gene", orderBy = "Clusters", value.var = "log2OR")
+  fish <- hierarch.ordering(dt = fish, toOrder = "Clusters", orderBy = "gene", value.var = "log2OR")
+  ggplot(fish, aes(x=gene, y=Clusters, size=sig.perc, color=log2OR_cap)) + 
     theme_bw() +
     scale_color_gradient2(low="blue", midpoint = 0, high="red") +
     geom_point() +
-    xRot() + 
-    facet_grid(gene ~ timepoint + markers, scale="free", space="free") +
-    theme(strip.text.y = element_text(angle=0))
-  ggsave(out("MarkerSignatures_DA.pdf"), w=12,h=15)
+    geom_point(shape=1, color="lightgrey") +
+    xRot()
+  ggsave(out("Cluster_enrichments.pdf"), w=length(unique(fish$gene))*0.2 + 2,h=length(unique(fish$Clusters))*0.2+1)
 }
 
 

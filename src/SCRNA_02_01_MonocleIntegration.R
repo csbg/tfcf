@@ -9,6 +9,7 @@ require("sceasy")
 SANN <- fread(PATHS$SCRNA$ANN)
 SANN <- SANN[!grepl("\\d$", tissue)]
 SANN <- SANN[!grepl("^ECCITE3", sample_old)]
+SANN <- SANN[sample != "WT-LSK_OP0_NM_7d_1"]
 
 # Integrate data with Monocle
 tx <- SANN$tissue[1]

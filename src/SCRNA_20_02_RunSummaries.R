@@ -3,6 +3,8 @@ source("src/00_init.R")
 basedir <- "SCRNA_20_Summary/"
 outB <- dirout(basedir)
 
+source("src/FUNC_Monocle_PLUS.R")
+
 
 # load datasets -----------------------------------------------------------
 mobjs <- list()
@@ -28,7 +30,7 @@ for(tissue.name in names(mobjs)){
 }
 
 # Monocle analysis with predicted celltypes ---------------------------------------------------------------
-tissue.name <- names(mobjs)[2]
+(tissue.name <- names(mobjs)[2])
 for(tissue.name in names(mobjs)){
   
   analysis.name <- "monocle.singleR"

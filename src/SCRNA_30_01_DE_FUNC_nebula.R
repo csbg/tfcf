@@ -25,7 +25,8 @@ obj.de.ann <- data.frame(
 )
 obj.de.ann <- filter(obj.de.ann, !GuideDE %in% c("Pu.1", "Spi1"))
 obj.de.ann <- mutate(obj.de.ann, GuideDE = gsub("^Men$", "Men1", GuideDE))
-sort(unique(obj.de.ann$GuideDE))
+table(obj.de.ann$GuideDE)
+table(obj.de.ann$ClusterDE)
 obj.de.ann$GuideDE <- relevel(factor(obj.de.ann$GuideDE), ref = "NTC")
 obj.de <- obj.de[, row.names(obj.de.ann)]
 stopifnot(row.names(obj.de.ann) == colnames(obj.de))
