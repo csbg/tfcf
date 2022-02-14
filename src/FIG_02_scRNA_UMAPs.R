@@ -122,55 +122,61 @@ for(tx in names(inDir.funcs)){
 }
 
 # Cluster enrichment analyses ---------------------------------------------
-tx <- "ex.vivo"
+tx <- "in.vivo"
 for(tx in names(inDir.funcs)){
   # out directory
   out <- dirout(paste0(base.dir, "/", tx))
   
   # Collect enrichment scores
-  fish <- fread(inDir.funcs[[tx]]("Guides_Fisher_Mixscape.tsv"))
-  fish <- merge(fish, unique(SANN[,c("sample_broad", "timepoint"),with=F]), by.x="sample", by.y="sample_broad")
-  fish <- fish[timepoint != "28d"]
-  
-  # summarize across NTCs
-  fish <- fish[, .(
-    log2OR=mean(log2OR), 
-    dir=length(unique(sign(log2OR)))==1, 
-    padj=sum(padj < 0.01), 
-    N=.N), by=c("sample", "Clusters", "mixscape_class")]
-  fish[dir == FALSE, padj := 0]
-  fish[dir == FALSE, log2OR := NA]
-  
-  # Summarize across guides
-  fish[, gene := gsub("_.+", "", mixscape_class)]
-  fish <- fish[, .(
-    log2OR=mean(log2OR, na.rm=TRUE), 
-    dir=length(unique(sign(log2OR[!is.na(log2OR)])))==1, 
-    padj=sum(padj), 
-    N=sum(N)), by=c("sample", "Clusters", "gene")]
-  
-  # summarize across samples
-  fish[dir == FALSE, padj := 0]
-  fish[dir == FALSE, log2OR := NA]
-  fish <- fish[, .(
-    log2OR=mean(log2OR, na.rm=TRUE), 
-    dir=length(unique(sign(log2OR[!is.na(log2OR)])))==1, 
-    padj=sum(padj), 
-    N=sum(N)), by=c("Clusters", "gene")]
-  
-  # setup for plotting
-  fish[padj == 0 | is.na(log2OR), log2OR := 0]
-  fish[, sig.perc := padj / N]
-  fish[,log2OR_cap := pmin(abs(log2OR), 5) * sign(log2OR)]
-  fish <- hierarch.ordering(dt = fish, toOrder = "gene", orderBy = "Clusters", value.var = "log2OR")
-  fish <- hierarch.ordering(dt = fish, toOrder = "Clusters", orderBy = "gene", value.var = "log2OR")
-  ggplot(fish, aes(x=gene, y=Clusters, size=sig.perc, color=log2OR_cap)) + 
-    theme_bw() +
-    scale_color_gradient2(low="blue", midpoint = 0, high="red") +
-    geom_point() +
-    geom_point(shape=1, color="lightgrey") +
-    xRot()
-  ggsave(out("Cluster_enrichments.pdf"), w=length(unique(fish$gene))*0.2 + 2,h=length(unique(fish$Clusters))*0.2+1)
+  for(typex in c("", "_noBcells")){
+    fish.file <- inDir.funcs[[tx]]("Guides_Fisher_Mixscape",typex,".tsv")
+    if(!file.exists(fish.file)) next
+    
+    fish <- fread(fish.file)
+    fish <- merge(fish, unique(SANN[,c("sample_broad", "timepoint"),with=F]), by.x="sample", by.y="sample_broad")
+    fish <- fish[timepoint != "28d"]
+    
+    # summarize across NTCs
+    fish <- fish[, .(
+      log2OR=mean(log2OR), 
+      dir=length(unique(sign(log2OR)))==1, 
+      padj=sum(padj < 0.01), 
+      N=.N), by=c("sample", "Clusters", "mixscape_class")]
+    fish[dir == FALSE, padj := 0]
+    fish[dir == FALSE, log2OR := NA]
+    
+    # Summarize across guides
+    fish[, gene := gsub("_.+", "", mixscape_class)]
+    fish <- fish[, .(
+      log2OR=mean(log2OR, na.rm=TRUE), 
+      dir=length(unique(sign(log2OR[!is.na(log2OR)])))==1, 
+      padj=sum(padj), 
+      N=sum(N)), by=c("sample", "Clusters", "gene")]
+    
+    # summarize across samples
+    fish[dir == FALSE, padj := 0]
+    fish[dir == FALSE, log2OR := NA]
+    fish <- fish[, .(
+      log2OR=mean(log2OR, na.rm=TRUE), 
+      dir=length(unique(sign(log2OR[!is.na(log2OR)])))==1, 
+      padj=sum(padj), 
+      N=sum(N)), by=c("Clusters", "gene")]
+    
+    # setup for plotting
+    fish[padj == 0 | is.na(log2OR), log2OR := 0]
+    fish[, sig.perc := padj / N]
+    fish[,log2OR_cap := pmin(abs(log2OR), 5) * sign(log2OR)]
+    fish <- hierarch.ordering(dt = fish, toOrder = "gene", orderBy = "Clusters", value.var = "log2OR")
+    fish <- hierarch.ordering(dt = fish, toOrder = "Clusters", orderBy = "gene", value.var = "log2OR")
+    ggplot(fish, aes(x=gene, y=Clusters, size=sig.perc, color=log2OR_cap)) + 
+      theme_bw() +
+      scale_color_gradient2(low="blue", midpoint = 0, high="red") +
+      geom_point() +
+      geom_point(shape=1, color="lightgrey") +
+      xRot()
+    ggsave(out("Cluster_enrichments",typex,".pdf"), w=length(unique(fish$gene))*0.2 + 2,h=length(unique(fish$Clusters))*0.2+1)
+    write.tsv(fish, out("Cluster_enrichments",typex,".tsv"))
+  }
 }
 
 
@@ -178,11 +184,11 @@ for(tx in names(inDir.funcs)){
 # IN VIVO ---------------------------------------------------------
 inDir.current <- "in.vivo"
 out <- dirout(paste0(base.dir, "/", inDir.current))
-ann <- annList[[inDir.current]]
-
+ann <- annList[tissue == inDir.current]
+fish.bcells <- fread(out("Cluster_enrichments","",".tsv"))
 
 # . UMAP of timepoint / markers ---------------------------------------------------------
-ggplot(ann[perturbed == FALSE][markers != "ckit+"], aes(x=UMAP1, y=UMAP2)) + 
+ggplot(ann[perturbed == FALSE], aes(x=UMAP1, y=UMAP2)) + 
   theme_bw(12) +
   geom_hex(bins=100) +
   scale_fill_gradient(low="lightgrey", high="blue") +
@@ -190,7 +196,7 @@ ggplot(ann[perturbed == FALSE][markers != "ckit+"], aes(x=UMAP1, y=UMAP2)) +
 ggsave(out("UMAP_Groups.pdf"), w=7,h=5)
 
 # . UMAP of samples -------------------------------------------------------
-ggplot(ann[perturbed == FALSE][markers != "ckit+"], aes(x=UMAP1, y=UMAP2)) + 
+ggplot(ann[perturbed == FALSE], aes(x=UMAP1, y=UMAP2)) + 
   theme_bw(12) +
   geom_hex(bins=100) +
   scale_fill_gradient(low="lightgrey", high="blue") +
@@ -198,7 +204,7 @@ ggplot(ann[perturbed == FALSE][markers != "ckit+"], aes(x=UMAP1, y=UMAP2)) +
 ggsave(out("UMAP_Samples.pdf"), w=7,h=5)
 
 # . Plot top guides ---------------------------------------------------------
-pDT.top <- ann[timepoint == "14d" & markers == "Lin-"]
+pDT.top <- ann[timepoint == "14d" & markers == "lin-"]
 pDT.ntc <- pDT.top[mixscape_class.global == "NTC"]
 pDT.final <- copy(pDT.ntc)
 pDT.final$plot <- "NTC"
@@ -207,7 +213,7 @@ for(x in c("Wdr82", "Rcor1", "Ehmt1", "Men1", "Kmt2a")){
   pDTg$plot <- x
   pDT.final <- rbind(pDT.final, pDTg)
 }
-pDT.final$plot <- factor(pDT.final$plot, levels=c("NTC", levels(pDT$gene)))
+pDT.final$plot <- relevel(factor(pDT.final$plot), ref = "NTC")
 ggplot(pDT.final, aes(x=UMAP1, y=UMAP2)) + 
   theme_bw() +
   geom_hex(data=pDT.final[mixscape_class.global == "NTC"], bins=100, fill="lightgrey") +
@@ -216,8 +222,35 @@ ggplot(pDT.final, aes(x=UMAP1, y=UMAP2)) +
   facet_wrap(~plot, ncol=3)
 ggsave(out("UMAP_Guides.pdf"), w=9,h=7)
 
+
+# . Plot b cell enrichments -------------------------------------------------
+pDT <- fish.bcells[Clusters == "Imm. B-cell"]
+pDT$gene <- factor(pDT$gene, levels = pDT[order(log2OR)]$gene)
+ggplot(pDT, aes(x=log2OR, y=gene, size=sig.perc, color = log2OR)) + 
+  theme_bw(12) +
+  geom_vline(xintercept = 0) +
+  scale_size_continuous(range = c(1,4)) +
+  geom_point() + 
+  geom_point(shape=1, color="lightgrey") + 
+  scale_color_gradient2(low="blue", high="red") +
+  ylab("") + xlab("Enrichment in immature B-cells")
+ggsave(out("Cluster_enrichments_BcellsOnly.pdf"), w=5,h=4)
+
+# . Plot b cell enrichments -------------------------------------------------
+pDT <- ann[mixscape_class.global == "NTC", .N, by=c("Clusters", "sample_broad", "CRISPR_Cellranger")]
+pDT[, sum := sum(N), by=c("CRISPR_Cellranger", "sample_broad")]
+pDT[, frac := N/sum * 100]
+ggplot(pDT,  aes(x=Clusters, y=frac, fill=CRISPR_Cellranger)) + 
+  theme_bw(12) +
+  geom_bar(stat="identity", position="dodge") +
+  facet_wrap(~sample_broad) +
+  xRot()
+ggsave(out("NTC_clonality.pdf"), w=12, h=6)
+write.tsv(pDT[, sum(N), by=c("CRISPR_Cellranger", "sample_broad")][order(sample_broad)], out("NTC_clonality.tsv"))
+
+
 # . Plot displasia guides ---------------------------------------------------------
-pDT.top <- ann[timepoint == "28d"]
+pDT.top <- ann[timepoint == "28d"][markers=="lin-"]
 pDT.ntc <- pDT.top[mixscape_class.global == "NTC"]
 pDT.final <- copy(pDT.ntc)
 pDT.final$plot <- "NTC"
@@ -226,7 +259,7 @@ for(x in c("Brd9", "Gltscr1", "Phf10")){
   pDTg$plot <- x
   pDT.final <- rbind(pDT.final, pDTg)
 }
-pDT.final$plot <- factor(pDT.final$plot, levels=c("NTC", levels(pDT$gene)))
+pDT.final$plot <- relevel(factor(pDT.final$plot), ref = "NTC")
 ggplot(pDT.final, aes(x=UMAP1, y=UMAP2)) + 
   theme_bw() +
   geom_hex(data=pDT.final[mixscape_class.global == "NTC"], bins=100, fill="lightgrey") +
@@ -235,8 +268,8 @@ ggplot(pDT.final, aes(x=UMAP1, y=UMAP2)) +
   facet_wrap(~plot, ncol=3)
 ggsave(out("UMAP_Guides_displasia.pdf"), w=9,h=7)
 
-# . Plot displasia numberes -----------------------------------------------
-pDT <- copy(ann[markers=="Lin-"])
+# . Plot displasia numbers -----------------------------------------------
+pDT <- copy(ann[markers=="lin-"])
 pDT[, group := gsub("_.+", "", guide)]
 pDT <- pDT[!is.na(group)]
 pDT <- pDT[,.N, by=c("timepoint", "mixscape_class.global", "group")]
@@ -264,10 +297,8 @@ ggsave(out("Displasia_Numbers_bars.pdf"), w=5,h=3)
 # . load data ---------------------------------------------------------
 inDir.current <- "leukemia"
 out <- dirout(paste0(base.dir, "/", inDir.current))
-ann <- annList[[inDir.current]]
+ann <- annList[tissue == inDir.current]
 abs <- fread(inDir.funcs[[inDir.current]]("Antibodies.tsv"))
-abs <- merge(abs[,-c("UMAP1", "UMAP2")], umap.new[[inDir.current]], by="rn")
-
 
 # . Antibodies on UMAP ----------------------------------------------------
 ggplot(abs, aes(x=UMAP1, y=UMAP2)) +
@@ -278,7 +309,7 @@ ggplot(abs, aes(x=UMAP1, y=UMAP2)) +
 ggsave(out("Antibodies_UMAP.pdf"), w=12+2, h=9+1)
 
 # . Combine signatures with Antibodies --------------------------------------
-pDT <- merge(ann[perturbed == FALSE][,c("rn", "UMAP1", "UMAP2"),with=F], markS, by="rn")
+pDT <- merge(ann[perturbed == FALSE][,c("rn", "UMAP1", "UMAP2"),with=F], marker.signatures, by="rn")
 pDT[, value.norm := scale(value), by="FinalName"]
 absDT <- merge(
   pDT[,c("rn", "sig", "value.norm"), with=F],
@@ -306,19 +337,19 @@ ggplot(ann, aes(x=UMAP1, y=UMAP2)) +
 ggsave(out("CellCycle_UMAP.pdf"), w=16,h=5)
 
 # Percentage
-pDT <- ann[perturbed == TRUE | mixscape_class == "NTC"][,.N, by=c("Phase", "guide", "timepoint", "markers")]
-pDT[,sum := sum(N), by=c("guide", "timepoint", "markers")]
+pDT <- ann[perturbed == TRUE | mixscape_class == "NTC"][,.N, by=c("Phase", "CRISPR_Cellranger", "timepoint", "markers")]
+pDT[,sum := sum(N), by=c("CRISPR_Cellranger", "timepoint", "markers")]
 pDT[, perc := N/sum*100]
-pDT[, gene := gsub("_.+", "", guide)]
+pDT[, gene := gsub("_.+", "", CRISPR_Cellranger)]
 pDT$gene <- factor(pDT$gene, levels=pDT[,mean(perc), by=c("Phase", "gene")][order(V1)][Phase == "G1"]$gene)
-ggplot(pDT, aes(x=guide,y=perc,fill=Phase)) + 
+ggplot(pDT, aes(x=CRISPR_Cellranger,y=perc,fill=Phase)) + 
   theme_bw(12) +
   geom_bar(stat="identity") +
   scale_fill_manual(values=c(G1 = "#b2df8a", G2M = "#6a3d9a", S = "grey")) +
   facet_grid(timepoint + markers ~ gene, scales = "free", space = "free", switch = "x") +
   theme(strip.text.x = element_text(angle=90)) +
   xRot()
-ggsave(out("CellCycle_Numbers.pdf"), w=10,h=5)
+ggsave(out("CellCycle_Numbers.pdf"), w=15,h=5)
 
 
 # . Plot top guides ---------------------------------------------------------

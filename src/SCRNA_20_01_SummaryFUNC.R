@@ -85,6 +85,8 @@ for(colx in c(
 
 
 
+
+
 # Output annotation -------------------------------------------------------
 write.tsv(ann, out("Annotation.tsv"))
 
@@ -460,9 +462,10 @@ ggplot(res, aes(
 ggsave(out("Guides_Fisher_NTCs.pdf"), w=10, h=length(unique(res$grp)) * 0.25 + 1, limitsize = FALSE)
 
 
-# . Guides per cluster - MIXSCAPE ------------------------------------------------------
+# . Guides per cluster - fisher test - MIXSCAPE - no B cells ------------------------------------------------------
 res <- data.table()
-pDT1 <- ann[!is.na(mixscape_class)][mixscape_class.global != "NP"]
+pDT1 <- ann[!is.na(mixscape_class)][mixscape_class.global != "NP"][!grepl("B.cell", Clusters)]
+#pDT1 <- pDT1[!grepl("B.cell", Clusters) & !grepl("CLP", Clusters)]
 stopifnot(sum(is.na(pDT1$CRISPR_Cellranger)) == 0)
 sx <- pDT1$sample_broad[1]
 for(sx in unique(pDT1$sample_broad)){
@@ -474,7 +477,67 @@ for(sx in unique(pDT1$sample_broad)){
         mx <- as.matrix(with(pDT2[CRISPR_Cellranger %in% c(gx, ntc)], table(Clusters == cx, CRISPR_Cellranger == gx)))
         if(all(dim(mx) == c(2,2))){
           fish <- fisher.test(mx)
-          res <- rbind(res, data.table(Clusters=cx, mixscape_class=gx, ntc=ntc, p=fish$p.value, OR=fish$estimate, sample=sx, total.cells=sum(mx)))
+          res <- rbind(res, data.table(
+            Clusters=cx, 
+            mixscape_class=gx, 
+            ntc=ntc, 
+            p=fish$p.value, 
+            OR=fish$estimate, 
+            sample=sx, 
+            total.cells=sum(mx),
+            guide.cells=nrow(pDT2[CRISPR_Cellranger  == gx])
+            ))
+        }
+      }
+    }
+  }
+}
+res[,padj := p.adjust(p, method="BH")]
+res[, log2OR := log2(pmin(5, OR + min(res[OR != 0]$OR)))]
+res[,grp := paste(mixscape_class, sample)]
+res <- hierarch.ordering(res, toOrder = "grp", orderBy = "Clusters", value.var = "log2OR", aggregate = TRUE)
+#res <- hierarch.ordering(res, toOrder = "Clusters", orderBy = "grp", value.var = "log2OR")
+ggplot(res, aes(
+  x=Clusters,
+  y=ntc,
+  color=log2OR,
+  size=pmin(-log10(padj), 5))) +
+  geom_point(shape=16) +
+  scale_color_gradient2(name="log2OR", low="blue", high="red") +
+  scale_size_continuous(name="padj") +
+  facet_grid(mixscape_class + sample ~ ., space = "free", scales = "free") +
+  theme_bw(12) +
+  theme(strip.text.y = element_text(angle=0)) +
+  xRot()
+ggsave(out("Guides_Fisher_Mixscape_noBcells.pdf"), w=10, h=length(unique(res$grp)) * 0.50 + 1, limitsize = FALSE)
+write.tsv(res[,-c("grp"), with=F], out("Guides_Fisher_Mixscape_noBcells.tsv"))
+
+
+# . Guides per cluster - fisher test - MIXSCAPE - with B cells ------------------------------------------------------
+res <- data.table()
+pDT1 <- ann[!is.na(mixscape_class)][mixscape_class.global != "NP"]
+#pDT1 <- pDT1[!grepl("B.cell", Clusters) & !grepl("CLP", Clusters)]
+stopifnot(sum(is.na(pDT1$CRISPR_Cellranger)) == 0)
+sx <- pDT1$sample_broad[1]
+for(sx in unique(pDT1$sample_broad)){
+  pDT2 <- pDT1[sample_broad == sx]
+  gx <- pDT2$CRISPR_Cellranger[1]
+  for(gx in unique(pDT2[mixscape_class != "NTC"]$CRISPR_Cellranger)){
+    for(cx in unique(pDT2$Clusters)){
+      for(ntc in unique(pDT2[mixscape_class == "NTC"][,.N, by="CRISPR_Cellranger"][N > 20]$CRISPR_Cellranger)){
+        mx <- as.matrix(with(pDT2[CRISPR_Cellranger %in% c(gx, ntc)], table(Clusters == cx, CRISPR_Cellranger == gx)))
+        if(all(dim(mx) == c(2,2))){
+          fish <- fisher.test(mx)
+          res <- rbind(res, data.table(
+            Clusters=cx, 
+            mixscape_class=gx, 
+            ntc=ntc, 
+            p=fish$p.value, 
+            OR=fish$estimate, 
+            sample=sx, 
+            total.cells=sum(mx),
+            guide.cells=nrow(pDT2[CRISPR_Cellranger  == gx])
+          ))
         }
       }
     }
@@ -499,7 +562,6 @@ ggplot(res, aes(
   xRot()
 ggsave(out("Guides_Fisher_Mixscape.pdf"), w=10, h=length(unique(res$grp)) * 0.50 + 1, limitsize = FALSE)
 write.tsv(res[,-c("grp"), with=F], out("Guides_Fisher_Mixscape.tsv"))
-
 
 
 # Guides Signature differential analysis ----------------------------------
