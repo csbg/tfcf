@@ -36,8 +36,8 @@ for(tx in names(mobjs)){
 
 # merge results -----------------------------------------------------------
 (tx <- names(mobjs)[1])
-tx <- "in.vivo"
-goi <- c("Gata1", "Gata2", "S100a8", "Mecom", "Hoxa7", "Hoxa9")
+tx <- "leukemia"
+goi <- c("Gata1", "Gata2", "S100a8", "Mecom", "Hoxa7", "Hoxa9", "Cd34", "Ctsg")
 for(tx in names(mobjs)){
   
   monocle.obj <- mobjs[[tx]]
@@ -125,9 +125,14 @@ for(tx in names(mobjs)){
   rcor.cnt <- xDT.majvote[Cluster == rcor.cluster & labels == "MEP"][sample %in% rcor.samples]
   if(nrow(rcor.cnt) > 0 & nrow(rcor.cnt[grepl("^Rcor", guide)]) / nrow(rcor.cnt) > 0.25) xDT.majvote[Cluster == rcor.cluster & labels == "MEP", labels := "MEP (pert.)"]
   
-  # Reassign GMPs based on S100a8 expression (in matured ones)
+  # Reassign GMPs
+  # 1. based on S100a8 expression (in matured ones)
   gmp.mat.clusters <- xDT.majvote[labels=="GMP"][,mean(S100a8), by=c("Cluster")][V1 > 1]$Cluster
   xDT.majvote[labels=="GMP" & Cluster %in% gmp.mat.clusters, labels := "GMP (late)"]
+  # 2. based on CD34 / Ctsg expression
+  gmp.cd34 <- xDT.majvote[labels == "GMP"][,.(g1=mean(Cd34), g2=mean(Ctsg)), by=c("Cluster")]
+  #ggplot(gmp.cd34, aes(x=g1, y=g2)) + geom_point()
+  xDT.majvote[labels=="GMP" & Cluster %in% gmp.cd34[g1 - g2 > 0]$Cluster, labels := "GMP (early)"]
   
   # Reassign HSCs to EBMP (more mature)
   ebmp.clusters <- xDT.majvote[labels=="HSC"][,.(mean(Mecom + Hoxa7 + Hoxa9)/3), by=c("Cluster")][V1 < 0.2]$Cluster

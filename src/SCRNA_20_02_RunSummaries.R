@@ -30,7 +30,7 @@ for(tissue.name in names(mobjs)){
 }
 
 # Monocle analysis with predicted celltypes ---------------------------------------------------------------
-(tissue.name <- names(mobjs)[2])
+(tissue.name <- names(mobjs)[1])
 for(tissue.name in names(mobjs)){
   
   analysis.name <- "monocle.singleR"

@@ -121,6 +121,7 @@ for(tx in names(inDir.funcs)){
   # Plot fraction of predicted cells in each cluster
 }
 
+
 # Cluster enrichment analyses ---------------------------------------------
 tx <- "in.vivo"
 for(tx in names(inDir.funcs)){
@@ -128,54 +129,60 @@ for(tx in names(inDir.funcs)){
   out <- dirout(paste0(base.dir, "/", tx))
   
   # Collect enrichment scores
-  for(typex in c("", "_noBcells")){
-    fish.file <- inDir.funcs[[tx]]("Guides_Fisher_Mixscape",typex,".tsv")
+  typex <- "noBcells"
+  for(typex in gsub(".+_(.+).pdf", "\\1", list.files(inDir.funcs[[tx]](""), pattern="Guides_Fisher_Mixscape_.*.pdf"))){
+    fish.file <- inDir.funcs[[tx]]("Guides_Fisher_Mixscape_",typex,".tsv")
     if(!file.exists(fish.file)) next
     
-    fish <- fread(fish.file)
-    fish <- merge(fish, unique(SANN[,c("sample_broad", "timepoint"),with=F]), by.x="sample", by.y="sample_broad")
-    fish <- fish[timepoint != "28d"]
-    
-    # summarize across NTCs
-    fish <- fish[, .(
-      log2OR=mean(log2OR), 
-      dir=length(unique(sign(log2OR)))==1, 
-      padj=sum(padj < 0.01), 
-      N=.N), by=c("sample", "Clusters", "mixscape_class")]
-    fish[dir == FALSE, padj := 0]
-    fish[dir == FALSE, log2OR := NA]
-    
-    # Summarize across guides
-    fish[, gene := gsub("_.+", "", mixscape_class)]
-    fish <- fish[, .(
-      log2OR=mean(log2OR, na.rm=TRUE), 
-      dir=length(unique(sign(log2OR[!is.na(log2OR)])))==1, 
-      padj=sum(padj), 
-      N=sum(N)), by=c("sample", "Clusters", "gene")]
-    
-    # summarize across samples
-    fish[dir == FALSE, padj := 0]
-    fish[dir == FALSE, log2OR := NA]
-    fish <- fish[, .(
-      log2OR=mean(log2OR, na.rm=TRUE), 
-      dir=length(unique(sign(log2OR[!is.na(log2OR)])))==1, 
-      padj=sum(padj), 
-      N=sum(N)), by=c("Clusters", "gene")]
-    
-    # setup for plotting
-    fish[padj == 0 | is.na(log2OR), log2OR := 0]
-    fish[, sig.perc := padj / N]
-    fish[,log2OR_cap := pmin(abs(log2OR), 5) * sign(log2OR)]
-    fish <- hierarch.ordering(dt = fish, toOrder = "gene", orderBy = "Clusters", value.var = "log2OR")
-    fish <- hierarch.ordering(dt = fish, toOrder = "Clusters", orderBy = "gene", value.var = "log2OR")
-    ggplot(fish, aes(x=gene, y=Clusters, size=sig.perc, color=log2OR_cap)) + 
-      theme_bw() +
-      scale_color_gradient2(low="blue", midpoint = 0, high="red") +
-      geom_point() +
-      geom_point(shape=1, color="lightgrey") +
-      xRot()
-    ggsave(out("Cluster_enrichments",typex,".pdf"), w=length(unique(fish$gene))*0.2 + 2,h=length(unique(fish$Clusters))*0.2+1)
-    write.tsv(fish, out("Cluster_enrichments",typex,".tsv"))
+    fish.full <- fread(fish.file)
+    fish.full <- merge(fish.full, unique(SANN[,c("sample_broad", "timepoint"),with=F]), by.x="sample", by.y="sample_broad")
+    for(timex in c(unique(fish.full$timepoint), "all")){
+      fish <- copy(fish.full)
+      if(timex != "all") fish <- fish[timepoint == timex]
+      
+      # summarize across NTCs
+      fish <- fish[, .(
+        log2OR=mean(log2OR), 
+        dir=length(unique(sign(log2OR)))==1, 
+        padj=sum(padj < 0.01), 
+        N=.N), by=c("sample", "Clusters", "mixscape_class")]
+      fish[dir == FALSE, padj := 0]
+      fish[dir == FALSE, log2OR := NA]
+      
+      # Summarize across guides
+      fish[, gene := gsub("_.+", "", mixscape_class)]
+      fish <- fish[, .(
+        log2OR=mean(log2OR, na.rm=TRUE), 
+        dir=length(unique(sign(log2OR[!is.na(log2OR)])))==1, 
+        padj=sum(padj), 
+        N=sum(N)), by=c("sample", "Clusters", "gene")]
+      fish[dir == FALSE, padj := 0]
+      fish[dir == FALSE, log2OR := NA]
+      
+      # summarize across samples
+      fish <- fish[, .(
+        log2OR=mean(log2OR, na.rm=TRUE), 
+        dir=length(unique(sign(log2OR[!is.na(log2OR)])))==1, 
+        padj=sum(padj), 
+        N=sum(N)), by=c("Clusters", "gene")]
+      fish[dir == FALSE, padj := 0]
+      fish[dir == FALSE, log2OR := NA]
+      
+      # setup for plotting
+      fish[padj == 0 | is.na(log2OR), log2OR := 0]
+      fish[, sig.perc := padj / N]
+      fish[,log2OR_cap := pmin(abs(log2OR), 5) * sign(log2OR)]
+      fish <- hierarch.ordering(dt = fish, toOrder = "gene", orderBy = "Clusters", value.var = "log2OR")
+      fish <- hierarch.ordering(dt = fish, toOrder = "Clusters", orderBy = "gene", value.var = "log2OR")
+      ggplot(fish, aes(x=gene, y=Clusters, size=sig.perc, color=log2OR_cap)) + 
+        theme_bw() +
+        scale_color_gradient2(low="blue", midpoint = 0, high="red") +
+        geom_point() +
+        geom_point(shape=1, color="lightgrey") +
+        xRot()
+      ggsave(out("Cluster_enrichments_",typex,"_", timex, ".pdf"), w=length(unique(fish$gene))*0.2 + 2,h=length(unique(fish$Clusters))*0.2+1)
+      write.tsv(fish, out("Cluster_enrichments_",typex,"_", timex,".tsv"))
+    }
   }
 }
 
@@ -185,7 +192,7 @@ for(tx in names(inDir.funcs)){
 inDir.current <- "in.vivo"
 out <- dirout(paste0(base.dir, "/", inDir.current))
 ann <- annList[tissue == inDir.current]
-fish.bcells <- fread(out("Cluster_enrichments","",".tsv"))
+fish.bcells <- fread(out("Cluster_enrichments","_basic", "_14d",".tsv"))
 
 # . UMAP of timepoint / markers ---------------------------------------------------------
 ggplot(ann[perturbed == FALSE], aes(x=UMAP1, y=UMAP2)) + 
@@ -236,7 +243,7 @@ ggplot(pDT, aes(x=log2OR, y=gene, size=sig.perc, color = log2OR)) +
   ylab("") + xlab("Enrichment in immature B-cells")
 ggsave(out("Cluster_enrichments_BcellsOnly.pdf"), w=5,h=4)
 
-# . Plot b cell enrichments -------------------------------------------------
+# . NTC distributions to assess clonality effects -------------------------------------------------
 pDT <- ann[mixscape_class.global == "NTC", .N, by=c("Clusters", "sample_broad", "CRISPR_Cellranger")]
 pDT[, sum := sum(N), by=c("CRISPR_Cellranger", "sample_broad")]
 pDT[, frac := N/sum * 100]

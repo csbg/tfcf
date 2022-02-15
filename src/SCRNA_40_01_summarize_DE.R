@@ -1,6 +1,6 @@
 source("src/00_init.R")
 
-base.dir <- "SCRNA_40_DE_summary/"
+base.dir <- "SCRNA_40_01_DE_summary/"
 out <- dirout(base.dir)
 
 
@@ -15,17 +15,6 @@ ds <- function(path){load(path); return(monocle.obj)}
 
 # EnrichR -----------------------------------------------------------------
 (load(PATHS$RESOURCES$Enrichr.mouse))
-
-
-# Folders -----------------------------------------------------------------
-
-inDir.funcs <- list(
-  "in.vivo"=dirout_load("FULLINT_10_01_BasicAnalysis_in.vivo"),
-  "in.vitro"=dirout_load("FULLINT_10_01_BasicAnalysis_in.vitro"),
-  "leukemia"=dirout_load("FULLINT_10_01_BasicAnalysis_leukemia")
-)
-inDir.full <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")
-
 
 
 # Load data ---------------------------------------------------------------
@@ -71,15 +60,22 @@ dev.off()
 #   geom_tile() + 
 #   facet_grid(gene2 ~ gene1, scales = "free", space = "free")
 set.seed(1212)
-mds.res <- data.table(cmdscale(d=as.dist(1-cMT), k=2), keep.rownames=TRUE)
-mds.res <- cbind(mds.res, setNames(data.table(do.call(rbind, strsplit(mds.res$rn, " "))), c("gene", "tissue")))
-ggplot(mds.res, aes(x=V1, y=V2, color=tissue, label=gene)) + 
-  geom_point(size=1) + 
-  ggrepel::geom_text_repel()+#color="black") + 
-  theme_bw() +
-  xlab("MDS dimension 1") +
-  ylab("MDS dimension 2")
-ggsave(out("Correlation_Heatmap_MDS.pdf"), w=8, h=7)
+
+
+tx <- "ex.vivo_myeloid"
+for(tx in c(unique(DE.RES$tissue), "all")){
+  cMTx <- cMT
+  if(tx != "all") cMTx <- cMTx[grepl(tx, row.names(cMTx)),grepl(tx, colnames(cMTx))]
+  mds.res <- data.table(cmdscale(d=as.dist(1-cMTx), k=2), keep.rownames=TRUE)
+  mds.res <- cbind(mds.res, setNames(data.table(do.call(rbind, strsplit(mds.res$rn, " "))), c("gene", "tissue")))
+  ggplot(mds.res, aes(x=V1, y=V2, color=tissue, label=gene)) + 
+    geom_point(size=1) + 
+    ggrepel::geom_text_repel()+#color="black") + 
+    theme_bw() +
+    xlab("MDS dimension 1") +
+    ylab("MDS dimension 2")
+  ggsave(out("Correlation_Heatmap_MDS_",tx,".pdf"), w=8, h=7)
+}
 
 
 
