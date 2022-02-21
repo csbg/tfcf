@@ -6,7 +6,7 @@ require(ggrepel)
 
 
 # Read data ---------------------------------------------------------------
-inDir <- dirout_load("FULLINT_10_02_DE")
+inDir <- dirout_load("SCRNA_40_01_DE_summary")
 
 cMT <- as.matrix(read.csv(inDir("DEG_Cor.csv"), row.names = 1))
 fcMT <- as.matrix(read.csv(inDir("FoldChanges.csv"), row.names=1))
@@ -34,16 +34,16 @@ GOI <- c("Kmt2a", "Kmt2d", "Men1", "Rbbp4", "Setdb1", "Smarcd2", "Wdr82")
 
 
 
-# Correlation heatmap ----------------------------------------------------
+# Correlation analyses ----------------------------------------------------
 pDT <- melt(data.table(cMT, keep.rownames = TRUE), id.vars = "rn")
 pDT[, guide1 := sub(" .+$", "", rn)]
 pDT[, tissue1 := sub("^.+? ", "", rn)]
 pDT[, guide2 := sub("\\..+$", "", variable)]
 pDT[, tissue2 := sub("^.+?\\.", "", variable)]
-
 pDT <- hierarch.ordering(pDT, toOrder = "guide1", orderBy = "variable", value.var = "value", aggregate = TRUE)
 pDT <- hierarch.ordering(pDT, toOrder = "guide2", orderBy = "rn", value.var = "value", aggregate = TRUE)
 
+# Overall correlations
 ggplot(pDT, aes(x=guide1, y=guide2, fill=value)) + 
   themeNF() +
   geom_tile() + 
@@ -53,7 +53,37 @@ ggplot(pDT, aes(x=guide1, y=guide2, fill=value)) +
   xRot()
 ggsaveNF(out("CorrelationHM.pdf"), w=3,h=3)
 
+# Normal vs cancer correlations
+pDT[,variable := as.character(variable)]
+pDT[make.names(rn) == make.names(variable), value := NA]
+pDT.cvh <- pDT[!grepl("in.vivo", tissue1) & !grepl("in.vivo", tissue2)]
+ggplot(pDT.cvh, 
+       aes(
+         x=paste(guide1, tissue1), 
+         y=paste(guide2, tissue2), 
+         fill=value)) + 
+  themeNF() +
+  geom_tile() + 
+  facet_grid(guide2 ~ guide1, space = "free", scales = "free") +
+  scale_fill_gradient2(low="blue", high="red") +
+  xlab("") + ylab("") +
+  theme(strip.text.x = element_text(angle=90)) +
+  theme(strip.text.y = element_text(angle=0)) +
+  theme(panel.spacing = unit(0, "lines")) +
+  xRot()
+ggsaveNF(out("Correlation_CVH_HM.pdf"), w=4,h=4)
 
+# Rank factors by their normal vs healthy correlation
+pDT.sum <- pDT.cvh[guide1 == guide2 & tissue1 == "ex.vivo_myeloid" & tissue1 != tissue2]
+pDT.sum$guide <- factor(pDT.sum$guide1, levels = pDT.sum[order(-value)]$guide1)
+ggplot(pDT.sum, aes(x=guide, y=value)) + 
+  theme_bw() +
+  geom_bar(stat="identity") + 
+  ylab("Correlation normal vs cancer") +
+  xRot()
+ggsaveNF(out("Correlation_CVH_bars.pdf"), w=2,h=1, guides = TRUE)
+
+# MDS of correlations
 set.seed(1212)
 mds.res <- data.table(cmdscale(d=as.dist(1-cMT), k=2), keep.rownames=TRUE)
 mds.res <- cbind(mds.res, setNames(data.table(do.call(rbind, strsplit(mds.res$rn, " "))), c("gene", "tissue")))
@@ -67,6 +97,18 @@ ggsaveNF(out("CorrelationHM_MDS.pdf"), w=2, h=2)
 
 
 
+# Scatterplot ----------------------------------------------------
+pDT <- data.table(fcMT, keep.rownames = TRUE)
+pDT <- melt(pDT, id.vars = "rn")
+pDT[, guide := gsub("\\..+$", "", variable)]
+pDT[, tissue := sub("^.+?\\.", "", variable)]
+pDT <- dcast.data.table(pDT[!grepl("in.vivo", tissue)], guide + rn ~ tissue, value.var = "value")
+ggplot(pDT, aes(x=ex.vivo_myeloid, y=leukemia_myeloid)) + 
+  theme_bw(12) +
+  stat_binhex(aes(fill=log10(..count..))) +
+  facet_wrap(~guide, scales = "free")
+ggsave(out("Correlation_CvH_Scatterplots.pdf"), w=20,h=20)
+
 
 # Vulcano plots -----------------------------------------------------------
 ggplot(deDT[guide %in% GOI], aes(x=estimate, y=pmin(30, -log10(p_value)))) + 
@@ -74,7 +116,6 @@ ggplot(deDT[guide %in% GOI], aes(x=estimate, y=pmin(30, -log10(p_value)))) +
   facet_grid(guide ~ tissue, scale="free_y") +
   stat_binhex(aes(fill=log10(..count..)))
 ggsave(out("Vulcano.pdf"), w=12,h=16)
-
 
 
 

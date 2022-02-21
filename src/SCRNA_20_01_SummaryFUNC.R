@@ -466,16 +466,23 @@ ggsave(out("Guides_Fisher_NTCs.pdf"), w=10, h=length(unique(res$grp)) * 0.25 + 1
 
 # FIRST PREPARE DIFFERENT ANALYSIS (in different input tables)
 fish.test.sets <- list()
-x <- ann[!is.na(mixscape_class)][mixscape_class.global != "NP"]
-# basic analysis of everything
-fish.test.sets[[paste0("basic")]] <- x
-# without b cells
-fish.test.sets[[paste0("noBcells")]] <- x[!grepl("B.cell", Clusters)]
-# Early branching analysis
-eba <- list(MEP=c("MEP (early)", "MEP"),GMP=c("GMP (early)", "Mono", "GMP"))
-xxx <- x[Clusters %in% do.call(c, eba)]
-for(xnam in names(eba)){xxx[Clusters %in% eba[[xnam]], Clusters := xnam]}
-fish.test.sets[["earlyBranches"]] <- xxx
+
+# using mixscape
+for(mixx in c("", "noMixscape")){
+  x <- ann[!is.na(mixscape_class)]
+  x <- if(mixx == "") x[mixscape_class.global != "NP"] else x
+  # basic analysis of everything
+  fish.test.sets[[paste0("basic", mixx)]] <- x
+  # without b cells
+  fish.test.sets[[paste0("noBcells", mixx)]] <- x[!grepl("B.cell", Clusters)]
+  # Early branching analysis
+  eba <- list(MEP=c("MEP (early)", "MEP"),GMP=c("GMP (early)", "Mono", "GMP"))
+  xxx <- x[Clusters %in% do.call(c, eba)]
+  for(xnam in names(eba)){xxx[Clusters %in% eba[[xnam]], Clusters := xnam]}
+  fish.test.sets[[paste0("earlyBranches", mixx)]] <- xxx
+}
+
+
 # remove those with 0 rows
 fish.test.sets <- fish.test.sets[sapply(fish.test.sets, nrow) > 0]
 
@@ -512,14 +519,14 @@ for(fish.test.x in names(fish.test.sets)){
     }
   }
   
-  # modify and save results
+  # save file
+  if(nrow(res) < 3) next
   res[,padj := p.adjust(p, method="BH")]
   res[, log2OR := log2(pmin(5, OR + min(res[OR != 0]$OR)))]
   res[,grp := paste(mixscape_class, sample)]
   write.tsv(res[,-c("grp"), with=F], out("Guides_Fisher_Mixscape_",fish.test.x,".tsv"))
   
-  # Plot
-  if(nrow(res) < 3) next
+  # plot
   res <- hierarch.ordering(res, toOrder = "grp", orderBy = "Clusters", value.var = "log2OR", aggregate = TRUE)
   ggplot(res, aes(
     x=Clusters,

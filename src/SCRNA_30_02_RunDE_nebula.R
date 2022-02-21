@@ -1,6 +1,7 @@
 source("src/00_init.R")
 
 require(nebula)
+require(doMC)
 source("src/FUNC_Monocle_PLUS.R")
 
 basedir <- "SCRNA_30_DE_Nebula/"
@@ -22,21 +23,52 @@ for(tissuex in PATHS$SCRNA$MONOCLE.NAMES){
 # Which analysis to take celltypes from? -----------------------------------
 ANALYSIS <- "monocle.singleR"
 
-# Normal Monocle analysis ---------------------------------------------------------------
+# Analysis of Myeloid cells ---------------------------------------------------------------
 ct.use <- "myeloid"
-(tissue.name <- names(mobjs)[2])
-for(tissue.name in names(mobjs)){
+(tissue.name <- names(mobjs)[1])
+#for(tissue.name in names(mobjs)){
+for(tissue.name in "in.vivo"){
 
   # Monocle object
   monocle.obj <- mobjs[[tissue.name]]
-  monocle.obj <- monocle.obj[, monocle.obj$timepoint == "14d"]
+  monocle.obj <- monocle.obj[, monocle.obj$timepoint != "28d"]
   monocle.obj <- monocle.obj[, monocle.obj$sample != "WT-LSK_OP0_NM_7d_1"]
-  
+
   # Filter only celltypes of interest
   ann <- fread(dirout_load(paste0("SCRNA_20_Summary/",tissue.name, "_", ANALYSIS))("Annotation.tsv"))
   ann <- ann[rn %in% colnames(monocle.obj)]
   sort(unique(ann$Clusters))
   for(x in c("Ery", "B.cell", "CLP", "MEP", "T.cell")){ann <- ann[!grepl(x, Clusters)]}
+  sort(unique(ann$Clusters))
+
+  # Assign clusters to use as covariate (to avoid seeing shifts in populations but changes within populations)
+  monocle.obj <- monocle.obj[, ann$rn]
+  monocle.obj$clusterDE <- ann$Clusters
+
+  out <- dirout(paste0(basedir, tissue.name, "_", ct.use))
+
+  source("src/SCRNA_30_01_DE_FUNC_nebula.R")
+}
+
+
+# Analysis of Erythroid cells ---------------------------------------------------------------
+ct.use <- "erythroid"
+(tissue.name <- names(mobjs)[1])
+for(tissue.name in "in.vivo"){
+  
+  # Monocle object
+  monocle.obj <- mobjs[[tissue.name]]
+  monocle.obj <- monocle.obj[, monocle.obj$timepoint != "28d"]
+  monocle.obj <- monocle.obj[, monocle.obj$sample != "WT-LSK_OP0_NM_7d_1"]
+  
+  # Filter only celltypes of interest
+  ann <- fread(dirout_load(paste0("SCRNA_20_Summary/",tissue.name, "_", ANALYSIS))("Annotation.tsv"))
+  ann <- ann[rn %in% colnames(monocle.obj)]
+  ann.use <- data.table()
+  sort(unique(ann$Clusters))
+  for(x in c("Ery", "MEP")){ann.use <- rbind(ann.use, ann[!grepl(x, Clusters)])}
+  ann.use <- unique(ann.use)
+  ann <- ann.use
   sort(unique(ann$Clusters))
   
   # Assign clusters to use as covariate (to avoid seeing shifts in populations but changes within populations)
@@ -44,8 +76,7 @@ for(tissue.name in names(mobjs)){
   monocle.obj$clusterDE <- ann$Clusters
   
   out <- dirout(paste0(basedir, tissue.name, "_", ct.use))
-
+  
   source("src/SCRNA_30_01_DE_FUNC_nebula.R")
 }
-
 

@@ -35,6 +35,15 @@ write.tsv(data.table(obj.de.ann, keep.rownames = TRUE), out("DEG_Annnotation.tsv
 
 
 
+# Calculate non-zero values -----------------------------------------------
+guide.barcodes <- split(row.names(obj.de.ann), factor(obj.de.ann$GuideDE))
+m <- counts(obj.de)
+stopifnot(class(m) == "dgCMatrix")
+guide.fnz <- lapply(guide.barcodes, function(bcx) tabulate(m[,bcx,drop=F]@i + 1))
+guide.fnz <- do.call(cbind, guide.fnz)
+row.names(guide.fnz) <- row.names(m)
+total.count <- data.table(obj.de.ann)[,.(totalCount = .N), by="GuideDE"]
+
 # Run nebula --------------------------------------------------------------
 
 # Model matrix
@@ -69,9 +78,23 @@ saveRDS(res, neb.file)
 
 
 #  . Export results -------------------------------------------------------
+
+# Use only reliable results
 resGuides <- res[grepl("GuideDE", term)][convergence >= -15]
+
+# Clean up names
 resGuides[, guide := gsub("^GuideDE", "", term)]
 resGuides[, guide := gsub("_.+$", "", guide)]
+resGuides[, guide := gsub("^GuideDE", "", guide)]
+
+# Add counts
+resGuides <- merge(
+  resGuides, 
+  setNames(melt(data.table(guide.fnz, keep.rownames = TRUE), id.vars = "rn"), c("gene_id", "guide", "nonzeroCount")),
+  by=c("gene_id", "guide"))
+resGuides <- merge(resGuides, total.count, by.x="guide", by.y="GuideDE")
+
+# Clean estimates
 resGuides <- resGuides[!is.na(estimate)]
 resGuides[, estimate_raw := estimate]
 resGuides[, estimate := ifelse(p_value > 0.9, 0, estimate)]

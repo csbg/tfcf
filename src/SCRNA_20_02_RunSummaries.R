@@ -15,22 +15,22 @@ for(tissuex in PATHS$SCRNA$MONOCLE.NAMES){
 
 
 # Normal Monocle analysis ---------------------------------------------------------------
-tissue.name <- names(mobjs)[2]
-for(tissue.name in names(mobjs)){
-
-  analysis.name <- "monocle"
-
-  monocle.obj <- mobjs[[tissue.name]]
-
-  monocle.obj$clusters.final <-  getCL(monocle.obj)
-
-  out <- dirout(paste0("SCRNA_20_Summary/", tissue.name, "_", analysis.name))
-
-  source("src/SCRNA_20_01_SummaryFUNC.R")
-}
+# tissue.name <- names(mobjs)[2]
+# for(tissue.name in names(mobjs)){
+# 
+#   analysis.name <- "monocle"
+# 
+#   monocle.obj <- mobjs[[tissue.name]]
+# 
+#   monocle.obj$clusters.final <-  getCL(monocle.obj)
+# 
+#   out <- dirout(paste0("SCRNA_20_Summary/", tissue.name, "_", analysis.name))
+# 
+#   source("src/SCRNA_20_01_SummaryFUNC.R")
+# }
 
 # Monocle analysis with predicted celltypes ---------------------------------------------------------------
-(tissue.name <- names(mobjs)[1])
+(tissue.name <- names(mobjs)[3])
 for(tissue.name in names(mobjs)){
   
   analysis.name <- "monocle.singleR"

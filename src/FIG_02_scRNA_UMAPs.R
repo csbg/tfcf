@@ -20,7 +20,11 @@ for(tx in TISSUES){inDir.funcs[[tx]] <- dirout_load(paste0("SCRNA_20_Summary/", 
 
 # Load data ---------------------------------------------------------------
 
+# Annotations
 SANN <- fread(PATHS$SCRNA$ANN)
+
+# Marker genes
+marker.genes <- fread("metadata/markers.csv")
 
 # Load signatures
 marker.signatures <- lapply(TISSUES, function(tissue.name){
@@ -52,6 +56,19 @@ umap.proj <- list(
   izzo = readRDS(dirout_load("SCRNA_10_collect_UMAPs")("ProjIzzo.RDS")),
   in.vivo = readRDS(dirout_load("SCRNA_10_collect_UMAPs")("ProjVivo.RDS"))
 )
+
+# load Monocle Objects
+mobjs <- list()
+tissuex <- PATHS$SCRNA$MONOCLE.NAMES[1]
+for(tissuex in PATHS$SCRNA$MONOCLE.NAMES){
+  (load(PATHS$SCRNA$MONOCLE.DIR(tissuex)))
+  mobjs[[tissuex]] <- monocle.obj
+}
+for(tissuex in names(mobjs)){
+  mobjs[[tissuex]]$CellType <- annList[match(colnames(mobjs[[tissuex]]), rn)]$Clusters
+  fData(mobjs[[tissuex]])$gene_short_name <- row.names(fData(mobjs[[tissuex]]))
+}
+
 
 
 # SETUP ENDS HERE ---------------------------------------------------------
@@ -119,6 +136,14 @@ for(tx in names(inDir.funcs)){
   # Plot expression of marker genes in each cluster
   
   # Plot fraction of predicted cells in each cluster
+}
+
+
+# Marker gene expression --------------------------------------------------
+for(tx in names(mobjs)){
+  out <- dirout(paste0(base.dir, "/", tx))
+  plot_genes_by_group(mobjs[[tx]], markers = marker.genes$Name, group_cells_by = "CellType") + scale_size_continuous(range=c(0,5))
+  ggsave(out("Markers_Clusters.pdf"), w=6,h=8)
 }
 
 
@@ -316,23 +341,14 @@ ggplot(abs, aes(x=UMAP1, y=UMAP2)) +
 ggsave(out("Antibodies_UMAP.pdf"), w=12+2, h=9+1)
 
 # . Combine signatures with Antibodies --------------------------------------
-pDT <- merge(ann[perturbed == FALSE][,c("rn", "UMAP1", "UMAP2"),with=F], marker.signatures, by="rn")
-pDT[, value.norm := scale(value), by="FinalName"]
-absDT <- merge(
-  pDT[,c("rn", "sig", "value.norm"), with=F],
-  abs[,c("rn", "Antibody", "Signal.norm"), with=F],
-  by="rn", allow.cartesian=TRUE)
-absC <- absDT[, cor(value.norm, Signal.norm, use="pairwise.complete.obs"), by=c("sig", "Antibody")][order(V1)]
-absC <- hierarch.ordering(absC, toOrder = "sig", orderBy = "Antibody", value.var = "V1")
-absC <- hierarch.ordering(absC, orderBy = "sig", toOrder = "Antibody", value.var = "V1")
-ggplot(absC,
-       aes(x=sig, y=Antibody, fill=V1)) + 
-  theme_bw(12) +
-  geom_tile() + 
+pDT <- abs[, .(Signal=mean(Signal.norm, na.rm=TRUE)), by=c("Clusters", "Antibody")]
+pDT <- hierarch.ordering(pDT, "Clusters", "Antibody", "Signal")
+pDT <- hierarch.ordering(pDT, "Antibody", "Clusters", "Signal")
+ggplot(pDT, aes(x=Clusters,y=Antibody, fill=Signal)) +
+  geom_tile() +
   scale_fill_gradient2(low="blue", high="red") +
   xRot()
-ggsave(out("Antibodies_signatures_correlation.pdf"), w=5,h=5)
-
+ggsave(out("Antibodies_Average.pdf"), w=5, h=4)
 
 # . Cell cycle ------------------------------------------------------------
 # UMAP
@@ -377,3 +393,24 @@ ggplot(pDT.final, aes(x=UMAP1, y=UMAP2)) +
   scale_fill_gradientn(colours=c("#6a3d9a", "#e31a1c", "#ff7f00", "#ffff99")) +
   facet_wrap(~plot, ncol=3)
 ggsave(out("UMAP_Guides.pdf"), w=9,h=15)
+
+
+
+# Cancer vs Healthy -------------------------------------------------------
+out <- dirout(paste0(base.dir, "/", "CvH"))
+
+pDT <- list(
+  leukemia = fread(outBase("leukemia/Cluster_enrichments_basic_all.tsv")),
+  normal = fread(outBase("ex.vivo/Cluster_enrichments_basic_all.tsv"))
+)
+pDT <- rbindlist(pDT, idcol = "tissue")
+
+ggplot(pDT, aes(x=Clusters, y=tissue, size=sig.perc, color=log2OR_cap)) + 
+  theme_bw() +
+  scale_color_gradient2(low="blue", midpoint = 0, high="red") +
+  geom_point() +
+  geom_point(shape=1, color="lightgrey") +
+  facet_grid(gene ~ .) +
+  xRot() +
+  theme(strip.text.y = element_text(angle=0))
+ggsave(out("Cluster_enrichments.pdf"), w=4,h=16)

@@ -37,10 +37,15 @@ for(tx in names(mobjs)){
 # merge results -----------------------------------------------------------
 (tx <- names(mobjs)[1])
 tx <- "leukemia"
-goi <- c("Gata1", "Gata2", "S100a8", "Mecom", "Hoxa7", "Hoxa9", "Cd34", "Ctsg")
+goi <- c("Gata1", "Gata2", "S100a8", "Mecom", "Hoxa7", "Hoxa9", "Cd34", "Ctsg", "Bcat1", "Myc", "Hif1a")
 for(tx in names(mobjs)){
   
   monocle.obj <- mobjs[[tx]]
+
+  # marker plot
+  stopifnot(all(goi %in% row.names(monocle.obj)))
+  p <- plot_cells_umap_hex_NF(monocle.obj, scale=TRUE, genes = goi)
+  ggsave(out("CellTypes_", tx, "_Markers_UMAP_hex_scale.pdf"), w=12,h=8, plot=p)
   
   # load relevant singleR dataset and assign clusters
   sx <- copy(singleR.res[db %in% c("izzo_label.main", "marrow10x_label.main")])
@@ -101,6 +106,18 @@ for(tx in names(mobjs)){
   xDT.keep <- merge(xDT.keep, xDT, by=c("Cluster", "labels"))
   xDT.majvote <- rbind(xDT.keep, xDT.reassign)
   stopifnot(nrow(xDT.majvote) == nrow(xDT))
+  
+  # Cell types in leukemia
+  if(tx == "leukemia"){
+    # Reassign GMPs with high Gata exprsesion to Eo/Ba
+    gmp.reassign <- xDT.majvote[labels=="GMP"][,.(Gata2 = mean(Gata2), Gata1 = mean(Gata1)), by="Cluster"][Gata2 > 1 & Gata1 > 1]$Cluster
+    xDT.majvote[labels=="GMP" & Cluster %in% gmp.reassign, labels := "Eo/Ba"]
+    
+    # identify leukemic stem cells
+    pDT <- xDT.majvote[,.(Bcat1 = mean(Bcat1), Cd34 = mean(Cd34), Ctsg = mean(Ctsg)), by="Cluster"]
+    ggplot(pDT, aes(x=Cd34, y=Ctsg, color=Bcat1, label=Cluster)) + geom_text() + scale_color_gradient2()
+    xDT.majvote[Cluster %in% pDT[Bcat1 > 0 & Cd34 > -0.1 & Ctsg > -0.1]$Cluster, labels := "LSC"]
+  }
   
   # Reassign MEPs
   # 1 by Gata expression

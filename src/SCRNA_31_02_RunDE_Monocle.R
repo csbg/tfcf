@@ -29,7 +29,7 @@ for(tissue.name in names(mobjs)){
 
   # Monocle object
   monocle.obj <- mobjs[[tissue.name]]
-  monocle.obj <- monocle.obj[, monocle.obj$timepoint == "14d"]
+  monocle.obj <- monocle.obj[, monocle.obj$timepoint != "28d"]
   monocle.obj <- monocle.obj[, monocle.obj$sample != "WT-LSK_OP0_NM_7d_1"]
 
   # Filter only celltypes of interest

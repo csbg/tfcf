@@ -32,6 +32,28 @@ FC.MT <- toMT(dt = DE.RES, col = "id", row = "gene_id", val = "estimate")
 write.csv(round(FC.MT, 3), out("FoldChanges.csv"))
 
 
+
+
+# QC ----------------------------------------------------------------------
+ggplot(DE.RES, aes(x=nonzeroCount, y=estimate)) + 
+  theme_bw() +
+  geom_hex() + 
+  facet_grid(guide ~ tissue, scales = "free_x")
+ggsave(out("QC_cnts_vs_LogFC.pdf"), w=19, h=35, limitsize = FALSE)
+
+ggplot(DE.RES, aes(x=nonzeroCount, y=-log10(q_value))) + 
+  theme_bw() +
+  geom_hex() + 
+  facet_grid(guide ~ tissue, scales = "free_x")
+ggsave(out("QC_cnts_vs_q.pdf"), w=19, h=35, limitsize = FALSE)
+
+ggplot(DE.RES[q_value < 0.05], aes(x=nonzeroCount, y=estimate)) + 
+  theme_bw() +
+  geom_hex() + 
+  facet_grid(guide ~ tissue, scales = "free_x")
+ggsave(out("QC_cnts_vs_LogFC_sig.pdf"), w=19, h=35, limitsize = FALSE)
+
+
 # Correlations ------------------------------------------------------------
 cMT <- corS(FC.MT[apply(is.na(FC.MT), 1, sum) == 0,], use="pairwise.complete.obs")
 gn <- ncol(FC.MT)
