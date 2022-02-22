@@ -115,7 +115,12 @@ for(tx in names(mobjs)){
     
     # identify leukemic stem cells
     pDT <- xDT.majvote[,.(Bcat1 = mean(Bcat1), Cd34 = mean(Cd34), Ctsg = mean(Ctsg)), by="Cluster"]
-    ggplot(pDT, aes(x=Cd34, y=Ctsg, color=Bcat1, label=Cluster)) + geom_text() + scale_color_gradient2()
+    ggplot(pDT, aes(x=Cd34, y=Ctsg, color=Bcat1, label=Cluster)) + 
+      theme_bw(12) +
+      geom_point(size=3) +
+      geom_text(color="black", aes(x=Cd34 + 0.05)) + 
+      scale_color_gradient2()
+    ggsave(out("Celltypes_LSCs.pdf"), w=6,h=5)
     xDT.majvote[Cluster %in% pDT[Bcat1 > 0 & Cd34 > -0.1 & Ctsg > -0.1]$Cluster, labels := "LSC"]
   }
   
