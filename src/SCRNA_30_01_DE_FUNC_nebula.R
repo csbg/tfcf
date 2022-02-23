@@ -23,8 +23,10 @@ obj.de.ann <- data.frame(
   GuideDE=gsub("_.+$", "", obj.de$guide),
   ClusterDE=obj.de$clusterDE
 )
-obj.de.ann <- filter(obj.de.ann, !GuideDE %in% c("Pu.1", "Spi1"))
+
 obj.de.ann <- mutate(obj.de.ann, GuideDE = gsub("^Men$", "Men1", GuideDE))
+obj.de.ann <- mutate(obj.de.ann, GuideDE = gsub("^Pu.1$", "Spi1", GuideDE))
+#obj.de.ann <- filter(obj.de.ann, !GuideDE %in% c("Pu.1", "Spi1"))
 table(obj.de.ann$GuideDE)
 table(obj.de.ann$ClusterDE)
 obj.de.ann$GuideDE <- relevel(factor(obj.de.ann$GuideDE), ref = "NTC")

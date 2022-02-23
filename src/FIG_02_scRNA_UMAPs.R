@@ -24,7 +24,7 @@ for(tx in TISSUES){inDir.funcs[[tx]] <- dirout_load(paste0("SCRNA_20_Summary/", 
 SANN <- fread(PATHS$SCRNA$ANN)
 
 # Marker genes
-marker.genes <- fread("metadata/markers.csv")
+marker.genes <- fread("metadata/markers.csv", header = FALSE)$V1
 
 # Load signatures
 marker.signatures <- lapply(TISSUES, function(tissue.name){
@@ -79,7 +79,7 @@ for(tissuex in names(mobjs)){
 # UMAP Projections ---------------------------------------------------------
 tx <- "in.vivo"
 tx <- "leukemia"
-tx <- "ex.vitro"
+tx <- "ex.vivo"
 for(tx in names(inDir.funcs)){
   # out directory
   out <- dirout(paste0(base.dir, "/", tx))
@@ -88,6 +88,7 @@ for(tx in names(inDir.funcs)){
   ann <- annList[tissue ==  tx]
   
   # Hexpoints
+  x <- names(umap.proj)[1]
   for(x in names(umap.proj)){
     xDT <- umap.proj[[x]][match(ann$rn, rn)]
     hex.obj <- hexbin::hexbin(x=xDT$UMAP_1, y=xDT$UMAP_2, xbins = 100, IDs=TRUE)
@@ -96,12 +97,14 @@ for(tx in names(inDir.funcs)){
     pDT[, sum := sum(N), by=c("hex.x", "hex.y")]
     pDT[, frac := N / sum]
     pDT <- pDT[frac > 0.25]
+    pDT.labels <- pDT[frac > 0.5, .(hex.x = median(hex.x), hex.y=median(hex.y)), by=c("Clusters")]
     ggplot(pDT, aes(x=hex.x, y=hex.y)) +
       theme_bw(12) +
       #geom_hex(fill="lightgrey", bins=100) +
-      geom_point(aes(color=Clusters, shape=Clusters), size=1) + 
-      scale_shape_manual(values=rep(c(1,16,2,18,3,4), 20))
-    ggsave(out("UMAP_Celltypes_",x,".pdf"), w=6,h=4)
+      geom_point(aes(color=Clusters, alpha=frac), size=0.5) + 
+      geom_text(data=pDT.labels, aes(label=gsub(" ", "\n", Clusters)), lineheight = 0.8)
+      #scale_shape_manual(values=rep(c(1,16,2,18,3,4), 20))
+    ggsaveNF(out("UMAP_Celltypes_",x,".pdf"), w=1.5,h=1.5)
   }
 } 
 
@@ -142,7 +145,7 @@ for(tx in names(inDir.funcs)){
 # Marker gene expression --------------------------------------------------
 for(tx in names(mobjs)){
   out <- dirout(paste0(base.dir, "/", tx))
-  plot_genes_by_group(mobjs[[tx]], markers = marker.genes$Name, group_cells_by = "CellType") + scale_size_continuous(range=c(0,5))
+  plot_genes_by_group(mobjs[[tx]], markers = marker.genes, group_cells_by = "CellType") + scale_size_continuous(range=c(0,5))
   ggsave(out("Markers_Clusters.pdf"), w=6,h=8)
 }
 
@@ -176,6 +179,7 @@ for(tx in names(inDir.funcs)){
       
       # Summarize across guides
       fish[, gene := gsub("_.+", "", mixscape_class)]
+      fish[gene == "Pu.1", gene := "Spi1"]
       fish <- fish[, .(
         log2OR=mean(log2OR, na.rm=TRUE), 
         dir=length(unique(sign(log2OR[!is.na(log2OR)])))==1, 
@@ -358,6 +362,28 @@ ggplot(ann, aes(x=UMAP1, y=UMAP2)) +
   scale_fill_hexbin() +
   facet_grid(. ~ Phase)
 ggsave(out("CellCycle_UMAP.pdf"), w=16,h=5)
+
+# in one UMAP
+hex.obj <- hexbin::hexbin(x=ann$UMAP1, y=ann$UMAP2, xbins = 100, IDs=TRUE)
+pDT <- cbind(ann, data.table(hex.x=hex.obj@xcm, hex.y=hex.obj@ycm, hex.cell=hex.obj@cell)[match(hex.obj@cID, hex.cell),])
+pDT <- pDT[,.N, by=c("hex.x", "hex.y", "Phase")]
+pDT[, sum := sum(N), by=c("hex.x", "hex.y")]
+pDT[, frac := N/sum]
+pDT <- dcast.data.table(pDT, hex.x + hex.y ~ Phase, value.var = "frac")
+pDT.cols <- as.matrix(pDT[,c("G1", "G2M", "S")])
+pDT.cols[is.na(pDT.cols)] <- 0
+pDT$col <- apply(pDT.cols %*% rbind(c(255, 161, 77), c(65,255,78), c(120, 77, 255)), 1, function(x){rgb(x[1], x[2], x[3], alpha=255, maxColorValue = 255)})
+pDT$id <- paste0("x", 1:nrow(pDT))
+ggplot(pDT, aes(x=hex.x, y=hex.y, color=id)) + 
+  theme_bw(12) +
+  guides(color=FALSE) +
+  geom_point(size=0.5) +
+  scale_color_manual(values=setNames(pDT$col, pDT$id)) +
+  geom_text(x=-7.5, y=7.5, label="G1", color="#FFA14D") +
+  geom_text(x=-7.5, y=6.5, label="G2M", color="#41FF4E") +
+  geom_text(x=-7.5, y=5.5, label="S", color="#784DFF")
+ggsave(out("CellCycle_UMAP_single.pdf"), w=5,h=5)
+
 
 # Percentage
 pDT <- ann[perturbed == TRUE | mixscape_class == "NTC"][,.N, by=c("Phase", "CRISPR_Cellranger", "timepoint", "markers")]

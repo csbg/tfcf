@@ -25,7 +25,7 @@ source("src/FUNC_Monocle_PLUS.R")
 # Load additional data ----------------------------------------------------
 
 # Markers
-marker.genes <- fread("metadata/markers.csv")
+marker.genes <- fread("metadata/markers.csv", header = FALSE)$V1
 
 # Marker signautres
 ff <- list.files(dirout_load("SCRNA_06_01_Markers")(tissue.name), pattern="Signatures_", full.names = TRUE)
@@ -201,13 +201,13 @@ ggsave(out("Clusters_UMAP.points.jpg"), w=7,h=5, plot=p)
 # Cell type MARKERS  ------------------------------------------------------
 
 # Markers
-plot_genes_by_group(monocle.obj, markers = marker.genes$Name, group_cells_by = "clusters.final") + scale_size_continuous(range=c(0,5))
-ggsave(out("Markers_Clusters.pdf"), w=6,h=8)
+plot_genes_by_group(monocle.obj, markers = marker.genes, group_cells_by = "clusters.final") + scale_size_continuous(range=c(0,5))
+ggsave(out("Markers_Clusters.pdf"), w=6,h=15)
 
-p <- plot_cells_umap_hex_NF(monocle.obj,genes = sort(marker.genes$Name))
+p <- plot_cells_umap_hex_NF(monocle.obj,genes = sort(marker.genes))
 ggsave(out("Markers_UMAP_hex.pdf"), w=30,h=30, plot=p)
 
-p <- plot_cells_umap_hex_NF(monocle.obj, scale=TRUE, genes = sort(marker.genes$Name))
+p <- plot_cells_umap_hex_NF(monocle.obj, scale=TRUE, genes = sort(marker.genes))
 ggsave(out("Markers_UMAP_hex_scale.pdf"), w=30,h=30, plot=p)
 
 

@@ -26,7 +26,7 @@ pUMAP.de[, tissue := sub("^.+?\\.", "", term)]
 pUMAP.de[, estimate_cap := pmin(umap.log2FC.cutoff, abs(estimate)) * sign(estimate)]
 
 
-GOI <- c("Kmt2a", "Kmt2d", "Men1", "Rbbp4", "Setdb1", "Smarcd2", "Wdr82")
+GOI <- c("Kmt2a", "Kmt2d", "Men1", "Rbbp4", "Setdb1", "Smarcd2", "Wdr82", "Cbx3", "Hdac1", "Crebbp")
 
 # SETUP ENDS HERE ---------------------------------------------------------
 
@@ -139,17 +139,6 @@ ggsave(out("UMAP","_Clusters_hex.pdf"), w=6,h=5)
 # tn <- length(unique(pUMAP.de$guide))
 mean.umap <- function(x){mean(x, na.rm=TRUE)}
 
-ggplot(pUMAP.de[guide %in% GOI], aes(x=UMAP1, y=UMAP2)) +
-  themeNF() + 
-  stat_summary_hex(
-    aes(z=estimate_cap),
-    fun=mean.umap) +
-  scale_fill_gradient2(high="#e31a1c",mid="#ffffff", low="#1f78b4") +
-  facet_grid(tissue~guide) +
-  xlab("UMAP dimension 1") + ylab("UMAP dimension 2") +
-  xlim(-umapDT.dim1,umapDT.dim1) + ylim(-umapDT.dim2,umapDT.dim2)
-ggsaveNF(out("UMAP_Values_selection.pdf"), w=2,h=1)
-
 ggplot(pUMAP.de, aes(x=UMAP1, y=UMAP2)) +
   themeNF() + 
   stat_summary_hex(
@@ -160,6 +149,17 @@ ggplot(pUMAP.de, aes(x=UMAP1, y=UMAP2)) +
   xlab("UMAP dimension 1") + ylab("UMAP dimension 2") +
   xlim(-umapDT.dim1,umapDT.dim1) + ylim(-umapDT.dim2,umapDT.dim2)
 ggsaveNF(out("UMAP_Values.pdf"), w=2,h=8)
+
+ggplot(pUMAP.de[guide %in% GOI][!grepl("in.vivo", tissue)], aes(x=UMAP1, y=UMAP2)) +
+  themeNF() + 
+  stat_summary_hex(
+    aes(z=estimate_cap),
+    fun=mean.umap) +
+  scale_fill_gradient2(high="#e31a1c",mid="#ffffff", low="#1f78b4") +
+  facet_grid(gsub("_", "\n", tissue)~guide) +
+  xlab("UMAP dimension 1") + ylab("UMAP dimension 2") +
+  xlim(-umapDT.dim1,umapDT.dim1) + ylim(-umapDT.dim2,umapDT.dim2)
+ggsaveNF(out("UMAP_Values_selection.pdf"), w=3,h=0.75)
 
 
 # Plot values by UMAP cluster -----------------------------------------------------
@@ -176,7 +176,7 @@ ggplot(pDT, aes(y=factor(Cluster), x=tissue, fill=V1)) +
   theme(panel.spacing = unit(0.01, "cm")) +
   xlab("") +
   xRot()
-ggsaveNF(out("UMAP_ClusterLogFC.pdf"), w=4,h=1)
+ggsaveNF(out("UMAP_ClusterLogFC.pdf"), w=6,h=1)
 
 
 

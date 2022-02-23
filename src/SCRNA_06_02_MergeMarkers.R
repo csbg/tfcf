@@ -37,15 +37,15 @@ for(tx in names(mobjs)){
 # merge results -----------------------------------------------------------
 (tx <- names(mobjs)[1])
 tx <- "leukemia"
-goi <- c("Gata1", "Gata2", "S100a8", "Mecom", "Hoxa7", "Hoxa9", "Cd34", "Ctsg", "Bcat1", "Myc", "Hif1a")
+goi <- fread("metadata/markers.csv", header = F)$V1
 for(tx in names(mobjs)){
   
   monocle.obj <- mobjs[[tx]]
 
   # marker plot
   stopifnot(all(goi %in% row.names(monocle.obj)))
-  p <- plot_cells_umap_hex_NF(monocle.obj, scale=TRUE, genes = goi)
-  ggsave(out("CellTypes_", tx, "_Markers_UMAP_hex_scale.pdf"), w=12,h=8, plot=p)
+  p <- plot_cells_umap_hex_NF(monocle.obj, scale=TRUE, genes = goi, ncol=7)
+  ggsave(out("CellTypes_", tx, "_Markers_UMAP_hex_scale.pdf"), w=20,h=20, plot=p)
   
   # load relevant singleR dataset and assign clusters
   sx <- copy(singleR.res[db %in% c("izzo_label.main", "marrow10x_label.main")])
@@ -114,14 +114,14 @@ for(tx in names(mobjs)){
     xDT.majvote[labels=="GMP" & Cluster %in% gmp.reassign, labels := "Eo/Ba"]
     
     # identify leukemic stem cells
-    pDT <- xDT.majvote[,.(Bcat1 = mean(Bcat1), Cd34 = mean(Cd34), Ctsg = mean(Ctsg)), by="Cluster"]
+    pDT <- xDT.majvote[,.(Bcat1 = mean(Bcat1), Cd34 = mean(Cd34), Ctsg = mean(Ctsg)), by="Cluster"][order(Bcat1)]
     ggplot(pDT, aes(x=Cd34, y=Ctsg, color=Bcat1, label=Cluster)) + 
       theme_bw(12) +
       geom_point(size=3) +
       geom_text(color="black", aes(x=Cd34 + 0.05)) + 
       scale_color_gradient2()
     ggsave(out("Celltypes_LSCs.pdf"), w=6,h=5)
-    xDT.majvote[Cluster %in% pDT[Bcat1 > 0 & Cd34 > -0.1 & Ctsg > -0.1]$Cluster, labels := "LSC"]
+    xDT.majvote[Cluster %in% pDT[Bcat1 > 0.5 & Cd34 > -0.25 & Ctsg > -0.25]$Cluster, labels := "LSC"]
   }
   
   # Reassign MEPs
