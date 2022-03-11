@@ -30,20 +30,20 @@ for(tissue.name in names(mobjs)){
 }
 
 # Monocle analysis with predicted celltypes ---------------------------------------------------------------
-# (tissue.name <- names(mobjs)[3])
-# for(tissue.name in names(mobjs)){
-#   
-#   analysis.name <- "monocle.singleR"
-#   
-#   monocle.obj <- mobjs[[tissue.name]]
-#   
-#   singleR.cell.types <- readRDS(dirout_load("SCRNA_06_02_MergeMarkers")("CellTypes_",tissue.name,".RDS"))
-#   monocle.obj$clusters.final <-  setNames(singleR.cell.types[match(colnames(monocle.obj), cellname),]$labels, colnames(monocle.obj))
-#   
-#   out <- dirout(paste0("SCRNA_20_Summary/", tissue.name, "_", analysis.name))
-#   
-#   source("src/SCRNA_20_01_SummaryFUNC.R")
-# }
+(tissue.name <- names(mobjs)[2])
+for(tissue.name in names(mobjs)){
+
+  analysis.name <- "monocle.singleR"
+
+  monocle.obj <- mobjs[[tissue.name]]
+
+  singleR.cell.types <- readRDS(dirout_load("SCRNA_06_02_MergeMarkers")("CellTypes_",tissue.name,".RDS"))
+  monocle.obj$clusters.final <-  setNames(singleR.cell.types[match(colnames(monocle.obj), cellname),]$labels, colnames(monocle.obj))
+
+  out <- dirout(paste0("SCRNA_20_Summary/", tissue.name, "_", analysis.name))
+
+  source("src/SCRNA_20_01_SummaryFUNC.R")
+}
 
 
 # Projection to in vivo ---------------------------------------------------------------

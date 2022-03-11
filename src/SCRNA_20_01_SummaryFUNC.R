@@ -468,18 +468,27 @@ ggsave(out("Guides_Fisher_NTCs.pdf"), w=10, h=length(unique(res$grp)) * 0.25 + 1
 fish.test.sets <- list()
 
 # using mixscape
+mixx <- "noMixscape"
+mixx <- ""
 for(mixx in c("", "noMixscape")){
   x <- ann[!is.na(mixscape_class)]
   x <- if(mixx == "") x[mixscape_class.global != "NP"] else x
+  
   # basic analysis of everything
   fish.test.sets[[paste0("basic", mixx)]] <- x
+  
   # without b cells
   fish.test.sets[[paste0("noBcells", mixx)]] <- x[!grepl("B.cell", Clusters)]
+  
   # Early branching analysis
   eba <- list(MEP=c("MEP (early)", "MEP"),GMP=c("GMP (early)", "Mono", "GMP"))
   xxx <- x[Clusters %in% do.call(c, eba)]
   for(xnam in names(eba)){xxx[Clusters %in% eba[[xnam]], Clusters := xnam]}
   fish.test.sets[[paste0("earlyBranches", mixx)]] <- xxx
+  
+  # HSC
+  earlyMid.clusters <- c("HSC", "Eo/Ba", "MkP", "MEP", "MEP (early)", "GMP", "Gran. P")
+  fish.test.sets[[paste0("earlyMid", mixx)]] <- x[Clusters %in% earlyMid.clusters]
 }
 
 

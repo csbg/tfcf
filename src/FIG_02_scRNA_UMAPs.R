@@ -166,7 +166,7 @@ for(tx in names(inDir.funcs)){
   out <- dirout(paste0(base.dir, "/", tx))
   
   # Collect enrichment scores
-  typex <- "noBcells"
+  typex <- "earlyMid"
   for(typex in gsub(".+_(.+).pdf", "\\1", list.files(inDir.funcs[[tx]](""), pattern="Guides_Fisher_Mixscape_.*.pdf"))){
     fish.file <- inDir.funcs[[tx]]("Guides_Fisher_Mixscape_",typex,".tsv")
     if(!file.exists(fish.file)) next
