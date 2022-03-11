@@ -314,7 +314,8 @@ ggsaveNF(out("Aggregated_Edges.pdf"), w=3,h=6, guide=TRUE)
 # Selected comparisons (David) --------------------------------------------
 pDT.stats <- copy(RESULTS.wt.agg.gene)
 pDT.stats <- unique(pDT.stats[,-"Comparison.Group"])
-pDT.stats <- pDT.stats[Gene %in% c(pDT.stats[hit == TRUE][complete.screen == TRUE]$Gene, "Smarcd1")]
+pDT.stats <- pDT.stats[Gene %in% c(pDT.stats[hit == TRUE][complete.screen == TRUE]$Gene, "Smarcd1", "Ezh2", "Rcor2")]
+pDT.stats <- pDT.stats[!Gene %in% "Ctcf"]
 pDT.stats <- pDT.stats[Comparison %in% COMPARISONS.healthy]
 pDT.stats <- merge(pDT.stats, ANN.genes, by.x="Gene", by.y="GENE", all.x=TRUE)
 pDT.stats <- hierarch.ordering(pDT.stats, toOrder = "Gene", orderBy = "Comparison", value.var="z")
@@ -337,9 +338,9 @@ p <- ggplot(pDT.stats[Genotype == "Cas9"], aes(
     xlab("") +
     theme(panel.spacing = unit(0.01, "cm"))
 ggsaveNF(out("SimpleHM_RedBlue.pdf"), w=4.5,h=1, plot = p + scale_fill_gradient2(name=TeX(r'($\\overset{\Delta_{Cas9-WT}}$)'), low="#e31a1c", high="#1f78b4"))
-ggsaveNF(out("SimpleHM_GreenPurple.pdf"), w=4.5,h=1, plot = p + scale_fill_gradient2(name=TeX(r'($\\overset{\Delta_{Cas9-WT}}$)'), low="#33a02c", high="#6a3d9a"))
+ggsaveNF(out("SimpleHM_GreenPurple.pdf"), w=4.5,h=1, plot = p + scale_fill_gradient2(name=TeX(r'($\\overset{\Delta_{Cas9-WT}}$)'), high="#33a02c", low="#6a3d9a"))
 
-cleanDev(); pdf(out("SimpleHM_Dendrogram.pdf"), w=15,h=5)
+  cleanDev(); pdf(out("SimpleHM_Dendrogram.pdf"), w=15,h=5)
 plot(hclust(dist(toMT(pDT.stats[Genotype == "Cas9"], row = "Gene", col = "Comparison", val = "z"))))
 dev.off()
 

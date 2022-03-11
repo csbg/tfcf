@@ -6,10 +6,12 @@ outBase <- dirout(base.dir)
 # FUNCTIONS ---------------------------------------------------------------
 ds <- function(path){load(path); return(monocle.obj)}
 
+xu <- xlab("UMAP 1")
+yu <- ylab("UMAP 2")
 
 # SETTINGS ----------------------------------------------------------------
 ff <- list.files(dirout_load("SCRNA_20_Summary")(""))
-TISSUES <- gsub("_.+", "", ff[grepl("_monocle$", ff)])
+(TISSUES <- gsub("_.+", "", ff[grepl("_monocle.singleR$", ff)]))
 SIGS.USE <- fread("metadata/markers.signatures.use.scRNA.tsv")
 SIGS.USE[, sig := paste(DB, Celltype)]
 
@@ -97,12 +99,14 @@ for(tx in names(inDir.funcs)){
     pDT[, sum := sum(N), by=c("hex.x", "hex.y")]
     pDT[, frac := N / sum]
     pDT <- pDT[frac > 0.25]
+    pDT$Clusters <- cleanCelltypes(pDT$Clusters,twoLines = TRUE)
     pDT.labels <- pDT[frac > 0.5, .(hex.x = median(hex.x), hex.y=median(hex.y)), by=c("Clusters")]
     ggplot(pDT, aes(x=hex.x, y=hex.y)) +
-      theme_bw(12) +
+      themeNF() +
       #geom_hex(fill="lightgrey", bins=100) +
       geom_point(aes(color=Clusters, alpha=frac), size=0.5) + 
-      geom_text(data=pDT.labels, aes(label=gsub(" ", "\n", Clusters)), lineheight = 0.8)
+      geom_text(data=pDT.labels, aes(label=Clusters), lineheight = 0.8) +
+      xu + yu
       #scale_shape_manual(values=rep(c(1,16,2,18,3,4), 20))
     ggsaveNF(out("UMAP_Celltypes_",x,".pdf"), w=1.5,h=1.5)
   }
@@ -112,7 +116,7 @@ for(tx in names(inDir.funcs)){
 # Signatures --------------------------------------------------------------
 tx <- "in.vivo"
 tx <- "leukemia"
-tx <- "ex.vitro"
+tx <- "ex.vivo"
 for(tx in names(inDir.funcs)){
   # out directory
   out <- dirout(paste0(base.dir, "/", tx))
@@ -127,14 +131,16 @@ for(tx in names(inDir.funcs)){
     by="rn")
   pDT <- pDT[, mean(value), by=c("Clusters", "FinalName")]
   pDT[, V1 := scale(V1), by="FinalName"]
-  pDT <- hierarch.ordering(pDT, "Clusters", "FinalName", "V1")
+  pDT[, Clusters := cleanCelltypes(Clusters)]
+  #pDT <- hierarch.ordering(pDT, "Clusters", "FinalName", "V1")
   pDT <- hierarch.ordering(pDT, "FinalName", "Clusters", "V1")
   ggplot(pDT, aes(x=FinalName, y=Clusters, fill=V1)) + 
     geom_tile() +
+    themeNF(rotate = TRUE) +
     scale_fill_gradient2(low="blue", high="red") +
-    theme_bw(12) +
-    xRot()
-  ggsave(out("Supp_Signatures.pdf"), w=6,h=5)
+    xlab("External gene signatures") +
+    ylab("Cell type\n(this study)")
+  ggsaveNF(out("Supp_Signatures.pdf"), w=1,h=length(unique(pDT$Clusters)) * 0.05 + 0.5)
   
   # Plot expression of marker genes in each cluster
   
@@ -145,8 +151,11 @@ for(tx in names(inDir.funcs)){
 # Marker gene expression --------------------------------------------------
 for(tx in names(mobjs)){
   out <- dirout(paste0(base.dir, "/", tx))
-  plot_genes_by_group(mobjs[[tx]], markers = marker.genes, group_cells_by = "CellType") + scale_size_continuous(range=c(0,5))
-  ggsave(out("Markers_Clusters.pdf"), w=6,h=8)
+  plot_genes_by_group(mobjs[[tx]], markers = marker.genes, group_cells_by = "CellType") + 
+    scale_size_continuous(range=c(0,5)) +
+    themeNF(rotate = TRUE) +
+    xlab("Cell type")
+  ggsaveNF(out("Markers_Clusters.pdf"), w=1.5,h=2.5)
 }
 
 
@@ -164,6 +173,7 @@ for(tx in names(inDir.funcs)){
     
     fish.full <- fread(fish.file)
     fish.full <- merge(fish.full, unique(SANN[,c("sample_broad", "timepoint"),with=F]), by.x="sample", by.y="sample_broad")
+    timex <- "all"
     for(timex in c(unique(fish.full$timepoint), "all")){
       fish <- copy(fish.full)
       if(timex != "all") fish <- fish[timepoint == timex]
@@ -202,17 +212,50 @@ for(tx in names(inDir.funcs)){
       fish[, sig.perc := padj / N]
       fish[,log2OR_cap := pmin(abs(log2OR), 5) * sign(log2OR)]
       fish <- hierarch.ordering(dt = fish, toOrder = "gene", orderBy = "Clusters", value.var = "log2OR")
-      fish <- hierarch.ordering(dt = fish, toOrder = "Clusters", orderBy = "gene", value.var = "log2OR")
+      fish[, Clusters := cleanCelltypes(Clusters)]
+      #fish <- hierarch.ordering(dt = fish, toOrder = "Clusters", orderBy = "gene", value.var = "log2OR")
       ggplot(fish, aes(x=gene, y=Clusters, size=sig.perc, color=log2OR_cap)) + 
-        theme_bw() +
-        scale_color_gradient2(low="blue", midpoint = 0, high="red") +
+        themeNF(rotate=TRUE) +
+        scale_color_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
+        scale_size_continuous(name="% sign.", range = c(0,5)) +
         geom_point() +
         geom_point(shape=1, color="lightgrey") +
-        xRot()
-      ggsave(out("Cluster_enrichments_",typex,"_", timex, ".pdf"), w=length(unique(fish$gene))*0.2 + 2,h=length(unique(fish$Clusters))*0.2+1)
+        xlab("Gene") + ylab("Cell type")
+      ggsaveNF(
+        out("Cluster_enrichments_",typex,"_", timex, ".pdf"), 
+        w=length(unique(fish$gene))*0.05 + 0.5,
+        h=length(unique(fish$Clusters))*0.05 + 0.5)
       write.tsv(fish, out("Cluster_enrichments_",typex,"_", timex,".tsv"))
     }
   }
+}
+
+
+
+# Plot all guides ---------------------------------------------------------
+tx <- "in.vivo"
+for(tx in names(inDir.funcs)){
+  # out directory
+  out <- dirout(paste0(base.dir, "/", tx))
+  
+  pDT.top <- annList[tissue == tx][timepoint != "28d"]
+  pDT.ntc <- pDT.top[mixscape_class.global == "NTC"]
+  pDT.final <- copy(pDT.ntc)
+  pDT.final$plot <- "NTC"
+  for(x in unique(pDT.top[perturbed == TRUE]$gene)){
+    pDTg <- rbind(pDT.ntc, pDT.top[grepl(paste0("^", x), guide) & mixscape_class.global == "KO"])
+    pDTg$plot <- x
+    pDT.final <- rbind(pDT.final, pDTg)
+  }
+  pDT.final$plot <- relevel(factor(pDT.final$plot),ref = "NTC")
+  ggplot(pDT.final, aes(x=UMAP1, y=UMAP2)) + 
+    themeNF() +
+    geom_hex(data=pDT.final[mixscape_class.global == "NTC"], bins=100, fill="lightgrey") +
+    geom_hex(data=pDT.final[mixscape_class.global != "NTC" | plot == "NTC"], bins=100) +
+    scale_fill_gradientn(colours=c("#6a3d9a", "#e31a1c", "#ff7f00", "#ffff99")) +
+    facet_wrap(~plot, ncol=6) + 
+    xu + yu
+  ggsaveNF(out("UMAP_Guides_all.pdf"), w=4,h=4)
 }
 
 
@@ -225,52 +268,55 @@ fish.bcells <- fread(out("Cluster_enrichments","_basic", "_14d",".tsv"))
 
 # . UMAP of timepoint / markers ---------------------------------------------------------
 ggplot(ann[perturbed == FALSE], aes(x=UMAP1, y=UMAP2)) + 
-  theme_bw(12) +
+  themeNF() +
   geom_hex(bins=100) +
   scale_fill_gradient(low="lightgrey", high="blue") +
-  facet_wrap(~markers + timepoint, ncol=3)
-ggsave(out("UMAP_Groups.pdf"), w=7,h=5)
+  facet_wrap(~markers + timepoint, ncol=2) +
+  xu + yu
+ggsaveNF(out("UMAP_Groups.pdf"), w=1,h=1)
 
 # . UMAP of samples -------------------------------------------------------
 ggplot(ann[perturbed == FALSE], aes(x=UMAP1, y=UMAP2)) + 
-  theme_bw(12) +
+  themeNF() +
   geom_hex(bins=100) +
   scale_fill_gradient(low="lightgrey", high="blue") +
-  facet_wrap(~sample, ncol=3)
-ggsave(out("UMAP_Samples.pdf"), w=7,h=5)
+  facet_wrap(~sample_broad, ncol=3) +
+  xu + yu
+ggsaveNF(out("UMAP_Samples.pdf"), w=2,h=2)
 
 # . Plot top guides ---------------------------------------------------------
-pDT.top <- ann[timepoint == "14d" & markers == "lin-"]
+pDT.top <- ann[timepoint == "14d"]
 pDT.ntc <- pDT.top[mixscape_class.global == "NTC"]
 pDT.final <- copy(pDT.ntc)
 pDT.final$plot <- "NTC"
-for(x in c("Wdr82", "Rcor1", "Ehmt1", "Men1", "Kmt2a")){
+for(x in c("Wdr82", "Rcor1", "Ehmt1", "Setdb1", "Hdac3")){
   pDTg <- rbind(pDT.ntc, pDT.top[grepl(paste0("^", x), guide) & perturbed == TRUE])
   pDTg$plot <- x
   pDT.final <- rbind(pDT.final, pDTg)
 }
 pDT.final$plot <- relevel(factor(pDT.final$plot), ref = "NTC")
 ggplot(pDT.final, aes(x=UMAP1, y=UMAP2)) + 
-  theme_bw() +
+  themeNF() +
   geom_hex(data=pDT.final[mixscape_class.global == "NTC"], bins=100, fill="lightgrey") +
   geom_hex(data=pDT.final[mixscape_class.global != "NTC" | plot == "NTC"], bins=100) +
   scale_fill_gradientn(colours=c("#6a3d9a", "#e31a1c", "#ff7f00", "#ffff99")) +
-  facet_wrap(~plot, ncol=3)
-ggsave(out("UMAP_Guides.pdf"), w=9,h=7)
+  facet_wrap(~plot, ncol=3) +
+  xu + yu
+ggsaveNF(out("UMAP_Guides.pdf"), w=2,h=2)
 
 
 # . Plot b cell enrichments -------------------------------------------------
 pDT <- fish.bcells[Clusters == "Imm. B-cell"]
 pDT$gene <- factor(pDT$gene, levels = pDT[order(log2OR)]$gene)
 ggplot(pDT, aes(x=log2OR, y=gene, size=sig.perc, color = log2OR)) + 
-  theme_bw(12) +
+  themeNF(12) +
   geom_vline(xintercept = 0) +
   scale_size_continuous(range = c(1,4)) +
   geom_point() + 
   geom_point(shape=1, color="lightgrey") + 
   scale_color_gradient2(low="blue", high="red") +
   ylab("") + xlab("Enrichment in immature B-cells")
-ggsave(out("Cluster_enrichments_BcellsOnly.pdf"), w=5,h=4)
+ggsaveNF(out("Cluster_enrichments_BcellsOnly.pdf"), w=2,h=2)
 
 # . NTC distributions to assess clonality effects -------------------------------------------------
 pDT <- ann[mixscape_class.global == "NTC", .N, by=c("Clusters", "sample_broad", "CRISPR_Cellranger")]
@@ -286,23 +332,24 @@ write.tsv(pDT[, sum(N), by=c("CRISPR_Cellranger", "sample_broad")][order(sample_
 
 
 # . Plot displasia guides ---------------------------------------------------------
-pDT.top <- ann[timepoint == "28d"][markers=="lin-"]
+pDT.top <- ann[timepoint == "28d"]
 pDT.ntc <- pDT.top[mixscape_class.global == "NTC"]
 pDT.final <- copy(pDT.ntc)
 pDT.final$plot <- "NTC"
-for(x in c("Brd9", "Gltscr1", "Phf10")){
+for(x in c("Brd9", "Phf10")){
   pDTg <- rbind(pDT.ntc, pDT.top[grepl(paste0("^", x), guide) & perturbed == TRUE])
   pDTg$plot <- x
   pDT.final <- rbind(pDT.final, pDTg)
 }
 pDT.final$plot <- relevel(factor(pDT.final$plot), ref = "NTC")
 ggplot(pDT.final, aes(x=UMAP1, y=UMAP2)) + 
-  theme_bw() +
+  themeNF() +
   geom_hex(data=pDT.final[mixscape_class.global == "NTC"], bins=100, fill="lightgrey") +
   geom_hex(data=pDT.final[mixscape_class.global != "NTC" | plot == "NTC"], bins=100) +
   scale_fill_gradientn(colours=c("#6a3d9a", "#e31a1c", "#ff7f00", "#ffff99")) +
-  facet_wrap(~plot, ncol=3)
-ggsave(out("UMAP_Guides_displasia.pdf"), w=9,h=7)
+  facet_wrap(~plot, ncol=3) +
+  xu + yu
+ggsaveNF(out("UMAP_Guides_displasia.pdf"), w=2,h=1)
 
 # . Plot displasia numbers -----------------------------------------------
 pDT <- copy(ann[markers=="lin-"])
@@ -317,14 +364,15 @@ pDT <- pDT[group %in% pDT[, .N, by="group"][N == 2]$group]
 # Bar plot
 pDT$group <- factor(pDT$group, levels=pDT[timepoint == "28d"][order(N)]$group)
 ggplot(pDT, aes(x=group, y=perc, fill=group == "NTC")) + 
-  theme_bw() +
+  themeNF() +
   scale_fill_manual(values=c("black", "red")) +
   geom_bar(position="dodge", stat='identity') +
   facet_grid(. ~ timepoint, space="free", scales = "free") + 
   guides(fill=FALSE) +
   ylab("Percent of cells with guide") + 
-  xRot()
-ggsave(out("Displasia_Numbers_bars.pdf"), w=5,h=3)
+  xRot() + 
+  xlab("")
+ggsaveNF(out("Displasia_Numbers_bars.pdf"), w=2,h=1, guides = TRUE)
 
 
 
@@ -341,27 +389,32 @@ ggplot(abs, aes(x=UMAP1, y=UMAP2)) +
   stat_summary_hex(bins = 100, aes(z=pmin(abs(Signal.norm), 2) * sign(Signal.norm)),fun=mean) +
   scale_fill_gradient2(low="blue", high="red") +
   facet_wrap(~Antibody) +
-  theme_bw(12)
-ggsave(out("Antibodies_UMAP.pdf"), w=12+2, h=9+1)
+  themeNF() +
+  xu + yu
+ggsaveNF(out("Antibodies_UMAP.pdf"), w=2, h=2)
 
 # . Combine signatures with Antibodies --------------------------------------
 pDT <- abs[, .(Signal=mean(Signal.norm, na.rm=TRUE)), by=c("Clusters", "Antibody")]
-pDT <- hierarch.ordering(pDT, "Clusters", "Antibody", "Signal")
+pDT[, Clusters := cleanCelltypes(Clusters)]
+#pDT <- hierarch.ordering(pDT, "Clusters", "Antibody", "Signal")
 pDT <- hierarch.ordering(pDT, "Antibody", "Clusters", "Signal")
-ggplot(pDT, aes(x=Clusters,y=Antibody, fill=Signal)) +
+ggplot(pDT, aes(y=Clusters,x=Antibody, fill=Signal)) +
+  themeNF() +
   geom_tile() +
   scale_fill_gradient2(low="blue", high="red") +
-  xRot()
-ggsave(out("Antibodies_Average.pdf"), w=5, h=4)
+  xRot() +
+  ylab("Cell types")
+ggsaveNF(out("Antibodies_Average.pdf"), w=1, h=1)
 
 # . Cell cycle ------------------------------------------------------------
 # UMAP
 ggplot(ann, aes(x=UMAP1, y=UMAP2)) + 
-  theme_bw(12) +
+  themeNF() +
   geom_hex(bins=100) +
   scale_fill_hexbin() +
-  facet_grid(. ~ Phase)
-ggsave(out("CellCycle_UMAP.pdf"), w=16,h=5)
+  facet_grid(. ~ Phase) +
+  xu + yu
+ggsaveNF(out("CellCycle_UMAP.pdf"), w=2,h=1)
 
 # in one UMAP
 hex.obj <- hexbin::hexbin(x=ann$UMAP1, y=ann$UMAP2, xbins = 100, IDs=TRUE)
@@ -375,14 +428,15 @@ pDT.cols[is.na(pDT.cols)] <- 0
 pDT$col <- apply(pDT.cols %*% rbind(c(255, 161, 77), c(65,255,78), c(120, 77, 255)), 1, function(x){rgb(x[1], x[2], x[3], alpha=255, maxColorValue = 255)})
 pDT$id <- paste0("x", 1:nrow(pDT))
 ggplot(pDT, aes(x=hex.x, y=hex.y, color=id)) + 
-  theme_bw(12) +
+  themeNF() +
   guides(color=FALSE) +
-  geom_point(size=0.5) +
+  geom_point(size=0.1) +
   scale_color_manual(values=setNames(pDT$col, pDT$id)) +
   geom_text(x=-7.5, y=7.5, label="G1", color="#FFA14D") +
   geom_text(x=-7.5, y=6.5, label="G2M", color="#41FF4E") +
-  geom_text(x=-7.5, y=5.5, label="S", color="#784DFF")
-ggsave(out("CellCycle_UMAP_single.pdf"), w=5,h=5)
+  geom_text(x=-7.5, y=5.5, label="S", color="#784DFF") +
+  xu + yu
+ggsaveNF(out("CellCycle_UMAP_single.pdf"), w=1,h=1)
 
 
 # Percentage
@@ -392,34 +446,14 @@ pDT[, perc := N/sum*100]
 pDT[, gene := gsub("_.+", "", CRISPR_Cellranger)]
 pDT$gene <- factor(pDT$gene, levels=pDT[,mean(perc), by=c("Phase", "gene")][order(V1)][Phase == "G1"]$gene)
 ggplot(pDT, aes(x=CRISPR_Cellranger,y=perc,fill=Phase)) + 
-  theme_bw(12) +
+  themeNF(rotate = TRUE) +
   geom_bar(stat="identity") +
   scale_fill_manual(values=c(G1 = "#b2df8a", G2M = "#6a3d9a", S = "grey")) +
-  facet_grid(timepoint + markers ~ gene, scales = "free", space = "free", switch = "x") +
+  facet_grid(. ~ gene, scales = "free", space = "free", switch = "x") +
   theme(strip.text.x = element_text(angle=90)) +
-  xRot()
-ggsave(out("CellCycle_Numbers.pdf"), w=15,h=5)
-
-
-# . Plot top guides ---------------------------------------------------------
-pDT.top <- copy(ann)
-pDT.ntc <- pDT.top[mixscape_class.global == "NTC"]
-pDT.final <- copy(pDT.ntc)
-pDT.final$plot <- "NTC"
-for(x in unique(pDT.top[perturbed == TRUE]$gene)){
-  pDTg <- rbind(pDT.ntc, pDT.top[grepl(paste0("^", x), guide) & mixscape_class.global == "KO"])
-  pDTg$plot <- x
-  pDT.final <- rbind(pDT.final, pDTg)
-}
-pDT.final$plot <- relevel(factor(pDT.final$plot),ref = "NTC")
-ggplot(pDT.final, aes(x=UMAP1, y=UMAP2)) + 
-  theme_bw() +
-  geom_hex(data=pDT.final[mixscape_class.global == "NTC"], bins=100, fill="lightgrey") +
-  geom_hex(data=pDT.final[mixscape_class.global != "NTC" | plot == "NTC"], bins=100) +
-  scale_fill_gradientn(colours=c("#6a3d9a", "#e31a1c", "#ff7f00", "#ffff99")) +
-  facet_wrap(~plot, ncol=3)
-ggsave(out("UMAP_Guides.pdf"), w=9,h=15)
-
+  theme(panel.spacing = unit(0.05, "cm")) +
+  ylab("Percentage of cells") + xlab("")
+ggsaveNF(out("CellCycle_Numbers.pdf"), w=3,h=1.2)
 
 
 # Cancer vs Healthy -------------------------------------------------------
@@ -430,13 +464,15 @@ pDT <- list(
   normal = fread(outBase("ex.vivo/Cluster_enrichments_basic_all.tsv"))
 )
 pDT <- rbindlist(pDT, idcol = "tissue")
+pDT[, Clusters := cleanCelltypes(Clusters, reverse = FALSE)]
 
 ggplot(pDT, aes(x=Clusters, y=tissue, size=sig.perc, color=log2OR_cap)) + 
-  theme_bw() +
-  scale_color_gradient2(low="blue", midpoint = 0, high="red") +
+  themeNF(rotate = TRUE) +
+  scale_color_gradient2(name = "log2(OR)", low="blue", midpoint = 0, high="red") +
+  scale_size_continuous(name = "% sign", range=c(0,5)) +
   geom_point() +
   geom_point(shape=1, color="lightgrey") +
   facet_grid(gene ~ .) +
-  xRot() +
-  theme(strip.text.y = element_text(angle=0))
-ggsave(out("Cluster_enrichments.pdf"), w=4,h=16)
+  theme(strip.text.y = element_text(angle=0)) +
+  xlab("Cell types") + ylab("")
+ggsaveNF(out("Cluster_enrichments.pdf"), w=1.5,h=4.5, guides = TRUE)

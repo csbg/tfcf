@@ -7,9 +7,9 @@ require("sceasy")
 
 # Annotation --------------------------------------------
 SANN <- fread(PATHS$SCRNA$ANN)
-SANN <- SANN[!grepl("\\d$", tissue)]
-SANN <- SANN[!grepl("^ECCITE3", sample_old)]
-SANN <- SANN[sample != "WT-LSK_OP0_NM_7d_1"]
+samples.not.use <- SANN[grepl("\\d$", tissue) | toAnalyse == "NO"]$sample
+SANN <- SANN[!sample %in% samples.not.use]
+sort(SANN$sample)
 
 # Integrate data with Monocle
 tx <- SANN$tissue[1]

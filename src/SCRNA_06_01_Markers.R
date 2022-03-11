@@ -146,7 +146,7 @@ for(tx in PATHS$SCRNA$MONOCLE.NAMES){# loop through tissues
   mnam <- names(marker.lists)[5]
   for(mnam in names(marker.lists)){
     mfile <- outT("Signatures_",mnam,".csv")
-    if(file.exists(mfile)) next
+    #if(file.exists(mfile)) next
     
     markers <- marker.lists[[mnam]]
     markers <- lapply(markers, function(x) x[x %in% row.names(dat)])

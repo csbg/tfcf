@@ -119,6 +119,8 @@ stopifnot(all(colnames(marrow_plate_expr) == names(marrow_plate_pheno)))
 # head(row.names(reference_cell_types$hpca), 40)
 
 
+
+
 # Plot expression of *our* genes ------------------------------------------
 genes <- fread("metadata/TFCF_Annotations.tsv")
 table(genes$Category)
@@ -181,7 +183,7 @@ for(dx in unique(res$dataset)){
 
 
 
-# LOAD DATA ---------------------------------------------------------------
+# Predict celltypes ---------------------------------------------------------------
 
 sx <- SANN$sample[1]
 for(sx in SANN$sample){
@@ -240,37 +242,34 @@ for(sx in SANN$sample){
       print(paste(".", labelx))
       
       ref.file <- outS("cell_types_", ref, "_", labelx, ".csv")
-      if(file.exists(ref.file)){
-        print(paste(".", "already done"))
-        next
-      } else {
-        if(!labelx %in% colnames(colData(reference_cell_types[[ref]]))) next
-        
-        print(paste(".", "running SingleR"))
-        
-        results <- SingleR(
-          test = count_matrix,
-          ref = reference_cell_types[[ref]],
-          labels = colData(reference_cell_types[[ref]])[, labelx],
-          de.method = "wilcox"
-        )
-        
-        res <- data.table(
-          as_tibble(results, rownames = "cell"),
-          ref = ref,
-          labels = labelx
-        )
-        
-        colnames(res) <- gsub("\\.", "_", colnames(res))
-        
-        res <- res[,c("cell", "labels", "tuning_scores_first", "tuning_scores_second"), with=F]
-        
-        for(cx in colnames(res)){
-          if(is.numeric(res[[cx]])) res[[cx]] <- round(res[[cx]], 2)
-        }
-        
-        write_csv(res, ref.file)
+
+      if(!labelx %in% colnames(colData(reference_cell_types[[ref]]))) next
+      
+      print(paste(".", "running SingleR"))
+      
+      results <- SingleR(
+        test = count_matrix,
+        ref = reference_cell_types[[ref]],
+        labels = colData(reference_cell_types[[ref]])[, labelx],
+        de.method = "wilcox"
+      )
+      
+      res <- data.table(
+        as_tibble(results, rownames = "cell"),
+        ref = ref,
+        labels = labelx
+      )
+      
+      colnames(res) <- gsub("\\.", "_", colnames(res))
+      
+      res <- res[,c("cell", "labels", "tuning_scores_first", "tuning_scores_second"), with=F]
+      
+      for(cx in colnames(res)){
+        if(is.numeric(res[[cx]])) res[[cx]] <- round(res[[cx]], 2)
       }
+      
+      write_csv(res, ref.file)
+      
     }
     TRUE
   }

@@ -113,7 +113,7 @@ getMainDatasets <- function(){
 
 
 
-# Comparisons (POOLED) -------------------------------------------------------------
+# COMPARISONS, NAMES, DEFINITIONS -------------------------------------------------------------
 COMPARISONS <- list(
   CKIT.LSK=c("cKit", "LSKd9"),
   GMP.LSK=c("GMP", "LSKd7"),
@@ -140,7 +140,10 @@ COMPARISONS.healthy <- c(
   "GMPcd11.DN"
 )
 
+CLEAN.CELLTYPES <- fread("metadata/FIGS_celltypes.tsv", fill=TRUE)
+CLEAN.CELLTYPES[NewName == "", NewName := Name]
 
+# CLEAN FUNCTIONS ---------------------------------------------------------
 cleanComparisons <- function(x, order=TRUE, ggtext=FALSE, dm="clean", reverse=FALSE, colors=c("832424", "3A3A98")){
   transformPretty <- function(i, gg=ggtext){
     if(gg){
@@ -165,6 +168,16 @@ cleanComparisons <- function(x, order=TRUE, ggtext=FALSE, dm="clean", reverse=FA
     }
   }
   x
+}
+
+
+cleanCelltypes <- function(x, order=TRUE, twoLines=FALSE, reverse=TRUE){
+  stopifnot(all(x %in% CLEAN.CELLTYPES$Name))
+  x <- CLEAN.CELLTYPES[match(x, Name)]$NewName
+  order.levels <- if(reverse) rev(CLEAN.CELLTYPES$NewName) else CLEAN.CELLTYPES$NewName
+  if(order) x <- factor(x, levels=order.levels)
+  if(twoLines) x <- sub(" ", "\n", x)
+  return(x)
 }
 
 

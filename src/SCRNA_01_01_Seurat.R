@@ -19,6 +19,7 @@ table(SANN$tissue)
 SANN[,tissue := gsub("^exVivo1$", "exVivo", tissue)]
 SANN[,tissue := gsub("V", " v", tissue)]
 SANN[,tissue := gsub(" ", ".", tissue)]
+table(SANN$tissue)
 # clean time-points
 SANN[is.na(timepoint),timepoint := "d0"]
 table(SANN$timepoint)

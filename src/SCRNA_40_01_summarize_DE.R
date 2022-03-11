@@ -24,6 +24,7 @@ ff <- lapply(ff, function(x) paste0(x, "/DEG_Results_all.tsv"))
 ff <- lapply(ff, fread)
 DE.RES <- rbindlist(ff, idcol = "tissue")
 stopifnot(all(grepl("^GuideDE", DE.RES$term)))
+DE.RES[abs(estimate) > 15, estimate := min(15,  abs(estimate)) * sign(estimate)]
 write.tsv(DE.RES[, -c("se", "convergence", "estimate_raw", "term"), with=F], out("DEG_Statistics.tsv"))
 write.tsv(DE.RES[, -c("se", "convergence", "estimate_raw", "term"), with=F][q_value < 0.05], out("DEG_Statistics_significant.tsv"))
 
@@ -104,7 +105,7 @@ for(tx in c(unique(DE.RES$tissue), "all")){
 
 # UMAP of genes -----------------------------------------------------------
 umap.log2FC.cutoff <- 3
-umapMT <- FC.MT
+umapMT <- FC.MT[apply(is.na(FC.MT), 1, sum) < 5,]
 umap.type.name <- "all"
 gg <- if(umap.type.name == "top") unique(DE.RES[q_value < 0.05 & abs(estimate) > 1]$gene_id) else row.names(umapMT)
 mt <- umapMT[gg,]
