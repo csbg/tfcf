@@ -128,7 +128,9 @@ COMPARISONS <- list(
   DMEry.LSC=c("DM.Ery", "DM.LSC"),
   DMMye.LSC=c("DM.Mye", "DM.LSC"),
   DMMye.Ery=c("DM.Mye", "DM.Ery"),
-  DMCD11b.LSC=c("DM.LSC.CD11b", "DM.LSC")
+  DMCD11b.LSC=c("DM.LSC.CD11b", "DM.LSC"),
+  DMd10v5=c("DM.d10", "DM.d5"),
+  DMd17v10=c("DM.d17", "DM.d10")
 )
 
 COMPARISONS.healthy <- c(
@@ -224,6 +226,7 @@ COLORS.HM.FUNC <- colorRampPalette(c("#6a3d9a", "#a6cee3", "white", "#fdbf6f", "
 COLORS.CELLTYPES.scRNA <- fread("metadata/markers.signatures.use.scRNA.tsv")
 COLORS.CELLTYPES.scRNA <- setNames(COLORS.CELLTYPES.scRNA$Color, COLORS.CELLTYPES.scRNA$FinalName)
 COLORS.CELLTYPES.scRNA["NA"] <- "lightgrey"
+COLORS.CELLTYPES.scRNA.ainhoa <- setNames(CLEAN.CELLTYPES$Color, CLEAN.CELLTYPES$NewName)
 
 scale_fill_hexbin <- function(...){scale_fill_gradientn(colours=c("#a6cee3", "#fdbf6f", "#ff7f00", "#e31a1c"), ...)}
 

@@ -16,7 +16,7 @@ cleanNames <- function(x){
 
 # read data files ---------------------------------------------------------------
 ff <- list.files(paste0(PATHS$LOCATIONS$RAWDATA, "POOLED/v4_final/"), recursive = TRUE, pattern="", full.names = TRUE)
-ff <- ff[!grepl("\\/DM\\/", ff) | grepl("Time0", ff)]
+ff <- ff[!grepl("\\/DM\\/", ff) | grepl("Time0", ff)] # From the first DM folder keep only Time 0
 ff <- ff[grepl(".txt$", ff) | grepl(".tsv$", ff)]
 stopifnot(sum(duplicated(basename(ff))) == 0)
 names(ff) <- cleanNames(basename(ff))
@@ -103,6 +103,9 @@ names.to.clean <- colnames(m)
 names.to.clean <- gsub("^Cas9DM_", "Cas9_DM.", names.to.clean, ignore.case = TRUE)
 names.to.clean <- gsub("^Cas9_DM_", "Cas9_DM.", names.to.clean, ignore.case = TRUE)
 names.to.clean <- gsub("^Cas9_DM\\.LSC_CD11b_", "Cas9_DM.LSC.CD11b_", names.to.clean, ignore.case = TRUE)
+# Fix colnames for specific samples
+idx <- grep("LibR1_DM_Oct2021", names.to.clean)
+names.to.clean[idx] <- gsub("^DM_R1_(d\\d+) ", "Cas9_DM.\\1_R1_Oct2021 ", names.to.clean[idx])
 colnames(m) <- names.to.clean
 
 

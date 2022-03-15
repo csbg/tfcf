@@ -71,11 +71,38 @@ for(tissuex in names(mobjs)){
   fData(mobjs[[tissuex]])$gene_short_name <- row.names(fData(mobjs[[tissuex]]))
 }
 
+izzo <- fread(dirout_load("SCRNA_08_03_ProjectionIzzo_separate")("Izzo_WT1/Output_izzo.tsv"))
 
 
 # SETUP ENDS HERE ---------------------------------------------------------
 
 
+
+
+# Plot Izzo dataset original ----------------------------------------------
+hex.obj <- hexbin::hexbin(x=izzo$UMAP_1, y=izzo$UMAP_2, xbins = 100, IDs=TRUE)
+pDT <- cbind(izzo, data.table(hex.x=hex.obj@xcm, hex.y=hex.obj@ycm, hex.cell=hex.obj@cell)[match(hex.obj@cID, hex.cell),])
+pDT <- pDT[,.N, by=c("hex.x", "hex.y", "functional.cluster")]
+pDT[, sum := sum(N), by=c("hex.x", "hex.y")]
+pDT[, frac := N / sum]
+pDT <- pDT[frac > 0.25]
+pDT.labels <- pDT[frac > 0.5, .(hex.x = median(hex.x), hex.y=median(hex.y)), by=c("functional.cluster")]
+ggplot(pDT, aes(x=hex.x, y=hex.y)) +
+  themeNF() +
+  #geom_hex(fill="lightgrey", bins=100) +
+  geom_point(aes(color=functional.cluster, alpha=frac), size=0.5) + 
+  geom_text(data=pDT.labels, aes(label=functional.cluster), lineheight = 0.8) +
+  #scale_color_manual(values=COLORS.CELLTYPES.scRNA.ainhoa) +
+  xu + yu
+ggsaveNF(outBase("UMAP_Izzo.pdf"), w=1.5,h=1.5)
+
+ggplot(umap.proj$izzo[tissue != "Izzo_WT1"], aes(x=UMAP_1, UMAP_2)) + 
+  themeNF() +
+  geom_hex(bins=100) +
+  scale_fill_gradient(low="lightgrey", high="blue") +
+  facet_grid(. ~ tissue) +
+  xu + yu
+ggsaveNF(outBase("UMAP_Izzo_projected.pdf"), w=4,h=1.5)
 
 
 # UMAP Projections ---------------------------------------------------------
@@ -99,18 +126,20 @@ for(tx in names(inDir.funcs)){
     pDT[, sum := sum(N), by=c("hex.x", "hex.y")]
     pDT[, frac := N / sum]
     pDT <- pDT[frac > 0.25]
-    pDT$Clusters <- cleanCelltypes(pDT$Clusters,twoLines = TRUE)
     pDT.labels <- pDT[frac > 0.5, .(hex.x = median(hex.x), hex.y=median(hex.y)), by=c("Clusters")]
+    pDT[, Clusters := cleanCelltypes(Clusters,twoLines = FALSE)]
+    pDT.labels[, Clusters := cleanCelltypes(Clusters,twoLines = TRUE)]
     ggplot(pDT, aes(x=hex.x, y=hex.y)) +
       themeNF() +
       #geom_hex(fill="lightgrey", bins=100) +
       geom_point(aes(color=Clusters, alpha=frac), size=0.5) + 
       geom_text(data=pDT.labels, aes(label=Clusters), lineheight = 0.8) +
+      scale_color_manual(values=COLORS.CELLTYPES.scRNA.ainhoa) +
       xu + yu
       #scale_shape_manual(values=rep(c(1,16,2,18,3,4), 20))
     ggsaveNF(out("UMAP_Celltypes_",x,".pdf"), w=1.5,h=1.5)
   }
-} 
+}
 
 
 # Signatures --------------------------------------------------------------

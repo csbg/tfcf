@@ -19,7 +19,7 @@ tpmMT <- t(t(rMT) / colSums(rMT, na.rm=TRUE)*1e6)
 stopifnot(all(is.na(rMT) == is.na(tpmMT)))
 stopifnot(all(tpmMT[,1] == rMT[,1]/sum(rMT[,1],na.rm=T)*1e6, na.rm = TRUE))
 
-# Compare to WT WT
+# Compare to WT
 cDT <- copy(ann[Library != "A"])
 cDT[,id2 := paste(Population, Library)]
 cDT <- dcast.data.table(unique(cDT[,c("id", "id2", "Genotype")]), id2 ~ Genotype, value.var = "id")
@@ -250,39 +250,39 @@ for(libx in unique(res.stats$Library)){
 
 
 
-
-# . Plot examples -----------------------------------------------------------
-m.norm <- t(t(m)/colSums(m, na.rm = TRUE)) * 1e-6
-m.norm <- log2(m.norm + 1)
-table(is.na(m.norm))
-
-genex <- "Kmt2d"
-for(genex in c("Spi1", "Kmt2d")){
-  
-  if(!genex %in% res.stats$Gene){
-    message(genex, " not found")
-    next
-  }
-  
-  guides <- unique(res.stats[Gene == genex]$Guide)
-  gx <- guides[1]
-  pDT <- data.table()
-  for(gx in guides){
-    ret <- copy(ann)
-    ret$NormCounts <- m.norm[gx, ret$sample]
-    pDT <- rbind(pDT, data.table(ret, Guide=gx))
-  }
-  pDT <- pDT[!is.na(NormCounts)]
-  #pDT <- pDT[Genotype == "Cas9"]
-  pDT[, NormCounts2 := scale(NormCounts), by="Guide"]
-  ggplot(pDT, aes(x=sample,y=Guide, fill=NormCounts2)) + 
-    geom_tile() +
-    facet_grid(~ Genotype + Library,scales="free", space = "free") + 
-    scale_fill_gradient2(name="Normalized\ncounts", low="red", high="blue") +
-    theme_bw(12) +
-    xRot()
-  ggsave(out("Example_", genex, ".pdf"), w=length(unique(pDT$sample)) * 0.2 + 2,h=length(unique(pDT$Guide)) * 0.4 +4)
-}
+# 
+# # . Plot examples -----------------------------------------------------------
+# m.norm <- t(t(m)/colSums(m, na.rm = TRUE)) * 1e-6
+# m.norm <- log2(m.norm + 1)
+# table(is.na(m.norm))
+# 
+# genex <- "Kmt2d"
+# for(genex in c("Spi1", "Kmt2d")){
+#   
+#   if(!genex %in% res.stats$Gene){
+#     message(genex, " not found")
+#     next
+#   }
+#   
+#   guides <- unique(res.stats[Gene == genex]$Guide)
+#   gx <- guides[1]
+#   pDT <- data.table()
+#   for(gx in guides){
+#     ret <- copy(ann)
+#     ret$NormCounts <- m.norm[gx, ret$sample]
+#     pDT <- rbind(pDT, data.table(ret, Guide=gx))
+#   }
+#   pDT <- pDT[!is.na(NormCounts)]
+#   #pDT <- pDT[Genotype == "Cas9"]
+#   pDT[, NormCounts2 := scale(NormCounts), by="Guide"]
+#   ggplot(pDT, aes(x=sample,y=Guide, fill=NormCounts2)) + 
+#     geom_tile() +
+#     facet_grid(~ Genotype + Library,scales="free", space = "free") + 
+#     scale_fill_gradient2(name="Normalized\ncounts", low="red", high="blue") +
+#     theme_bw(12) +
+#     xRot()
+#   ggsave(out("Example_", genex, ".pdf"), w=length(unique(pDT$sample)) * 0.2 + 2,h=length(unique(pDT$Guide)) * 0.4 +4)
+# }
 
 
 
