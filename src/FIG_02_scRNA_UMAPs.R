@@ -32,7 +32,7 @@ marker.genes <- fread("metadata/markers.csv", header = FALSE)$V1
 marker.signatures <- lapply(TISSUES, function(tissue.name){
   ff <- list.files(dirout_load("SCRNA_06_01_Markers")(tissue.name), pattern="Signatures_", full.names = TRUE)
   names(ff) <- gsub("^Signatures_(.+?).csv$", "\\1", basename(ff))
-  ff <- ff[unique(SIGS.USE$DB)]
+  ff <- ff[c(unique(SIGS.USE$DB), "BulkOld")]
   lapply(ff, function(fx) as.matrix(read.csv(fx)))
 })
 names(marker.signatures) <- TISSUES
@@ -41,7 +41,12 @@ marker.signatures <- rbindlist(lapply(marker.signatures, function(ltx){
       dt <- melt(data.table(dt, keep.rownames = TRUE), id.vars = "rn")
     }), idcol = "DB")
   }), idcol = "tissue")
+marker.signatures.bulk <- marker.signatures[DB == "BulkOld"]
 marker.signatures <- merge(marker.signatures, SIGS.USE, by.x=c("DB", "variable"), by.y=c("DB", "Celltype"))
+
+# signature differential analysis
+marker.signatures.DA <- lapply(TISSUES, function(tx) fread(inDir.funcs[[tx]]("SigDA.tsv")))
+names(marker.signatures.DA) <- TISSUES
 
 # Cell annotations
 annList <- lapply(names(inDir.funcs), function(inDir.current){
@@ -102,7 +107,7 @@ ggplot(umap.proj$izzo[tissue != "Izzo_WT1"], aes(x=UMAP_1, UMAP_2)) +
   scale_fill_gradient(low="lightgrey", high="blue") +
   facet_grid(. ~ tissue) +
   xu + yu
-ggsaveNF(outBase("UMAP_Izzo_projected.pdf"), w=4,h=1.5)
+ggsaveNF(outBase("UMAP_Izzo_projected.pdf"), w=3,h=1.5)
 
 
 # UMAP Projections ---------------------------------------------------------
@@ -174,6 +179,51 @@ for(tx in names(inDir.funcs)){
   # Plot expression of marker genes in each cluster
   
   # Plot fraction of predicted cells in each cluster
+}
+
+
+# Signatures DE with CRISPR KOs -------------------------------------------
+tx <- TISSUES[1]
+for(tx in TISSUES){
+  
+  out <- dirout(paste0(base.dir, "/", tx))
+  
+  pDT <- marker.signatures.DA[[tx]]
+  pDT <- merge(pDT, SIGS.USE, by=c("sig"))
+  
+  # Summarize across guides
+  pDT[gene == "Pu.1", gene := "Spi1"]
+  pDT <- pDT[, .(
+    d=mean(d, na.rm=TRUE), 
+    dir=length(unique(sign(d[!is.na(d)])))==1, 
+    padj=sum(padj < 0.01), 
+    N=.N), by=c("sample", "FinalName", "gene")]
+  pDT[dir == FALSE, padj := 0]
+  pDT[dir == FALSE, d := NA]
+  
+  # summarize across samples
+  pDT <- pDT[, .(
+    d=mean(d, na.rm=TRUE), 
+    dir=length(unique(sign(d[!is.na(d)])))==1, 
+    padj=sum(padj), 
+    N=sum(N)), by=c("FinalName", "gene")]
+  pDT[dir == FALSE, padj := 0]
+  pDT[dir == FALSE, d := NA]
+  
+  # setup for plotting
+  pDT[padj == 0 | is.na(d), d := 0]
+  pDT[, sig.perc := padj / N]
+  pDT[,d_cap := pmin(abs(d), 5) * sign(d)]
+  pDT <- hierarch.ordering(dt = pDT, toOrder = "FinalName", orderBy = "gene", value.var = "d")
+  pDT <- hierarch.ordering(dt = pDT, toOrder = "gene", orderBy = "FinalName", value.var = "d")
+  ggplot(pDT, aes(x=gene,y=FinalName, color=d, size=sig.perc)) + 
+    themeNF(rotate = TRUE) +
+    scale_size_continuous(name="% sign.", range = c(0,4)) +
+    scale_color_gradient2(name="delta",low="#1f78b4", high="#e31a1c") +
+    geom_point() +
+    geom_point(shape=1, color="lightgrey") +
+    ylab("Marker signature") + xlab("")
+  ggsaveNF(out("MarkerSignatures_DA.pdf"),w=2,h=1)
 }
 
 
@@ -402,6 +452,25 @@ ggplot(pDT, aes(x=group, y=perc, fill=group == "NTC")) +
   xRot() + 
   xlab("")
 ggsaveNF(out("Displasia_Numbers_bars.pdf"), w=2,h=1, guides = TRUE)
+
+
+# EX VIVO---------------------------------------------------------
+
+# . load data ---------------------------------------------------------
+inDir.current <- "ex.vivo"
+out <- dirout(paste0(base.dir, "/", inDir.current))
+ann <- annList[tissue == inDir.current]
+marker.signatures[DB == "Larry"]
+
+pDT <- merge(umap.proj$izzo, marker.signatures.bulk, by="rn")
+pDT[, value.norm := scale(value), by="variable"]
+ggplot(pDT, aes(x=UMAP_1, y=UMAP_2)) +
+  stat_summary_hex(aes(z=pmin(3, value.norm)),fun=mean, bins=100) +
+  scale_fill_gradient2(low="blue", midpoint = 0, high="red") +
+  themeNF() +
+  facet_wrap(~variable) +
+  xu + yu
+ggsaveNF(out("BulkSignatures.pdf"), w=2.5,h=1)
 
 
 

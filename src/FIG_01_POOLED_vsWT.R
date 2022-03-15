@@ -193,7 +193,7 @@ ggsaveNF(out("Numbers.pdf"), w=0.8, h=1)
 
 
 # Example calculation and scores -----------------------------------------------------
-ggplot(SCORES.EXAMPLE[!(Genotype == "Cas9" & grepl("^NTC", Gene))], aes(x=Score)) + 
+ggplot(SCORES.EXAMPLE[!(Genotype == "Cas9" & grepl("^NTC", Guide))], aes(x=Score)) + 
   geom_density(data=data.table(Score=rnorm(10000, mean=SCORES.EXAMPLE.bg$mean, sd=SCORES.EXAMPLE.bg$sd)), fill="#b2df8a", color=NA) +
   scale_color_manual(values=COLOR.Genotypes) +
   geom_density(aes(color=Genotype)) +
@@ -324,7 +324,7 @@ write.tsv(pDT.stats, out("SimpleHM.tsv"))
 # Plot
 pDT.stats[, z.cap := pmin(5, abs(z)) * sign(z)]
 p <- ggplot(pDT.stats[Genotype == "Cas9"], aes(
-  y=cleanComparisons(Comparison, ggtext = TRUE, reverse = TRUE, colors=c("e31a1c", "1f78b4")), 
+  y=cleanComparisons(Comparison, ggtext = TRUE, reverse = TRUE, colors=c("0000B3", "A60000")), 
   x=Gene)
   ) +
     themeNF() + 
@@ -337,10 +337,16 @@ p <- ggplot(pDT.stats[Genotype == "Cas9"], aes(
     theme(axis.text.y = element_markdown()) +
     xlab("") +
     theme(panel.spacing = unit(0.01, "cm"))
-ggsaveNF(out("SimpleHM_RedBlue.pdf"), w=4.5,h=1, plot = p + scale_fill_gradient2(name=TeX(r'($\\overset{\Delta_{Cas9-WT}}$)'), low="#e31a1c", high="#1f78b4"))
-ggsaveNF(out("SimpleHM_GreenPurple.pdf"), w=4.5,h=1, plot = p + scale_fill_gradient2(name=TeX(r'($\\overset{\Delta_{Cas9-WT}}$)'), high="#33a02c", low="#6a3d9a"))
+ggsaveNF(out("SimpleHM_RedBlue.pdf"), w=4.5,h=1, 
+         plot = p + scale_fill_gradient2(
+           name=TeX(r'($\\overset{\Delta_{Cas9-WT}}$)'), 
+           low="#0000B3", high="#A60000"))
+ggsaveNF(out("SimpleHM_GreenPurple.pdf"), w=4.5,h=1, 
+         plot = p + scale_fill_gradient2(
+           name=TeX(r'($\\overset{\Delta_{Cas9-WT}}$)'), 
+           high="#0D5E04", low="#5700C2"))
 
-  cleanDev(); pdf(out("SimpleHM_Dendrogram.pdf"), w=15,h=5)
+cleanDev(); pdf(out("SimpleHM_Dendrogram.pdf"), w=15,h=5)
 plot(hclust(dist(toMT(pDT.stats[Genotype == "Cas9"], row = "Gene", col = "Comparison", val = "z"))))
 dev.off()
 

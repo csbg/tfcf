@@ -28,7 +28,7 @@ mAA <-sapply(grps, function(grpx){
   message(grpx)
   colx <- grep(paste0(grpx, "_"), colnames(mA.cpm), value=TRUE)
   print(paste(colx, collapse = " - "))
-  rowMeans(mA.cpm[,colx], na.rm = TRUE)
+  rowMeans(mA.cpm[,colx, drop=F], na.rm = TRUE)
 })
 
 # Load analysis results ---------------------------------------------------
