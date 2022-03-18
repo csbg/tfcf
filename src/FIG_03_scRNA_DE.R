@@ -8,6 +8,13 @@ require(ggrepel)
 # Read data ---------------------------------------------------------------
 inDir <- dirout_load("SCRNA_40_01_DE_summary")
 
+annList <- lapply(PATHS$SCRNA$MONOCLE.NAMES, function(tx){
+  ann <- fread(dirout_load(paste0("SCRNA_20_Summary/", tx, "_monocle.singleR"))("Annotation.tsv"))
+  ann[, gene := gsub("_.+", "", guide)]
+  ann
+})
+annList <- rbindlist(annList, fill=TRUE)
+
 cMT <- as.matrix(read.csv(inDir("DEG_Cor.csv"), row.names = 1))
 fcMT <- as.matrix(read.csv(inDir("FoldChanges.csv"), row.names=1))
 umapDT <- fread(inDir("RegulatoryMap_UMAP_","all",".tsv"))
@@ -16,13 +23,13 @@ umapDT.dim2 <- floor(max(abs(umapDT$UMAP2))) + 0.5
 gseaDT <- fread(inDir("UMAP_GSEA.tsv"))
 deDT <- fread(inDir("DEG_Statistics.tsv"))
 
-atacDT.mye <- fread(paste0(gsub("Data", "CollaborationData", PATHS$LOCATIONS$DATA), "Mye_narrowPeak_consensusPeaks.boolean.annotatePeaks.extended.fc.txt"))
-atacDT <- melt(
-  atacDT.mye,
+atacDT.lsk <- fread(paste0(gsub("Data", "CollaborationData", PATHS$LOCATIONS$DATA), "LSK_narrowPeak_consensusPeaks.boolean.annotatePeaks.extended.fc.txt"))
+atacDT <- data.table::melt(
+  atacDT.lsk,
   id.vars = c("chr", "start", "end", "Distance to TSS", "Gene Name"),
   measure.vars = grep("log2FC$", colnames(atacDT.mye), value = TRUE)
   )
-atacDT[, variable := gsub("Mye-(.+?)_.+", "\\L\\1", variable, perl=TRUE)]
+atacDT[, variable := gsub("LSK-(.+?)_.+", "\\L\\1", variable, perl=TRUE)]
 atacDT[, variable := gsub("^(.)", "\\U\\1", variable, perl=TRUE)]
 
 
@@ -47,7 +54,9 @@ for(tx in unique(deDT$tissue)){
   pDT <- deDT[tissue == tx]
   pDT.l <- list(
     markers = pDT[grep("Mpo|Elane|Ctsg|S100a9|S100a8|Mtf2|Car1|Car2|Epor|Pklr|Pf4|Cpa3|Hba|Hbb|Tfrc|Cpox|Mt2|Trem2|Mefv|F13a1|Ly6c2|Fcgr3|Cd34|Kit|Itgam",gene_id),],
-    tfs = pDT[grep("Cited2|Satb1|Hoxa9|Hoxa7|Hoxb4|Fli1|Erg|Spi1|Cebpa|Cebpb|Cebpe|Mef2c|Klf4|Irf8|Gfi1|Gata1|Gata2|Klf1|Klf9|Klf3|Nfia|Nfix|Nfe2|Sox6|Mafk|Gfi1b|Tal1|Cited4|Lmo1|Lmo4",gene_id),])
+    #tfs = pDT[grep("Cited2|Satb1|Hoxa9|Hoxa7|Hoxb4|Fli1|Erg|Spi1|Cebpa|Cebpb|Cebpe|Mef2c|Klf4|Irf8|Gfi1|Gata1|Gata2|Klf1|Klf9|Klf3|Nfia|Nfix|Nfe2|Sox6|Mafk|Gfi1b|Tal1|Cited4|Lmo1|Lmo4",gene_id),]
+    tfs = pDT[grep("Spi1|Cebpa|Cebpb|Cebpe|Klf4|Gfi1|Irf8|Mef2c|Gata2|Gata1|Klf1|Zfpm1|Mafk|Sox6|Klf9|Lmo4|Nfia|Nfix|Nfe2|Nfe2l2|Tal1|Cited4",gene_id),]
+    )
   for(lnam in names(pDT.l)){
     xDT <- pDT.l[[lnam]]
     xDT <- hierarch.ordering(xDT, "guide", "gene_id", value.var = "estimate")
@@ -69,22 +78,56 @@ for(tx in unique(deDT$tissue)){
 # ATAC-seq comparison -----------------------------------------------------
 atacDT[order(abs(get("Distance to TSS")), decreasing = FALSE)][, head(.SD, n=1), by=c("Gene Name")]
 pDT <- merge(
-  deDT[tissue == "in.vivo_myeloid"][, c("gene_id", "guide", "estimate"), with=FALSE],
-  atacDT[order(abs(get("Distance to TSS")), decreasing = FALSE)][, head(.SD, n=1), by=c("Gene Name")][,c("Gene Name", "variable", "value")],
+  deDT[tissue == "ex.vivo_myeloid"][, c("gene_id", "guide", "estimate"), with=FALSE],
+  atacDT[order(abs(get("Distance to TSS")), decreasing = FALSE)][, head(.SD, n=1), by=c("Gene Name", "variable")][,c("Gene Name", "variable", "value")],
   by.x=c("gene_id", "guide"), by.y=c("Gene Name", "variable"))
-pt <- with(pDT, cor.test(estimate, value, use="pairwise.complete.obs"))
+pCor <- pDT[, cor(estimate, value, use="pairwise.complete.obs", method="spearman"), by=c("guide")]
 ggplot(pDT, aes(x=estimate, y=value)) + 
   themeNF() +
   stat_binhex(aes(fill=log10(..count..))) + 
-  ggtitle(paste(round(pt$estimate, 3))) +
+  #ggtitle(paste(round(pt$estimate, 3))) +
+  geom_text(data=pCor, aes(label=paste0("R=", round(V1,3))), x=-Inf,y=Inf, hjust=0, vjust=1)+
   facet_grid(. ~ guide) +
   xlab("RNA-seq logFC KO vs WT") +
   ylab("ATAC-seq logFC KO vs WT")
-ggsaveNF(out("ATAC_correlation.pdf"), w=1,h=1)
+ggsaveNF(out("ATAC_correlation.pdf"), w=4,h=1)
 
 
 
-# Correlation analyses ----------------------------------------------------
+# Correlation in BAF ------------------------------------------------------
+pDT <- data.table::melt(data.table(cMT, keep.rownames = TRUE), id.vars = "rn")
+pDT <- pDT[grepl("ex.vivo", rn) | grepl("in.vivo", rn)]
+pDT <- pDT[grepl("ex.vivo", variable) | grepl("in.vivo", variable)]
+pDT <- pDT[grepl("_myeloid", rn) & grepl("_myeloid", variable)]
+pDT <- pDT[grepl("Brd9|Kmt2d|Kmt2a|Smarcb1", rn) & grepl("Brd9|Kmt2d|Kmt2a|Smarcb1", variable)]
+pDT[, rn := gsub("_myeloid", "", rn)]
+pDT[, variable := gsub("_myeloid", "", variable)]
+pDT[, variable := gsub("\\.", " ", variable)]
+pDT[, rn := gsub("\\.", " ", rn)]
+pDT <- pDT[rn != variable]
+pDT <- hierarch.ordering(pDT, toOrder = "rn", orderBy = "variable", value.var = "value")
+pDT <- hierarch.ordering(pDT, toOrder = "variable", orderBy = "rn", value.var = "value")
+ggplot(pDT, aes(x=rn, y=variable, fill=value)) + 
+  geom_tile() + 
+  scale_fill_gradient2(low="blue", high="red") +
+  themeNF(rotate=TRUE)
+ggsaveNF(out("Phenocopy_BAF.pdf"), w=1,h=1)
+
+
+# Number of up- and downregualted genes ----------------------------------------------------
+pDT.up_down <- copy(deDT[tissue == "leukemia_myeloid"])
+pDT.up_down[, direction := ifelse(estimate > 0, "up", "down")]
+pDT.up_down <- pDT.up_down[q_value < 0.05][abs(estimate) > 0.5][,length(unique(gene_id)), by=c("guide", "direction")]
+#pDT[direction == "down", V1 := -V1]
+ggplot(pDT.up_down, aes(x=guide, y=V1, fill=direction)) +
+  themeNF() +
+  geom_bar(stat="identity", position="dodge") +
+  scale_y_log10() +
+  coord_flip()
+ggsaveNF(out("NumberOfGenes.pdf"), w=1,h=2)
+
+
+# Correlation Cancer vs Healthy ----------------------------------------------------
 pDT <- data.table::melt(data.table(cMT, keep.rownames = TRUE), id.vars = "rn")
 pDT[, guide1 := sub(" .+$", "", rn)]
 pDT[, tissue1 := sub("^.+? ", "", rn)]
@@ -94,16 +137,16 @@ pDT <- hierarch.ordering(pDT, toOrder = "guide1", orderBy = "variable", value.va
 pDT <- hierarch.ordering(pDT, toOrder = "guide2", orderBy = "rn", value.var = "value", aggregate = TRUE)
 
 # Overall correlations
-ggplot(pDT, aes(x=guide1, y=guide2, fill=value)) + 
-  themeNF() +
-  geom_tile() + 
-  facet_grid(tissue2 ~ tissue1, space = "free", scales = "free") +
-  scale_fill_gradient2(low="blue", high="red") +
-  xlab("") + ylab("") +
-  xRot()
-ggsaveNF(out("CorrelationHM.pdf"), w=3,h=3)
+# ggplot(pDT, aes(x=guide1, y=guide2, fill=value)) + 
+#   themeNF() +
+#   geom_tile() + 
+#   facet_grid(tissue2 ~ tissue1, space = "free", scales = "free") +
+#   scale_fill_gradient2(low="blue", high="red") +
+#   xlab("") + ylab("") +
+#   xRot()
+# ggsaveNF(out("CorrelationHM.pdf"), w=3,h=3)
 
-# Normal vs cancer correlations
+# Cancer vs Healthy correlations
 pDT[,variable := as.character(variable)]
 pDT[make.names(rn) == make.names(variable), value := NA]
 pDT.cvh <- pDT[!grepl("in.vivo", tissue1) & !grepl("in.vivo", tissue2)]
@@ -112,25 +155,57 @@ pDT.cvh <- pDT.cvh[guide1 %in% double.guides]
 pDT.cvh <- pDT.cvh[guide2 %in% double.guides]
 pDT.cvh[,tissue1 := gsub("_.+","", tissue1)]
 pDT.cvh[,tissue2 := gsub("_.+","", tissue2)]
-ggplot(pDT.cvh, 
-       aes(
-         x=paste(tissue1), 
-         y=paste(tissue2), 
-         fill=value)) + 
-  themeNF() +
-  geom_tile() + 
-  facet_grid(guide2 ~ guide1, space = "free", scales = "free", switch = "both") +
-  scale_fill_gradient2(low="blue", high="red") +
-  xlab("") + ylab("") +
-  theme(strip.text.x = element_text(angle=90)) +
-  theme(strip.text.y.left = element_text(angle=0)) +
-  theme(panel.spacing = unit(0, "lines")) +
-  xRot()
-ggsaveNF(out("Correlation_CVH_HM.pdf"), w=3,h=3)
 
-# Heatmap of differences
+# Cancer vs Healthy same factor Barplot
+pDT.sum <- pDT.cvh[guide1 == guide2 & tissue1 == "ex.vivo" & tissue1 != tissue2]
+pDT.sum$guide <- factor(pDT.sum$guide1, levels = pDT.sum[order(value)]$guide1)
+ggplot(pDT.sum, aes(x=guide, y=value)) + 
+  themeNF() +
+  geom_bar(stat="identity") + 
+  ylab("Correlation normal vs cancer") +
+  coord_flip() +
+  ylab("")
+ggsaveNF(out("Correlation_CVH_bars.pdf"), w=1,h=2, guides = TRUE)
+
+
+
+pDT.sum.control <- merge(
+  pDT.sum,
+  dcast.data.table(annList[mixscape_class.global == "KO", .N, by=c("gene", "tissue")][tissue != "in.vivo"], gene ~ tissue, value.var="N"),
+  by.x="guide1", by.y="gene")
+ggplot(pDT.sum.control,
+       aes(x=ex.vivo, y=leukemia, label=guide1)) +
+  geom_point(aes(color=value), size=3) +
+  geom_text_repel() +
+  themeNF(rotate=TRUE) +
+  scale_color_gradient2(low="blue", high="red") +
+  scale_y_log10(limits=c(10,1e4)) +
+  scale_x_log10(limits=c(10,1e4)) +
+  geom_abline()
+ggsaveNF(out("Correlation_CVH_bars_GuideCellNumbers.pdf"), w=2,h=2)
+
+
+# Cancer vs Healthy Heatmap
+# ggplot(pDT.cvh,
+#        aes(
+#          x=paste(tissue1),
+#          y=paste(tissue2),
+#          fill=value)) +
+#   themeNF() +
+#   geom_tile() +
+#   facet_grid(guide2 ~ guide1, space = "free", scales = "free", switch = "both") +
+#   scale_fill_gradient2(low="blue", high="red") +
+#   xlab("") + ylab("") +
+#   theme(strip.text.x = element_text(angle=90)) +
+#   theme(strip.text.y.left = element_text(angle=0)) +
+#   theme(panel.spacing = unit(0, "lines")) +
+#   xRot()
+# ggsaveNF(out("Correlation_CVH_HM.pdf"), w=3,h=3)
+
+
+# Cancer vs Healthy Heatmap of changes phenocopies
 pDT.cvh.diff <- dcast.data.table(pDT.cvh[tissue1 == tissue2], guide1 + guide2 ~ tissue1, value.var = "value")
-pDT.cvh.diff[, diff := ex.vivo - leukemia]
+pDT.cvh.diff[, diff := leukemia - ex.vivo]
 pDT.cvh.diff <- hierarch.ordering(pDT.cvh.diff, "guide1", "guide2", "diff")
 pDT.cvh.diff <- hierarch.ordering(pDT.cvh.diff, "guide2", "guide1", "diff")
 pDT.cvh.diff[, diff.grp := paste("sign", ifelse(abs(diff) > 0.1, sign(diff), 0))]
@@ -144,27 +219,74 @@ ggplot(pDT.cvh.diff, aes(x=guide1, y=guide2, fill=ex.vivo, size=abs(diff), color
   xlab("CRISPR targets") + ylab("CRISPR targets")
 ggsaveNF(out("Correlation_CVH_HM_Details_HM.pdf"), w=2,h=2)
 
-# Scattplot of differences
-gg <- pDT.cvh.diff[ex.vivo > 0.4 | ex.vivo < -0.15 | diff > 0.2 | diff < -0.2]
-ggplot(pDT.cvh.diff, aes(x=ex.vivo, y=diff)) + 
-  geom_point() +
+
+# Cancer vs Healthy changes phenocopies control for number of cells
+xDT <- dcast.data.table(annList[mixscape_class.global == "KO", .N, by=c("gene", "tissue")][tissue != "in.vivo"], gene ~ tissue, value.var="N")
+xDT2 <- pDT.cvh.diff[,.(meandiff = mean(diff, na.rm=TRUE)), by=c("guide1")]
+xDT2[, gene := as.character(guide1)]
+xDT <- merge.data.table(xDT, xDT2, by="gene")
+ggplot(xDT,
+       aes(x=ex.vivo, y=leukemia, label=gene)) +
+  geom_point(aes(color=meandiff), size=3) +
+  geom_text_repel() +
+  themeNF(rotate=TRUE) +
+  scale_color_gradient2(low="blue", high="red") +
+  scale_y_log10() +
+  scale_x_log10() +
+  geom_abline()
+ggsaveNF(out("Correlation_CVH_HM_Details_HM_GuideCellNumbers.pdf"), w=2,h=2)
+
+# Cancer vs Healthy of changes phenocopies Heatmap examples
+pDT.cvh.diff.2 <- copy(pDT.cvh.diff[sign(ex.vivo) != sign(leukemia)][order(-abs(diff))][1:50])
+pDT.cvh.diff.2 <- pDT.cvh.diff.2[t(apply(as.matrix(pDT.cvh.diff.2[,c("guide1", "guide2")]), 1, order))[,1] == 1]
+pDT.cvh.diff.2[, pair := paste0(guide1, "-", guide2)]
+pDT.cvh.diff.2$pair <- factor(pDT.cvh.diff.2$pair, levels=pDT.cvh.diff.2[order(diff)]$pair)
+pDT.cvh.diff.2 <- melt(pDT.cvh.diff.2, id.vars = c("pair"), measure.vars=c("ex.vivo", "leukemia", "diff"))
+ggplot(pDT.cvh.diff.2, aes(x=variable, y=pair, fill=value)) + 
+  themeNF(rotate=TRUE) +
+  geom_tile() +
+  scale_fill_gradient2(low="blue", high="red") +
+  xlab("Correlation")
+ggsaveNF(out("Correlation_CVH_HM_Details_HM_Examples.pdf"), w=1,h=2)
+
+# Cancer vs Healthy of changes phenocopies Scatterplot
+pDT.cvh.diff.scatter <- pDT.cvh.diff[t(apply(as.matrix(pDT.cvh.diff[,c("guide1", "guide2")]), 1, order))[,1] == 1]
+gg <- unique(rbind(
+  pDT.cvh.diff.scatter[ex.vivo > 0.4 | ex.vivo < -0.15],
+  pDT.cvh.diff.scatter[sign(leukemia) != sign(ex.vivo)][order(abs(diff), decreasing = TRUE)][1:20]
+))
+# ggplot(pDT.cvh.diff, aes(x=ex.vivo, y=diff)) + 
+#   geom_point() +
+#   geom_text_repel(data=gg, aes(label=paste0(guide1, "-", guide2))) +
+#   themeNF() +
+#   xlab("Correlation in ex vivo") +
+#   ylab("Difference in correlation\nleukemia vs ex vivo")
+# ggsaveNF(out("Correlation_CVH_HM_Details.pdf"), w=2,h=2)
+pmin <- min(c(pDT.cvh.diff.scatter$leukemia, pDT.cvh.diff$ex.vivo), na.rm = T)
+pmax <- max(c(pDT.cvh.diff.scatter$leukemia, pDT.cvh.diff$ex.vivo), na.rm = T)
+p <- ggplot(pDT.cvh.diff.scatter, aes(x=ex.vivo, y=leukemia)) + 
+  geom_point(color="lightblue", alpha=0.5) +
   geom_text_repel(data=gg, aes(label=paste0(guide1, "-", guide2))) +
   themeNF() +
   xlab("Correlation in ex vivo") +
-  ylab("Difference in correlation\nleukemia vs ex vivo")
-ggsaveNF(out("Correlation_CVH_HM_Details.pdf"), w=2,h=2)
+  ylab("Correlation in leukemia") + 
+  geom_abline() +
+  xlim(pmin, pmax) + ylim(pmin,pmax)
+ggsaveNF(out("Correlation_CVH_HM_Scatterplot.pdf"), w=2,h=2, plot=p)
 
-# Rank factors by their normal vs healthy correlation
-pDT.sum <- pDT.cvh[guide1 == guide2 & tissue1 == "ex.vivo" & tissue1 != tissue2]
-pDT.sum$guide <- factor(pDT.sum$guide1, levels = pDT.sum[order(value)]$guide1)
-ggplot(pDT.sum, aes(x=guide, y=value)) + 
+
+# Scatterplot ----------------------------------------------------
+pDT <- data.table(fcMT, keep.rownames = TRUE)
+pDT <- data.table::melt(pDT, id.vars = "rn")
+pDT[, guide := gsub("\\..+$", "", variable)]
+pDT[, tissue := sub("^.+?\\.", "", variable)]
+pDT <- dcast.data.table(pDT[!grepl("in.vivo", tissue)], guide + rn ~ tissue, value.var = "value")
+ggplot(pDT, aes(x=ex.vivo_myeloid, y=leukemia_myeloid)) + 
   themeNF() +
-  geom_bar(stat="identity") + 
-  ylab("Correlation normal vs cancer") +
-  coord_flip() +
-  ylab("")
-ggsaveNF(out("Correlation_CVH_bars.pdf"), w=1,h=2, guides = TRUE)
-
+  stat_binhex(aes(fill=log10(..count..))) +
+  facet_wrap(~guide, scales = "free", ncol = 6) +
+  gradient_fill_gradient2(low="grey", high="blue")
+ggsaveNF(out("Correlation_CvH_Scatterplots.pdf"), w=4,h=4)
 
 
 # MDS of correlations ----------------------------------------------------
@@ -182,26 +304,31 @@ for(tx in unique(deDT$tissue)){
   ggsaveNF(out("CorrelationHM_MDS_",tx,".pdf"), w=2, h=2)
 }
 
-
-# Scatterplot ----------------------------------------------------
-pDT <- data.table(fcMT, keep.rownames = TRUE)
-pDT <- data.table::melt(pDT, id.vars = "rn")
-pDT[, guide := gsub("\\..+$", "", variable)]
-pDT[, tissue := sub("^.+?\\.", "", variable)]
-pDT <- dcast.data.table(pDT[!grepl("in.vivo", tissue)], guide + rn ~ tissue, value.var = "value")
-ggplot(pDT, aes(x=ex.vivo_myeloid, y=leukemia_myeloid)) + 
-  themeNF() +
-  stat_binhex(aes(fill=log10(..count..))) +
-  facet_wrap(~guide, scales = "free", ncol = 6)
-ggsaveNF(out("Correlation_CvH_Scatterplots.pdf"), w=4,h=4)
-
-
 # Vulcano plots -----------------------------------------------------------
 ggplot(deDT[guide %in% GOI], aes(x=estimate, y=pmin(30, -log10(p_value)))) + 
   themeNF() +
   facet_grid(guide ~ tissue, scale="free_y") +
   stat_binhex(aes(fill=log10(..count..)))
 ggsaveNF(out("Vulcano.pdf"), w=4,h=4)
+
+dir.create(out("Vulcanos/"))
+guidex <- deDT$guide[1]
+for(guidex in unique(deDT$guide)){
+  pDT <- deDT[guide == guidex]
+  pDT.examples <- rbind(
+    pDT[order(estimate)][,head(.SD,n=5), by=c("tissue")],
+    pDT[order(-estimate)][,head(.SD,n=5), by=c("tissue")],
+    pDT[estimate > 0][order(p_value)][,head(.SD,n=5), by=c("tissue")],
+    pDT[estimate < 0][order(p_value)][,head(.SD,n=5), by=c("tissue")]
+  )
+  ggplot(pDT, aes(x=estimate, y=pmin(30, -log10(p_value)))) + 
+    facet_grid(guide ~ tissue, scale="free_y") +
+    stat_binhex(aes(fill=log10(..count..))) +
+    scale_fill_gradient(low="lightgrey", high="blue")+ 
+    geom_text_repel(data=pDT.examples, aes(label=gene_id)) +
+    themeNF()
+  ggsaveNF(out("Vulcanos/",guidex,".pdf"), w=length(unique(pDT$tissue))*2,h=2)
+}
 
 
 

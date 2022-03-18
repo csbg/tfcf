@@ -6,6 +6,8 @@ require(umap)
 base.dir <- "SCRNA_08_01_ProjectionInvivo/"
 out <- dirout(base.dir)
 
+source("src/FUNC_ProjecTILs_PLUS.R")
+
 
 # Annotation --------------------------------------------------------------
 SANN <- fread(PATHS$SCRNA$ANN)
@@ -40,7 +42,10 @@ as.Seurat.NF <- function(x){
 # if(file.exists(ref.file)){
 #   ref <- readRDS(ref.file)
 # } else {
-ref <- as.Seurat.NF(mobjs$in.vivo)
+
+ref.monocle <- mobjs$in.vivo
+ref <- as.Seurat.NF(ref.monocle)
+ref.umap.original <- reducedDims(ref.monocle)$UMAP
 ref <- FindVariableFeatures(ref)
 
 # PCA
@@ -125,13 +130,27 @@ for(tx in setdiff(PATHS$SCRNA$MONOCLE.NAMES, "in.vivo")){
     # Prediction
     pred <- cellstate.predict(ref=ref.use, query=proj)
     
+    # Cross-map UMAP
+    proj.umap.original <- ref.umap.predict(ref=ref.use, query=proj, ref.umap = ref.umap.original)
+    
+    
     # Export results
+    # Normal
     write.tsv(
       merge(
         data.table(pred@meta.data, keep.rownames = TRUE),
         data.table(proj@reductions$umap@cell.embeddings, keep.rownames = TRUE),
         by="rn"
       ), out("Output_", tx, "_",sx,".tsv"))
+    
+    # Cross-projected to original UMAP
+    write.tsv(
+      merge(
+        data.table(pred@meta.data, keep.rownames = TRUE),
+        data.table(proj.umap.original, keep.rownames = TRUE),
+        by="rn"
+      ), out("OutputCrossprojection_", tx, "_",sx,".tsv"))
+    
   }
 }
 
@@ -142,6 +161,8 @@ for(tx in setdiff(PATHS$SCRNA$MONOCLE.NAMES, "in.vivo")){
 ff <- list.files(out(""), pattern="Output_")
 ff <- lapply(ff, function(fx) fread(out(fx)))
 pDT <- rbindlist(ff, fill=TRUE)
+
+
 
 # Hex plot
 ggplot(pDT, aes(x=UMAP_1, y=UMAP_2)) + 

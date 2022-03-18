@@ -331,7 +331,7 @@ for(tx in names(inDir.funcs)){
     themeNF() +
     geom_hex(data=pDT.final[mixscape_class.global == "NTC"], bins=100, fill="lightgrey") +
     geom_hex(data=pDT.final[mixscape_class.global != "NTC" | plot == "NTC"], bins=100) +
-    scale_fill_gradientn(colours=c("#6a3d9a", "#e31a1c", "#ff7f00", "#ffff99")) +
+    scale_fill_gradientn(colours=c("#1f78b4", "#e31a1c")) +
     facet_wrap(~plot, ncol=6) + 
     xu + yu
   ggsaveNF(out("UMAP_Guides_all.pdf"), w=4,h=4)
@@ -378,7 +378,7 @@ ggplot(pDT.final, aes(x=UMAP1, y=UMAP2)) +
   themeNF() +
   geom_hex(data=pDT.final[mixscape_class.global == "NTC"], bins=100, fill="lightgrey") +
   geom_hex(data=pDT.final[mixscape_class.global != "NTC" | plot == "NTC"], bins=100) +
-  scale_fill_gradientn(colours=c("#6a3d9a", "#e31a1c", "#ff7f00", "#ffff99")) +
+  scale_fill_gradientn(colours=c("#1f78b4", "#e31a1c")) +
   facet_wrap(~plot, ncol=3) +
   xu + yu
 ggsaveNF(out("UMAP_Guides.pdf"), w=2,h=2)
@@ -425,7 +425,7 @@ ggplot(pDT.final, aes(x=UMAP1, y=UMAP2)) +
   themeNF() +
   geom_hex(data=pDT.final[mixscape_class.global == "NTC"], bins=100, fill="lightgrey") +
   geom_hex(data=pDT.final[mixscape_class.global != "NTC" | plot == "NTC"], bins=100) +
-  scale_fill_gradientn(colours=c("#6a3d9a", "#e31a1c", "#ff7f00", "#ffff99")) +
+  scale_fill_gradientn(colours=c("#1f78b4", "#e31a1c")) +
   facet_wrap(~plot, ncol=3) +
   xu + yu
 ggsaveNF(out("UMAP_Guides_displasia.pdf"), w=2,h=1)

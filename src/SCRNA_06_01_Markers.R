@@ -59,6 +59,10 @@ for(typex in c("Old", "New")){
 }
 
 
+# David list (where from?) ------------------------------------------------------------
+marker.lists[["David"]] <- with(fread("metadata/markers.david.tsv"), split(Gene, ID))
+
+
 
 # Enrichr ----------------------------------------------------------------
 enr.file <- out("EnrichR.RData")

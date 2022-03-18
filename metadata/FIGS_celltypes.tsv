@@ -1,21 +1,21 @@
 Name	NewName	Color
-HSC		#22CF00
-LSC		#22CF00
-GMP (early)		#8AF5FF
-GMP		#4DF5FF
-GMP (late)		#4DF5FF
-Gran. P	Gran Prog	#0078FF
-Gran.	Gran	#0029FF
-Mono		#DB30FF
-MkP		#DB70FF
-EBMP		#ED7E09
-Eo/Ba		#753E05
-MEP (early)		#FF7D99
-MEP	Ery Prog	#FF7D99
-MEP (pert.)	Ery Pert	#FF7D99
-Ery		#E3409A
-MEP (S)	Ery S	#F50024
-MEP (G1)	Ery G1	#6E0013
-CLP		#95967E
-Imm. B-cell		#444539
-B-cell		#444539
+HSC	LSK	#598527
+LSC	LSC	#611B9F
+GMP (early)	Early GMP	#91E0DA
+GMP	GMP	#6DB7E0
+GMP (late)	Late GMP	#5693B5
+Gran. P	Gran Prog.	#4371A4
+Gran.	Gran	#283477
+Mono	Mono	#1AA79D
+MkP	MkP	#C488D7
+EBMP	EBMP	#B3773E
+Eo/Ba	Eo/Ba	#E09649
+MEP (early)	Early MEP	#F49DB1
+MEP	Ery Prog.	#CF536D
+MEP (pert.)	Ery Pert.	#884654
+Ery	Ery	#BB122F
+MEP (S)	Ery (S)	#600505
+MEP (G1)	Ery (G1)	#CF536D
+CLP	CLP	#878874
+Imm. B-cell	Imm. B-cell 	#57584C
+B-cell	B-cell	#333232
