@@ -160,57 +160,69 @@ for(tx in setdiff(PATHS$SCRNA$MONOCLE.NAMES, "in.vivo")){
 # Summarize results -------------------------------------------------------
 ff <- list.files(out(""), pattern="Output_")
 ff <- lapply(ff, function(fx) fread(out(fx)))
-pDT <- rbindlist(ff, fill=TRUE)
 
+ff2 <- list.files(out(""), pattern="OutputCrossprojection_")
+ff2 <- lapply(ff2, function(fx) fread(out(fx)))
 
+pDT.list <- list(
+  original=rbindlist(ff, fill=TRUE),
+  crossproject=rbindlist(ff2, fill=TRUE)
+  )
 
-# Hex plot
-ggplot(pDT, aes(x=UMAP_1, y=UMAP_2)) + 
-  theme_bw(12) +
-  geom_hex(data=pDT[tissue == "in.vivo"], bins=100) + 
-  geom_density_2d(data=pDT[tissue != "in.vivo"], aes(color=tissue))
-ggsave(out("Hexplot.pdf"), w=6,h=5)
-
-# Hexplot by tissue
-ggplot(pDT, aes(x=UMAP_1, y=UMAP_2)) + 
-  theme_bw(12) +
-  stat_binhex(aes(fill=log10(..count..)), bins=100) + 
-  facet_grid(. ~ tissue)
-ggsave(out("Hexplot.byTissue.pdf"), w=16,h=5)
-
-# Celltypes
-ggplot(pDT, aes(x=UMAP_1, y=UMAP_2, color=functional.cluster)) + 
-  theme_bw(12) +
-  scale_color_brewer(palette = "Paired") +
-  geom_point(shape=1, alpha=0.3)
-ggsave(out("Celltypes.png"), w=7,h=5)
-
-# Numbers of cell types
-ggplot(pDT, aes(x=functional.cluster)) + 
-  theme_bw(12) +
-  geom_bar() + 
-  facet_grid(. ~ tissue) +
-  xRot() +
-  scale_y_log10()
-ggsave(out("Celltypes.numbers.pdf"), w=9,h=4)
-
-
-# # Compare to SingleR ------------------------------------------------------
-xDT <- merge(pDT, singleR.cell.types, by.x="rn", by.y="cellname")
-
-jDT <- data.table()
-for(tx in unique(xDT$tissue)){
-  jMT <- jaccard.twolists(
-    l1=with(xDT[tissue == tx], split(rn, functional.cluster)),
-    l2=with(xDT[tissue == tx], split(rn, labels))
+for(xx in names(pDT.list)){
+  pDT <- pDT.list[[xx]]
+  
+  # Hex plot
+  ggplot(pDT, aes(x=UMAP_1, y=UMAP_2)) + 
+    theme_bw(12) +
+    geom_hex(data=pDT[tissue == "in.vivo"], bins=100) + 
+    geom_density_2d(data=pDT[tissue != "in.vivo"], aes(color=tissue))
+  ggsave(out(xx, "_Hexplot.pdf"), w=6,h=5)
+  
+  # Hexplot by tissue
+  ggplot(pDT, aes(x=UMAP_1, y=UMAP_2)) + 
+    theme_bw(12) +
+    stat_binhex(aes(fill=log10(..count..)), bins=100) + 
+    facet_grid(. ~ tissue)
+  ggsave(out(xx, "_Hexplot.byTissue.pdf"), w=16,h=5)
+  
+  # Celltypes
+  ggplot(pDT, aes(x=UMAP_1, y=UMAP_2, color=functional.cluster)) + 
+    theme_bw(12) +
+    scale_color_brewer(palette = "Paired") +
+    geom_point(shape=1, alpha=0.3)
+  ggsave(out(xx, "_Celltypes.png"), w=7,h=5)
+  
+  # Numbers of cell types
+  ggplot(pDT, aes(x=functional.cluster)) + 
+    theme_bw(12) +
+    geom_bar() + 
+    facet_grid(. ~ tissue) +
+    xRot() +
+    scale_y_log10()
+  ggsave(out(xx, "_Celltypes.numbers.pdf"), w=9,h=4)
+  
+  
+  # Compare to SingleR ------------------------------------------------------
+  xDT <- merge(pDT, singleR.cell.types, by.x="rn", by.y="cellname")
+  
+  if(nrow(xDT) == 0) next
+  
+  jDT <- data.table()
+  for(tx in unique(xDT$tissue)){
+    jMT <- jaccard.twolists(
+      l1=with(xDT[tissue == tx], split(rn, functional.cluster)),
+      l2=with(xDT[tissue == tx], split(rn, labels))
     )
-
-  jDT <- rbind(jDT, data.table(melt(data.table(jMT, keep.rownames = TRUE), id.vars = "rn"), tissue=tx))
+    
+    jDT <- rbind(jDT, data.table(melt(data.table(jMT, keep.rownames = TRUE), id.vars = "rn"), tissue=tx))
+  }
+  ggplot(jDT, aes(x=rn, y=variable, fill=value)) +
+    theme_bw(12) +
+    geom_tile() +
+    facet_grid(. ~ tissue) +
+    xRot() +
+    scale_fill_gradient(low="white", high="blue")
+  ggsave(out(xx, "_ComparisonToSingleR.pdf"), w=13,h=5)
 }
-ggplot(jDT, aes(x=rn, y=variable, fill=value)) +
-  theme_bw(12) +
-  geom_tile() +
-  facet_grid(. ~ tissue) +
-  xRot() +
-  scale_fill_gradient(low="white", high="blue")
-ggsave(out("ComparisonToSingleR.pdf"), w=13,h=5)
+

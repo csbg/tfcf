@@ -65,6 +65,25 @@ for(tissue.name in names(mobjs)){
   source("src/SCRNA_20_01_SummaryFUNC.R")
 }
 
+# Projection to in vivo - crossprojection ---------------------------------------------------------------
+proj <- readRDS(dirout_load("SCRNA_10_collect_UMAPs")("ProjVivoX.RDS"))
+umapMT <- as.matrix(proj[,c("UMAP_1", "UMAP_2"), with=F])
+colnames(umapMT) <- NULL
+row.names(umapMT) <- proj$rn
+# Load cell types
+cts <- readRDS(dirout_load("SCRNA_10_collect_UMAPs")("ProjMonocle_celltypes.RDS"))
+for(tissue.name in names(mobjs)){
+  
+  analysis.name <- "projectToInvivoX"
+  
+  monocle.obj <- mobjs[[tissue.name]]
+  monocle.obj$clusters.final <-  setNames(cts[match(colnames(monocle.obj), rn),]$functional.cluster, colnames(monocle.obj))
+  reducedDims(monocle.obj)$UMAP <- umapMT[colnames(monocle.obj),]
+  out <- dirout(paste0("SCRNA_20_Summary/", tissue.name, "_", analysis.name))
+  
+  source("src/SCRNA_20_01_SummaryFUNC.R")
+}
+
 
 # Projection to izzo ---------------------------------------------------------------
 # Load UMAP

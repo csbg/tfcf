@@ -61,7 +61,8 @@ annList <- rbindlist(annList, fill=TRUE)
 umap.proj <- list(
   original=readRDS(dirout_load("SCRNA_10_collect_UMAPs")("ProjMonocle.RDS")),
   izzo = readRDS(dirout_load("SCRNA_10_collect_UMAPs")("ProjIzzo.RDS")),
-  in.vivo = readRDS(dirout_load("SCRNA_10_collect_UMAPs")("ProjVivo.RDS"))
+  in.vivo = readRDS(dirout_load("SCRNA_10_collect_UMAPs")("ProjVivo.RDS")),
+  in.vivo.X = readRDS(dirout_load("SCRNA_10_collect_UMAPs")("ProjVivoX.RDS"))
 )
 
 # load Monocle Objects
@@ -122,27 +123,27 @@ for(tx in names(inDir.funcs)){
   ann <- annList[tissue ==  tx]
   
   # Hexpoints
-  x <- names(umap.proj)[1]
+  (x <- names(umap.proj)[1])
   for(x in names(umap.proj)){
+    xDT.ref <- if(x %in% c("in.vivo", "in.vivo.X")) umap.proj[[x]][match(annList[tissue ==  "in.vivo"]$rn, rn)]
     xDT <- umap.proj[[x]][match(ann$rn, rn)]
     hex.obj <- hexbin::hexbin(x=xDT$UMAP_1, y=xDT$UMAP_2, xbins = 100, IDs=TRUE)
     pDT <- cbind(ann, data.table(hex.x=hex.obj@xcm, hex.y=hex.obj@ycm, hex.cell=hex.obj@cell)[match(hex.obj@cID, hex.cell),])
     pDT <- pDT[,.N, by=c("hex.x", "hex.y", "Clusters")]
     pDT[, sum := sum(N), by=c("hex.x", "hex.y")]
     pDT[, frac := N / sum]
-    pDT <- pDT[frac > 0.25]
-    pDT.labels <- pDT[frac > 0.5, .(hex.x = median(hex.x), hex.y=median(hex.y)), by=c("Clusters")]
+    pDT <- pDT[order(frac, decreasing = TRUE)][,head(.SD, 1), by=c("hex.x", "hex.y")]
+    #pDT <- pDT[frac > 0.25]
+    pDT.labels <- pDT[, .(hex.x = median(hex.x), hex.y=median(hex.y)), by=c("Clusters")]
     pDT[, Clusters := cleanCelltypes(Clusters,twoLines = FALSE)]
     pDT.labels[, Clusters := cleanCelltypes(Clusters,twoLines = TRUE)]
-    ggplot(pDT, aes(x=hex.x, y=hex.y)) +
-      themeNF() +
-      #geom_hex(fill="lightgrey", bins=100) +
-      geom_point(aes(color=Clusters, alpha=frac), size=0.5) + 
-      geom_text(data=pDT.labels, aes(label=Clusters), lineheight = 0.8) +
-      scale_color_manual(values=COLORS.CELLTYPES.scRNA.ainhoa) +
-      xu + yu
-      #scale_shape_manual(values=rep(c(1,16,2,18,3,4), 20))
-    ggsaveNF(out("UMAP_Celltypes_",x,".pdf"), w=1.5,h=1.5)
+    p <- ggplot(pDT, aes(x=hex.x, y=hex.y)) +
+      themeNF() + xu + yu + scale_color_manual(values=COLORS.CELLTYPES.scRNA.ainhoa)
+    if(!is.null(xDT.ref)) p <- p + geom_hex(data=xDT.ref, fill="lightgrey", bins=100, aes(x=UMAP_1, y=UMAP_2))
+    p <- p +
+      geom_point(aes(color=Clusters), size=0.5) + 
+      geom_text(data=pDT.labels, aes(label=Clusters), lineheight = 0.8)
+    ggsaveNF(out("UMAP_Celltypes_",x,".pdf"), w=1.5,h=1.5, plot=p)
   }
 }
 
