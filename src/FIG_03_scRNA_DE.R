@@ -22,12 +22,13 @@ umapDT.dim1 <- floor(max(abs(umapDT$UMAP1))) + 0.5
 umapDT.dim2 <- floor(max(abs(umapDT$UMAP2))) + 0.5
 gseaDT <- fread(inDir("UMAP_GSEA.tsv"))
 deDT <- fread(inDir("DEG_Statistics.tsv"))
+deDT[, use := grepl("_myeloid", tissue)]
 
 atacDT.lsk <- fread(paste0(gsub("Data", "CollaborationData", PATHS$LOCATIONS$DATA), "LSK_narrowPeak_consensusPeaks.boolean.annotatePeaks.extended.fc.txt"))
 atacDT <- data.table::melt(
   atacDT.lsk,
   id.vars = c("chr", "start", "end", "Distance to TSS", "Gene Name"),
-  measure.vars = grep("log2FC$", colnames(atacDT.mye), value = TRUE)
+  measure.vars = grep("log2FC$", colnames(atacDT.lsk), value = TRUE)
   )
 atacDT[, variable := gsub("LSK-(.+?)_.+", "\\L\\1", variable, perl=TRUE)]
 atacDT[, variable := gsub("^(.)", "\\U\\1", variable, perl=TRUE)]
@@ -41,7 +42,13 @@ pUMAP.de[, tissue := sub("^.+?\\.", "", term)]
 pUMAP.de[, estimate_cap := pmin(umap.log2FC.cutoff, abs(estimate)) * sign(estimate)]
 
 
-GOI <- c("Kmt2a", "Kmt2d", "Men1", "Rbbp4", "Setdb1", "Smarcd2", "Wdr82", "Cbx3", "Hdac1", "Crebbp")
+# Define interesting gene sets --------------------------------------------
+GOI.BAF <- c("Kmt2a", "Men1", "Brd9", "Smarcd1", "Smarcb1","Smarcd2", "Kmt2d")
+
+GOI.targets <- list(
+  markers = c("Mpo","Elane","Ctsg","S100a9","S100a8","Mtf2","Car1","Car2","Epor","Pklr","Pf4","Cpa3","Hba","Hbb","Tfrc","Cpox","Mt2","Trem2","Mefv","F13a1","Ly6c2","Fcgr3","Cd34","Kit","Itgam"),
+  tfs = c("Spi1","Cebpa","Cebpb","Cebpe","Klf4","Gfi1","Irf8","Mef2c","Gata2","Gata1","Klf1","Zfpm1","Mafk","Sox6","Klf9","Lmo4","Nfia","Nfix","Nfe2","Nfe2l2","Tal1","Cited4")
+)
 
 # SETUP ENDS HERE ---------------------------------------------------------
 
@@ -49,18 +56,16 @@ GOI <- c("Kmt2a", "Kmt2d", "Men1", "Rbbp4", "Setdb1", "Smarcd2", "Wdr82", "Cbx3"
 
 
 # Plot specific genes -----------------------------------------------------
-tx <- deDT$tissue[1]
-for(tx in unique(deDT$tissue)){
+tx <- deDT[use == TRUE]$tissue[1]
+for(tx in unique(deDT[use == TRUE]$tissue)){
   pDT <- deDT[tissue == tx]
-  pDT.l <- list(
-    markers = pDT[grep("Mpo|Elane|Ctsg|S100a9|S100a8|Mtf2|Car1|Car2|Epor|Pklr|Pf4|Cpa3|Hba|Hbb|Tfrc|Cpox|Mt2|Trem2|Mefv|F13a1|Ly6c2|Fcgr3|Cd34|Kit|Itgam",gene_id),],
-    #tfs = pDT[grep("Cited2|Satb1|Hoxa9|Hoxa7|Hoxb4|Fli1|Erg|Spi1|Cebpa|Cebpb|Cebpe|Mef2c|Klf4|Irf8|Gfi1|Gata1|Gata2|Klf1|Klf9|Klf3|Nfia|Nfix|Nfe2|Sox6|Mafk|Gfi1b|Tal1|Cited4|Lmo1|Lmo4",gene_id),]
-    tfs = pDT[grep("Spi1|Cebpa|Cebpb|Cebpe|Klf4|Gfi1|Irf8|Mef2c|Gata2|Gata1|Klf1|Zfpm1|Mafk|Sox6|Klf9|Lmo4|Nfia|Nfix|Nfe2|Nfe2l2|Tal1|Cited4",gene_id),]
-    )
-  for(lnam in names(pDT.l)){
-    xDT <- pDT.l[[lnam]]
-    xDT <- hierarch.ordering(xDT, "guide", "gene_id", value.var = "estimate")
-    xDT <- hierarch.ordering(xDT, "gene_id", "guide", value.var = "estimate")
+  lnam <- names(GOI.targets)[1]
+  for(lnam in names(GOI.targets)){
+    xDT <- pDT[gene_id %in% GOI.targets[[lnam]] & guide %in% GOI.BAF]
+    xDT$gene_id <- factor(xDT$gene_id, levels = GOI.targets[[lnam]])
+    xDT$guide <- factor(xDT$guide, levels = GOI.BAF)
+    # xDT <- hierarch.ordering(xDT, "guide", "gene_id", value.var = "estimate")
+    # xDT <- hierarch.ordering(xDT, "gene_id", "guide", value.var = "estimate")
     ggplot(xDT, aes(x=guide, y=gene_id, color=estimate, size=pmin(5, -log10(q_value)))) + 
       themeNF(rotate=TRUE) +
       geom_point() +
@@ -68,7 +73,7 @@ for(tx in unique(deDT$tissue)){
       scale_size_continuous(name="-log10(padj)", range = c(0,5)) +
       ggtitle(tx) +
       ylab("Gene expression") + xlab("CRISPR targets")
-    ggsaveNF(out("GeneDE_", tx, "_", lnam, ".pdf"),w=3,h=2, guides = TRUE)
+    ggsaveNF(out("GeneDE_", tx, "_", lnam, ".pdf"),w=1.5,h=2, guides = TRUE)
   }
 }
 
@@ -78,7 +83,7 @@ for(tx in unique(deDT$tissue)){
 # ATAC-seq comparison -----------------------------------------------------
 atacDT[order(abs(get("Distance to TSS")), decreasing = FALSE)][, head(.SD, n=1), by=c("Gene Name")]
 pDT <- merge(
-  deDT[tissue == "ex.vivo_myeloid"][, c("gene_id", "guide", "estimate"), with=FALSE],
+  deDT[tissue == "ex.vivo_7d"][, c("gene_id", "guide", "estimate"), with=FALSE],
   atacDT[order(abs(get("Distance to TSS")), decreasing = FALSE)][, head(.SD, n=1), by=c("Gene Name", "variable")][,c("Gene Name", "variable", "value")],
   by.x=c("gene_id", "guide"), by.y=c("Gene Name", "variable"))
 pCor <- pDT[, cor(estimate, value, use="pairwise.complete.obs", method="spearman"), by=c("guide")]
@@ -96,22 +101,26 @@ ggsaveNF(out("ATAC_correlation.pdf"), w=4,h=1)
 
 # Correlation in BAF ------------------------------------------------------
 pDT <- data.table::melt(data.table(cMT, keep.rownames = TRUE), id.vars = "rn")
-pDT <- pDT[grepl("ex.vivo", rn) | grepl("in.vivo", rn)]
-pDT <- pDT[grepl("ex.vivo", variable) | grepl("in.vivo", variable)]
+pDT <- pDT[(grepl("ex.vivo", rn) & grepl("ex.vivo", variable)) | (grepl("in.vivo", rn) & grepl("in.vivo", variable))]
 pDT <- pDT[grepl("_myeloid", rn) & grepl("_myeloid", variable)]
-pDT <- pDT[grepl("Brd9|Kmt2d|Kmt2a|Smarcb1", rn) & grepl("Brd9|Kmt2d|Kmt2a|Smarcb1", variable)]
-pDT[, rn := gsub("_myeloid", "", rn)]
-pDT[, variable := gsub("_myeloid", "", variable)]
+pDT[, tissue := ifelse(grepl("in.vivo", rn), "in vivo", "ex vivo")]
 pDT[, variable := gsub("\\.", " ", variable)]
+pDT[, variable := gsub(" .+$", "", variable)]
 pDT[, rn := gsub("\\.", " ", rn)]
+pDT[, rn := gsub(" .+$", "", rn)]
+pDT <- pDT[rn %in% GOI.BAF & variable %in% GOI.BAF]
 pDT <- pDT[rn != variable]
-pDT <- hierarch.ordering(pDT, toOrder = "rn", orderBy = "variable", value.var = "value")
-pDT <- hierarch.ordering(pDT, toOrder = "variable", orderBy = "rn", value.var = "value")
+pDT$rn <- factor(pDT$rn, levels = GOI.BAF)
+pDT$variable <- factor(pDT$variable, levels = GOI.BAF)
+# pDT <- hierarch.ordering(pDT, toOrder = "rn", orderBy = "variable", value.var = "value")
+# pDT <- hierarch.ordering(pDT, toOrder = "variable", orderBy = "rn", value.var = "value")
 ggplot(pDT, aes(x=rn, y=variable, fill=value)) + 
   geom_tile() + 
+  facet_grid(. ~ tissue) +
   scale_fill_gradient2(low="blue", high="red") +
-  themeNF(rotate=TRUE)
-ggsaveNF(out("Phenocopy_BAF.pdf"), w=1,h=1)
+  themeNF(rotate=TRUE) +
+  xlab("") + ylab("")
+ggsaveNF(out("Phenocopy_BAF.pdf"), w=2,h=1)
 
 
 # Number of up- and downregualted genes ----------------------------------------------------
@@ -119,12 +128,12 @@ pDT.up_down <- copy(deDT[tissue == "leukemia_myeloid"])
 pDT.up_down[, direction := ifelse(estimate > 0, "up", "down")]
 pDT.up_down <- pDT.up_down[q_value < 0.05][abs(estimate) > 0.5][,length(unique(gene_id)), by=c("guide", "direction")]
 #pDT[direction == "down", V1 := -V1]
-ggplot(pDT.up_down, aes(x=guide, y=V1, fill=direction)) +
+p <- ggplot(pDT.up_down, aes(x=guide, y=V1, fill=direction)) +
   themeNF() +
   geom_bar(stat="identity", position="dodge") +
-  scale_y_log10() +
   coord_flip()
-ggsaveNF(out("NumberOfGenes.pdf"), w=1,h=2)
+ggsaveNF(out("NumberOfGenes.pdf"), w=1,h=2, plot=p)
+ggsaveNF(out("NumberOfGenes_log.pdf"), w=1,h=2, plot=p + scale_y_log10())
 
 
 # Correlation Cancer vs Healthy ----------------------------------------------------
@@ -149,7 +158,8 @@ pDT <- hierarch.ordering(pDT, toOrder = "guide2", orderBy = "rn", value.var = "v
 # Cancer vs Healthy correlations
 pDT[,variable := as.character(variable)]
 pDT[make.names(rn) == make.names(variable), value := NA]
-pDT.cvh <- pDT[!grepl("in.vivo", tissue1) & !grepl("in.vivo", tissue2)]
+tissues.use <- c("ex.vivo_noMixscape", "leukemia_noMixscape")
+pDT.cvh <- pDT[tissue1 %in% tissues.use & tissue2 %in% tissues.use]
 double.guides <- pDT.cvh[guide1 == guide2][!is.na(value)]$guide1
 pDT.cvh <- pDT.cvh[guide1 %in% double.guides]
 pDT.cvh <- pDT.cvh[guide2 %in% double.guides]
@@ -167,8 +177,7 @@ ggplot(pDT.sum, aes(x=guide, y=value)) +
   ylab("")
 ggsaveNF(out("Correlation_CVH_bars.pdf"), w=1,h=2, guides = TRUE)
 
-
-
+# check relationship of correlation cvh to number of cells
 pDT.sum.control <- merge(
   pDT.sum,
   dcast.data.table(annList[mixscape_class.global == "KO", .N, by=c("gene", "tissue")][tissue != "in.vivo"], gene ~ tissue, value.var="N"),
@@ -280,12 +289,12 @@ pDT <- data.table(fcMT, keep.rownames = TRUE)
 pDT <- data.table::melt(pDT, id.vars = "rn")
 pDT[, guide := gsub("\\..+$", "", variable)]
 pDT[, tissue := sub("^.+?\\.", "", variable)]
-pDT <- dcast.data.table(pDT[!grepl("in.vivo", tissue)], guide + rn ~ tissue, value.var = "value")
-ggplot(pDT, aes(x=ex.vivo_myeloid, y=leukemia_myeloid)) + 
+pDT <- dcast.data.table(pDT, guide + rn ~ tissue, value.var = "value")
+ggplot(pDT, aes(x=ex.vivo_noMixscape, y=leukemia_noMixscape)) + 
   themeNF() +
   stat_binhex(aes(fill=log10(..count..))) +
-  facet_wrap(~guide, scales = "free", ncol = 6) +
-  gradient_fill_gradient2(low="grey", high="blue")
+  facet_wrap(~guide, scales = "free", ncol = 6)
+  #scale_fill_gradient2(low="grey", high="blue")
 ggsaveNF(out("Correlation_CvH_Scatterplots.pdf"), w=4,h=4)
 
 
@@ -305,12 +314,6 @@ for(tx in unique(deDT$tissue)){
 }
 
 # Vulcano plots -----------------------------------------------------------
-ggplot(deDT[guide %in% GOI], aes(x=estimate, y=pmin(30, -log10(p_value)))) + 
-  themeNF() +
-  facet_grid(guide ~ tissue, scale="free_y") +
-  stat_binhex(aes(fill=log10(..count..)))
-ggsaveNF(out("Vulcano.pdf"), w=4,h=4)
-
 dir.create(out("Vulcanos/"))
 guidex <- deDT$guide[1]
 for(guidex in unique(deDT$guide)){
@@ -327,7 +330,7 @@ for(guidex in unique(deDT$guide)){
     scale_fill_gradient(low="lightgrey", high="blue")+ 
     geom_text_repel(data=pDT.examples, aes(label=gene_id)) +
     themeNF()
-  ggsaveNF(out("Vulcanos/",guidex,".pdf"), w=length(unique(pDT$tissue))*2,h=2)
+  ggsaveNF(out("Vulcanos/",guidex,".pdf"), w=length(unique(pDT$tissue))*2,h=2, limitsize=FALSE)
 }
 
 
@@ -362,17 +365,6 @@ ggplot(pUMAP.de, aes(x=UMAP1, y=UMAP2)) +
   xlab("UMAP dimension 1") + ylab("UMAP dimension 2") +
   xlim(-umapDT.dim1,umapDT.dim1) + ylim(-umapDT.dim2,umapDT.dim2)
 ggsaveNF(out("UMAP_Values.pdf"), w=2,h=8)
-
-ggplot(pUMAP.de[guide %in% GOI][!grepl("in.vivo", tissue)], aes(x=UMAP1, y=UMAP2)) +
-  themeNF() + 
-  stat_summary_hex(
-    aes(z=estimate_cap),
-    fun=mean.umap) +
-  scale_fill_gradient2(high="#e31a1c",mid="#ffffff", low="#1f78b4") +
-  facet_grid(gsub("_", "\n", tissue)~guide) +
-  xlab("UMAP dimension 1") + ylab("UMAP dimension 2") +
-  xlim(-umapDT.dim1,umapDT.dim1) + ylim(-umapDT.dim2,umapDT.dim2)
-ggsaveNF(out("UMAP_Values_selection.pdf"), w=3,h=0.75)
 
 
 # Plot values by UMAP cluster -----------------------------------------------------

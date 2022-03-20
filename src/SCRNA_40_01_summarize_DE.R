@@ -40,19 +40,19 @@ ggplot(DE.RES, aes(x=nonzeroCount, y=estimate)) +
   theme_bw() +
   geom_hex() + 
   facet_grid(guide ~ tissue, scales = "free_x")
-ggsave(out("QC_cnts_vs_LogFC.pdf"), w=19, h=35, limitsize = FALSE)
+ggsave(out("QC_cnts_vs_LogFC.pdf"), w=30, h=35, limitsize = FALSE)
 
 ggplot(DE.RES, aes(x=nonzeroCount, y=-log10(q_value))) + 
   theme_bw() +
   geom_hex() + 
   facet_grid(guide ~ tissue, scales = "free_x")
-ggsave(out("QC_cnts_vs_q.pdf"), w=19, h=35, limitsize = FALSE)
+ggsave(out("QC_cnts_vs_q.pdf"), w=30, h=35, limitsize = FALSE)
 
 ggplot(DE.RES[q_value < 0.05], aes(x=nonzeroCount, y=estimate)) + 
   theme_bw() +
   geom_hex() + 
   facet_grid(guide ~ tissue, scales = "free_x")
-ggsave(out("QC_cnts_vs_LogFC_sig.pdf"), w=19, h=35, limitsize = FALSE)
+ggsave(out("QC_cnts_vs_LogFC_sig.pdf"), w=30, h=35, limitsize = FALSE)
 
 
 # Correlations ------------------------------------------------------------
@@ -88,7 +88,11 @@ set.seed(1212)
 tx <- "ex.vivo_myeloid"
 for(tx in c(unique(DE.RES$tissue), "all")){
   cMTx <- cMT
-  if(tx != "all") cMTx <- cMTx[grepl(tx, row.names(cMTx)),grepl(tx, colnames(cMTx))]
+  if(tx != "all"){
+    cMTx <- cMTx[grepl(tx, row.names(cMTx)),grepl(tx, colnames(cMTx))]
+  } else {
+    next
+  }
   mds.res <- data.table(cmdscale(d=as.dist(1-cMTx), k=2), keep.rownames=TRUE)
   mds.res <- cbind(mds.res, setNames(data.table(do.call(rbind, strsplit(mds.res$rn, " "))), c("gene", "tissue")))
   ggplot(mds.res, aes(x=V1, y=V2, color=tissue, label=gene)) + 
@@ -105,7 +109,8 @@ for(tx in c(unique(DE.RES$tissue), "all")){
 
 # UMAP of genes -----------------------------------------------------------
 umap.log2FC.cutoff <- 3
-umapMT <- FC.MT[apply(is.na(FC.MT), 1, sum) < 5,]
+umapMT <- FC.MT[,grepl("_myeloid$", colnames(FC.MT)) | grepl("_erythroid$", colnames(FC.MT))]
+umapMT <- umapMT[apply(is.na(FC.MT), 1, sum) < 5,]
 umap.type.name <- "all"
 gg <- if(umap.type.name == "top") unique(DE.RES[q_value < 0.05 & abs(estimate) > 1]$gene_id) else row.names(umapMT)
 mt <- umapMT[gg,]
