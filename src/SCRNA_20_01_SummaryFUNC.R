@@ -584,6 +584,7 @@ registerDoMC(cores=8)
 resSDA <- foreach(sx = unique(ann$sample_broad)) %dopar% {
   resSDA <- data.table()
   annS <- ann[sample_broad == sx]
+  if("lin-" %in% annS$markers) annS <- annS[markers=="lin-"]
   if(nrow(annS[mixscape_class.global == "NTC"]) < 10) return(data.table())
   guides <- unique(annS[mixscape_class.global == "KO"][,.N, by="guide"][N > 10]$guide)
   sigx <- colnames(mMT)[1]

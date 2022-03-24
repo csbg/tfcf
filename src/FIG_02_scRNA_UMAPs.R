@@ -503,7 +503,9 @@ ggsaveNF(out("BulkSignatures.pdf"), w=2.5,h=1)
 inDir.current <- "leukemia"
 out <- dirout(paste0(base.dir, "/", inDir.current))
 ann <- annList[tissue == inDir.current]
+#ann <- merge(ann[,-c("UMAP1", "UMAP2"),with=F], setNames(umap.proj[["in.vivo.X"]][,c("rn", "UMAP_1", "UMAP_2")], c("rn", "UMAP1", "UMAP2")), by="rn")
 abs <- fread(inDir.funcs[[inDir.current]]("Antibodies.tsv"))
+abs <- merge(abs[,-c("UMAP1", "UMAP2"),with=F], setNames(umap.proj[["in.vivo.X"]][,c("rn", "UMAP_1", "UMAP_2")], c("rn", "UMAP1", "UMAP2")), by="rn")
 
 # . Antibodies on UMAP ----------------------------------------------------
 ggplot(abs, aes(x=UMAP1, y=UMAP2)) +
@@ -577,6 +579,7 @@ ggplot(pDT, aes(x=CRISPR_Cellranger,y=perc,fill=Phase)) +
 ggsaveNF(out("CellCycle_Numbers.pdf"), w=3,h=1.2)
 
 
+
 # Cancer vs Healthy -------------------------------------------------------
 out <- dirout(paste0(base.dir, "/", "CvH"))
 
@@ -585,7 +588,7 @@ pDT <- list(
   normal = fread(outBase("ex.vivo/Cluster_enrichments_basic_all.tsv"))
 )
 pDT <- rbindlist(pDT, idcol = "tissue")
-pDT[, Clusters := cleanCelltypes(Clusters, reverse = FALSE)]
+pDT[, Clusters := cleanCelltypes(Clusters, reverse = FALSE, clean=FALSE)]
 
 ggplot(pDT, aes(x=Clusters, y=tissue, size=sig.perc, color=log2OR_cap)) + 
   themeNF(rotate = TRUE) +
