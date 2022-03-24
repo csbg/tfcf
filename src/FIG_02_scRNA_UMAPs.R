@@ -65,6 +65,18 @@ umap.proj <- list(
   in.vivo.X = readRDS(dirout_load("SCRNA_10_collect_UMAPs")("ProjVivoX.RDS"))
 )
 
+# # Update ex vivo and leukemia to use in.vivo.X UMAPs
+# res <- rbind(
+#   annList[tissue == "in.vivo"], 
+#   merge(
+#     annList[tissue != "in.vivo"][,-c("UMAP1", "UMAP2")], 
+#     setNames(umap.proj[["in.vivo.X"]][tissue != "in.vivo"][,c("rn", "UMAP_1", "UMAP_2")], c("rn", "UMAP1", "UMAP2")),
+#     by="rn"
+#     )
+# )
+# stopifnot(length(union(res$rn, annList$rn)) == length(intersect(res$rn, annList$rn)))
+# annList <- res
+
 # load Monocle Objects
 mobjs <- list()
 tissuex <- PATHS$SCRNA$MONOCLE.NAMES[1]
@@ -336,6 +348,16 @@ for(tx in names(inDir.funcs)){
     facet_wrap(~plot, ncol=6) + 
     xu + yu
   ggsaveNF(out("UMAP_Guides_all.pdf"), w=4,h=4)
+  
+  pDT.final <- cbind(pDT.final, umap.proj[["in.vivo.X"]][match(pDT.final$rn, rn)][,c("UMAP_1", "UMAP_2"),with=F])
+  ggplot(pDT.final, aes(x=UMAP_1, y=UMAP_2)) + 
+    themeNF() +
+    geom_hex(data=pDT.final[mixscape_class.global == "NTC"], bins=100, fill="lightgrey") +
+    geom_hex(data=pDT.final[mixscape_class.global != "NTC" | plot == "NTC"], bins=100) +
+    scale_fill_gradientn(colours=c("#1f78b4", "#e31a1c")) +
+    facet_wrap(~plot, ncol=6) + 
+    xu + yu
+  ggsaveNF(out("UMAP_Guides_all_Crossprojected.pdf"), w=4,h=4)
 }
 
 

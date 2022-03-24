@@ -492,8 +492,12 @@ for(mixx in c("", "noMixscape")){
 }
 
 
+
 # remove those with 0 rows
 fish.test.sets <- fish.test.sets[sapply(fish.test.sets, nrow) > 0]
+
+# Use only Lin- (in vivo)
+if("lin-" %in% ann$markers) fish.test.sets <- lapply(fish.test.sets, function(dt){dt[markers == "lin-"]})
 
 # START ANALYSIS
 (fish.test.x <- names(fish.test.sets)[1])
@@ -559,7 +563,21 @@ for(fish.test.x in names(fish.test.sets)){
 mMT <- lapply(names(marker.signatures), function(xnam){x <- marker.signatures[[xnam]]; colnames(x) <- paste(xnam, colnames(x)); x})
 mMT <- do.call(cbind, mMT)
 mMT <- scale(mMT)
-#mMT <- cbind(marker.signatures$Larry, marker.signatures$PanglaoDB[,c("Basophils", "Megakaryocytes")])
+
+# add combined signatures
+colnames(mMT)
+merge.sigs <- list(
+  "HSC" = c("HSC.2", "HSC.3"),
+  "Ba" = c("Ba.1", "Ba.2","Ba.3"),
+  "Mono" = c("Mono.1","Mono.2","Mono.3"),
+  "Neu" = c("Neu.4"),
+  "MkP" = c("MkP.1","MkP.2"),
+  "Ery" = c("Ery.1", "Ery.4")
+  )
+merge.sigs <- lapply(merge.sigs, function(x) paste("IzzoEtAl", x))
+names(merge.sigs) <- paste("Merge", names(merge.sigs))
+stopifnot(all(do.call(c, merge.sigs) %in% colnames(mMT)))
+mMT <- cbind(mMT, sapply(merge.sigs, function(xx) apply(mMT[,xx, drop=F], 1, mean)))
 
 sx <- ann$sample_broad[13]
 registerDoMC(cores=8)
@@ -597,16 +615,16 @@ ggplot(resSDA, aes(x=paste(sample, guide),y=sig, color=d, size=pmin(5, -log10(pa
   scale_color_gradient2(low="blue", high="red") +
   facet_grid(. ~ gene, scales = "free", space = "free") +
   xRot()
-ggsave(out("SigDA_Stats.pdf"), w=29,h=20)
+ggsave(out("SigDA_Stats.pdf"), w=29,h=24)
 
 
 # Signatures on UMAP
-pDT <- ann[mixscape_class.global %in% c("KO", "NTC") & guide %in% c(guides, "NTC")]
-grps <- length(unique(pDT$guide))
-ggplot(pDT, aes(x=UMAP1, y=UMAP2)) +
-  geom_hex(bins=50) +
-  scale_fill_gradient(low="lightgrey", high="blue") +
-  facet_wrap(~guide, ncol = 7) +
-  theme_bw(12)
-ggsave(out("SigDA_UMAP.pdf"), w=7*4,h=ceiling(grps/7)*4+1, limitsize = FALSE)
+# pDT <- ann[mixscape_class.global %in% c("KO", "NTC") & guide %in% c(guides, "NTC")]
+# grps <- length(unique(pDT$guide))
+# ggplot(pDT, aes(x=UMAP1, y=UMAP2)) +
+#   geom_hex(bins=50) +
+#   scale_fill_gradient(low="lightgrey", high="blue") +
+#   facet_wrap(~guide, ncol = 7) +
+#   theme_bw(12)
+# ggsave(out("SigDA_UMAP.pdf"), w=7*4,h=ceiling(grps/7)*4+1, limitsize = FALSE)
 

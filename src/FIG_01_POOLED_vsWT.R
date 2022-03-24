@@ -266,17 +266,20 @@ ggsaveNF(out("Scores_Example_Distribution_Simple.pdf"), w=1,h=1)
 # Result validation with replicates ----------------------------------------------
 pDT <- dcast.data.table(REPLICATES.VALUES, guide_i + sample_i + Population + Gene ~ Genotype, value.var = "value")
 pDT[, diff := Cas9 - WT]
-ggplot(pDT, aes(x=factor(guide_i), y=diff, fill=factor(sample_i))) + 
+ggplot(pDT, aes(x=factor(guide_i), y=diff, fill=paste(Population, sample_i))) + 
+  #geom_point() +
   geom_bar(stat="identity", position="dodge") +
   themeNF() +
-  facet_grid(Population~Gene, scales = "free", space = "free") +
+  facet_grid(.~Gene, scales = "free", space = "free") +
   #geom_vline(xintercept = 2.5) +
   geom_hline(yintercept = 0) +
+  scale_color_brewer(palette = "Paired") +
   scale_fill_brewer(palette = "Paired") +
   #coord_flip() +
-  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
-  xlab("Guides") + ylab(TeX("Difference to WT (log_{2}FC)"))
-ggsaveNF(out("Valiation_Replicates.pdf"), w=2,h=1)
+  #theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
+  xlab("Guides") + ylab(TeX("Change over WT (log_{2}FC)")) +
+  xRot()
+ggsaveNF(out("Validation_Replicates.pdf"), w=2,h=1)
 
 
 # Networks in one dimension ---------------------------------------------------------------
@@ -312,10 +315,15 @@ ggsaveNF(out("Aggregated_Edges.pdf"), w=3,h=6, guide=TRUE)
 
 
 # Selected comparisons (David) --------------------------------------------
+dla <- fread("metadata/FIGS_Order_Fig1E.tsv")
+
 pDT.stats <- copy(RESULTS.wt.agg.gene)
 pDT.stats <- unique(pDT.stats[,-"Comparison.Group"])
-pDT.stats <- pDT.stats[Gene %in% c(pDT.stats[hit == TRUE][complete.screen == TRUE]$Gene, "Smarcd1", "Ezh2", "Rcor2")]
-pDT.stats <- pDT.stats[!Gene %in% "Ctcf"]
+pDT.stats <- pDT.stats[Gene %in% dla$Factor]
+pDT.stats$Gene <- factor(pDT.stats$Gene, levels=dla$Factor)
+pDT.stats$ComplexDLA <- dla[match(pDT.stats$Gene, Factor)]$Complex
+# pDT.stats <- pDT.stats[Gene %in% c(pDT.stats[hit == TRUE][complete.screen == TRUE]$Gene, "Smarcd1", "Ezh2", "Rcor2")]
+# pDT.stats <- pDT.stats[!Gene %in% "Ctcf"]
 pDT.stats <- pDT.stats[Comparison %in% COMPARISONS.healthy]
 pDT.stats <- merge(pDT.stats, ANN.genes, by.x="Gene", by.y="GENE", all.x=TRUE)
 pDT.stats <- hierarch.ordering(pDT.stats, toOrder = "Gene", orderBy = "Comparison", value.var="z")
@@ -329,7 +337,7 @@ p <- ggplot(pDT.stats[Genotype == "Cas9"], aes(
   ) +
     themeNF() + 
     geom_point(aes(fill=z.cap, size=percSig), shape=21, color="lightgrey") +
-    facet_grid(. ~ Complex_simple, scales = "free", space = "free") +
+    facet_grid(. ~ ComplexDLA, scales = "free", space = "free") +
     theme(strip.text.x = element_text(angle=90)) +
     scale_size_continuous(range = c(2,4)) +
     xRot() + 

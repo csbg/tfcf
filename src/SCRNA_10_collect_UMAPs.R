@@ -30,12 +30,15 @@ saveRDS(res, out("ProjMonocle.RDS"))
 # celltypes from singleR after manual curation -------------------------------------------------------
 ff <- list.files(dirout_load("SCRNA_06_02_MergeMarkers")(""), pattern="CellTypes_*", full.names = TRUE)
 ff <- ff[grepl(".RDS$", ff)]
-singleR.cell.types <- do.call(rbind, lapply(ff, readRDS))
+singleR.cell.types <- lapply(ff, readRDS)
+leukemia.cells <- singleR.cell.types[[which(grepl("leukemia", ff))]]$cellname
+singleR.cell.types <- do.call(rbind, singleR.cell.types)
 singleR.cell.types[, conf := tuning_scores_first - tuning_scores_second]
 singleR.cell.types <- setNames(
   singleR.cell.types[, c("cellname", "sample", "labels", "conf"),with=F],
   c("rn", "sample", "functional.cluster", "functional.cluster.conf")
   )
+singleR.cell.types[rn %in% leukemia.cells & functional.cluster %in% c("GMP", "GMP (early)", "HSC", "LSC"), functional.cluster := "LSC"]
 saveRDS(singleR.cell.types, out("ProjMonocle_celltypes.RDS"))
 
 
