@@ -1,20 +1,35 @@
 Complex	Factor
 BAF	Bcl11a
 BAF	Actl6a
+BAF	Smarca2
 BAF	Smarca4
+BAF	Smarcc1
+BAF	Smarcc2
+BAF	Smarce1
+BAF	Smarce2
+BAF	Ss18
+BAF	Smarcb1
 cBAF	Arid1a
 cBAF	Arid1b
 cBAF	Dpf2
 cBAF	Smarcd2
 ncBAF	Smarcd1
 ncBAF	Brd9
+ncBAF	Gltscr1l
 PBAF	Arid2
 PBAF	Pbrm1
+	Hcfc1
+	Paxip1
+	Ash2l
+	Dpy30
+	Rbbp5
+	Wdr5
 SET1	Setd1a
 SET1	Setd1b
 SET1	Cxxc1
 SET1	Wdr82
 COMPASS - MLL4	Kdm6a
+COMPASS - MLL4	Kmt2c
 COMPASS - MLL4	Kmt2d
 COMPASS - MLL4	Ncoa6
 COMPASS - MLL1	Kmt2a
@@ -24,6 +39,7 @@ NSL	Kat8
 ARG-MET	Prmt5
 ARG-MET	Prmt1
 ARG-MET	Carm1
+CAF1	Asf1b
 CAF1	Chaf1a
 CAF1	Chaf1b
 COHESIN	Smc3
@@ -36,16 +52,25 @@ coREST	Kdm1a
 CREST-BRG1	Sp1
 DNAme	Dnmt1
 DNAme	Uhrf1
+ESCRT	Chmp2a
 FACT	Supt16
 FACT	Ssrp1
 HETEROCHR	Ehmt1
+HETEROCHR	Ehmt2
+HETEROCHR	Suv39h1
 HETEROCHR	Setdb1
 HETEROCHR	Cbx3
 ISWI	Baz1b
+ISWI	Smarcad1
 ISWI	Smarca5
+NPC	Nup62
+NPC	Nup85
+NPC	Nup153
 NuRD	Chd4
 NuRD	Rbbp4
 NuRD	Hdac1
+NCOR	Ncor1
+NCOR	Ncor2
 NCOR	Hdac3
 	Hdac4
 SMRT	Hdac7
@@ -55,12 +80,15 @@ RNA elongation	Dot1l
 PRC1	Cbx6
 PRC1	Cbx7
 PRC1	Phc3
+PRC2	Ezh1
 PRC2	Ezh2
 PRC2	Mtf2
 SCRAP	Actr6
 SCRAP	Yeats4
+SCRAP	Znhit1
 SIN3A	Sap30
 KDMs	Kdm3a
+KDMs	Kdm5a
 KDMs	Kdm6b
 KDMs	Kdm7a
 	Zmynd8

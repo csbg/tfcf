@@ -315,25 +315,30 @@ ggsaveNF(out("Aggregated_Edges.pdf"), w=3,h=6, guide=TRUE)
 
 
 # Selected comparisons (David) --------------------------------------------
-dla <- fread("metadata/FIGS_Order_Fig1E.tsv")
-
-pDT.stats <- copy(RESULTS.wt.agg.gene)
-pDT.stats <- unique(pDT.stats[,-"Comparison.Group"])
-pDT.stats <- pDT.stats[Gene %in% dla$Factor]
-pDT.stats$Gene <- factor(pDT.stats$Gene, levels=dla$Factor)
-pDT.stats$ComplexDLA <- dla[match(pDT.stats$Gene, Factor)]$Complex
-# pDT.stats <- pDT.stats[Gene %in% c(pDT.stats[hit == TRUE][complete.screen == TRUE]$Gene, "Smarcd1", "Ezh2", "Rcor2")]
-# pDT.stats <- pDT.stats[!Gene %in% "Ctcf"]
-pDT.stats <- pDT.stats[Comparison %in% COMPARISONS.healthy]
-pDT.stats <- merge(pDT.stats, ANN.genes, by.x="Gene", by.y="GENE", all.x=TRUE)
-pDT.stats <- hierarch.ordering(pDT.stats, toOrder = "Gene", orderBy = "Comparison", value.var="z")
-write.tsv(pDT.stats, out("SimpleHM.tsv"))
-
-# Plot
-pDT.stats[, z.cap := pmin(5, abs(z)) * sign(z)]
-p <- ggplot(pDT.stats[Genotype == "Cas9"], aes(
-  y=cleanComparisons(Comparison, ggtext = TRUE, reverse = TRUE, colors=c("0000B3", "A60000")), 
-  x=Gene)
+dla.list <- list(
+  main = fread("metadata/FIGS_Order_Fig1E.tsv"),
+  supp = fread("metadata/FIGS_Order_Fig1E_supp.tsv")
+)
+dla.nam <- names(dla.list)[1]
+for(dla.nam in names(dla.list)){
+  dla <- dla.list[[dla.nam]]
+  pDT.stats <- copy(RESULTS.wt.agg.gene)
+  pDT.stats <- unique(pDT.stats[,-"Comparison.Group"])
+  pDT.stats <- pDT.stats[Gene %in% dla$Factor]
+  pDT.stats$Gene <- factor(pDT.stats$Gene, levels=dla$Factor)
+  pDT.stats$ComplexDLA <- factor(dla[match(pDT.stats$Gene, Factor)]$Complex, levels=unique(dla$Complex))
+  # pDT.stats <- pDT.stats[Gene %in% c(pDT.stats[hit == TRUE][complete.screen == TRUE]$Gene, "Smarcd1", "Ezh2", "Rcor2")]
+  # pDT.stats <- pDT.stats[!Gene %in% "Ctcf"]
+  pDT.stats <- pDT.stats[Comparison %in% COMPARISONS.healthy]
+  pDT.stats <- merge(pDT.stats, ANN.genes, by.x="Gene", by.y="GENE", all.x=TRUE)
+  pDT.stats <- hierarch.ordering(pDT.stats, toOrder = "Gene", orderBy = "Comparison", value.var="z")
+  write.tsv(pDT.stats, out("SimpleHM_",dla.nam,".tsv"))
+  
+  # Plot
+  pDT.stats[, z.cap := pmin(5, abs(z)) * sign(z)]
+  p <- ggplot(pDT.stats[Genotype == "Cas9"], aes(
+    y=cleanComparisons(Comparison, ggtext = TRUE, reverse = TRUE, colors=c("0000B3", "A60000")), 
+    x=Gene)
   ) +
     themeNF() + 
     geom_point(aes(fill=z.cap, size=percSig), shape=21, color="lightgrey") +
@@ -345,30 +350,33 @@ p <- ggplot(pDT.stats[Genotype == "Cas9"], aes(
     theme(axis.text.y = element_markdown()) +
     xlab("") +
     theme(panel.spacing = unit(0.01, "cm"))
-ggsaveNF(out("SimpleHM_RedBlue.pdf"), w=4.5,h=1, 
-         plot = p + scale_fill_gradient2(
-           name=TeX(r'($\\overset{\Delta_{Cas9-WT}}$)'), 
-           low="#0000B3", high="#A60000"))
-ggsaveNF(out("SimpleHM_GreenPurple.pdf"), w=4.5,h=1, 
-         plot = p + scale_fill_gradient2(
-           name=TeX(r'($\\overset{\Delta_{Cas9-WT}}$)'), 
-           high="#0D5E04", low="#5700C2"))
+  w=length(unique(pDT.stats$Gene)) * 0.06 + 0.6
+  ggsaveNF(out("SimpleHM_",dla.nam,"_RedBlue.pdf"), w=w,h=1, 
+           plot = p + scale_fill_gradient2(
+             name=TeX(r'($\\overset{\Delta_{Cas9-WT}}$)'), 
+             low="#0000B3", high="#A60000"))
+  ggsaveNF(out("SimpleHM_",dla.nam,"_GreenPurple.pdf"), w=w,h=1, 
+           plot = p + scale_fill_gradient2(
+             name=TeX(r'($\\overset{\Delta_{Cas9-WT}}$)'), 
+             high="#0D5E04", low="#5700C2"))
+  
+  # cleanDev(); pdf(out("SimpleHM_Dendrogram.pdf"), w=15,h=5)
+  # plot(hclust(dist(toMT(pDT.stats[Genotype == "Cas9"], row = "Gene", col = "Comparison", val = "z"))))
+  # dev.off()
+  # 
+  # require(umap)
+  # umObj <- toMT(pDT.stats[Genotype == "Cas9"], row = "Gene", col = "Comparison", val = "z")
+  # umObj[is.na(umObj)] <- 0
+  # umObj <- umap(umObj)
+  # umap <- data.table(umObj$layout, keep.rownames = TRUE)
+  # umap <- setNames(umap, c("Gene", "UMAP1", "UMAP2"))
+  # ggplot(umap, aes(x=UMAP1, y=UMAP2)) + 
+  #   themeNF() +
+  #   geom_point(color="#1f78b4") +
+  #   geom_text_repel(aes(label = Gene))
+  # ggsaveNF(out("SimpleHM_UMAP.pdf"), w=2,h=2, guides = TRUE)
+}
 
-cleanDev(); pdf(out("SimpleHM_Dendrogram.pdf"), w=15,h=5)
-plot(hclust(dist(toMT(pDT.stats[Genotype == "Cas9"], row = "Gene", col = "Comparison", val = "z"))))
-dev.off()
-
-require(umap)
-umObj <- toMT(pDT.stats[Genotype == "Cas9"], row = "Gene", col = "Comparison", val = "z")
-umObj[is.na(umObj)] <- 0
-umObj <- umap(umObj)
-umap <- data.table(umObj$layout, keep.rownames = TRUE)
-umap <- setNames(umap, c("Gene", "UMAP1", "UMAP2"))
-ggplot(umap, aes(x=UMAP1, y=UMAP2)) + 
-  themeNF() +
-  geom_point(color="#1f78b4") +
-  geom_text_repel(aes(label = Gene))
-ggsaveNF(out("SimpleHM_UMAP.pdf"), w=2,h=2, guides = TRUE)
 
 # Vulcano plots -----------------------------------------------------------
 # ggplot(RESULTS.wt[Comparison %in% COMPARISONS.healthy], aes(x=z, y=-log10(p))) + 

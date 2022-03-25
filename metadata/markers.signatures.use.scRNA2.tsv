@@ -1,5 +1,6 @@
 DB	Celltype	Quality	FinalName	Color
 Merge	HSC	Good	HSC	#ff7f00
+Merge	Ba	Good	Ba	#ff7f00
 Merge	Mono	OK	Mono	#fb9a99
 Merge	Neu	OK	Neu	#cab2d6
 Merge	MkP	Good	MkP	#a6cee3

@@ -198,7 +198,7 @@ for(tx in names(inDir.funcs)){
 
 
 # Signatures DE with CRISPR KOs -------------------------------------------
-tx <- TISSUES[1]
+tx <-TISSUES[1]
 for(tx in TISSUES){
   
   out <- dirout(paste0(base.dir, "/", tx))
@@ -229,7 +229,8 @@ for(tx in TISSUES){
   pDT[padj == 0 | is.na(d), d := 0]
   pDT[, sig.perc := padj / N]
   pDT[,d_cap := pmin(abs(d), 5) * sign(d)]
-  pDT <- hierarch.ordering(dt = pDT, toOrder = "FinalName", orderBy = "gene", value.var = "d")
+  pDT$FinalName <- factor(pDT$FinalName, levels=rev(SIGS.USE.DA$FinalName))
+  #pDT <- hierarch.ordering(dt = pDT, toOrder = "FinalName", orderBy = "gene", value.var = "d")
   pDT <- hierarch.ordering(dt = pDT, toOrder = "gene", orderBy = "FinalName", value.var = "d")
   ggplot(pDT, aes(x=gene,y=FinalName, color=d, size=sig.perc)) + 
     themeNF(rotate = TRUE) +
@@ -238,7 +239,7 @@ for(tx in TISSUES){
     geom_point() +
     geom_point(shape=1, color="lightgrey") +
     ylab("Marker signature") + xlab("")
-  ggsaveNF(out("MarkerSignatures_DA.pdf"),w=1.5,h=0.7)
+  ggsaveNF(out("MarkerSignatures_DA.pdf"),w=2,h=0.7)
   
   dla <- fread("metadata/FIGS_Order_Fig2_CFs.tsv")$Factor
   pDT <- pDT[gene %in% dla]
@@ -385,6 +386,7 @@ out <- dirout(paste0(base.dir, "/", inDir.current))
 ann <- annList[tissue == inDir.current]
 fish.bcells <- fread(out("Cluster_enrichments","_basic", "_14d",".tsv"))
 fish.enrich.broad <- fread(out("Cluster_enrichments","_noBcells", "_14d",".tsv"))
+fish.early <- fread(out("Cluster_enrichments_earlyBranches_14d.tsv"))
 
 # . UMAP of timepoint / markers ---------------------------------------------------------
 ggplot(ann[perturbed == FALSE], aes(x=UMAP1, y=UMAP2)) + 
@@ -425,7 +427,9 @@ ggplot(pDT.final, aes(x=UMAP1, y=UMAP2)) +
 ggsaveNF(out("UMAP_Guides.pdf"), w=2,h=2)
 
 
-# . Plot b cell enrichments -------------------------------------------------
+# . Plot manual enrichments -------------------------------------------------
+
+# B cell enrichments
 pDT <- fish.bcells[Clusters == "Imm. B-cell"]
 pDT$gene <- factor(pDT$gene, levels = pDT[order(log2OR)]$gene)
 ggplot(pDT, aes(x=log2OR, y=gene, size=sig.perc, color = log2OR)) + 
@@ -438,7 +442,7 @@ ggplot(pDT, aes(x=log2OR, y=gene, size=sig.perc, color = log2OR)) +
   ylab("") + xlab("Enrichment in immature B-cells")
 ggsaveNF(out("ClusterEnrichments_manual_BcellsOnly.pdf"), w=2,h=2)
 
-# . Plot enrichments with DLA order
+# Plot enrichments with DLA order
 dla <- fread("metadata/FIGS_Order_Fig2E_CFs.tsv")$Factor
 pDT <- fish.enrich.broad[gene %in% dla]
 pDT$gene <- factor(pDT$gene, levels = dla)
@@ -451,6 +455,18 @@ ggplot(pDT, aes(x=gene, y=Clusters, size=sig.perc, color=log2OR_cap)) +
   geom_point(shape=1, color="lightgrey") +
   xlab("Gene") + ylab("Cell type")
 ggsaveNF(out("ClusterEnrichments_manual_cleaned.pdf"), w=2,h=1.2)
+
+# Plot early enrichments with DLA order
+pDT <- fish.early[Clusters == "GMP"][abs(log2OR) > 0]
+pDT$gene <- factor(pDT$gene, levels = pDT[order(log2OR)]$gene)
+ggplot(pDT, aes(x=log2OR, y=gene, size=sig.perc, color=log2OR_cap)) + 
+  themeNF(rotate=TRUE) +
+  scale_color_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
+  scale_size_continuous(name="% sign.", range = c(0,5), limits = c(0,1)) +
+  geom_point() +
+  ylab("") + xlab("GMP enrichment vs MEPs (log2OR)") +
+  geom_vline(xintercept = 0)
+ggsaveNF(out("ClusterEnrichments_manual_MEPvsGMP.pdf"), w=1,h=1)
 
 # . NTC distributions to assess clonality effects -------------------------------------------------
 pDT <- ann[mixscape_class.global == "NTC", .N, by=c("Clusters", "sample_broad", "CRISPR_Cellranger")]
