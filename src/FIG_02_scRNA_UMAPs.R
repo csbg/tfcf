@@ -14,6 +14,8 @@ ff <- list.files(dirout_load("SCRNA_20_Summary")(""))
 (TISSUES <- gsub("_.+", "", ff[grepl("_monocle.singleR$", ff)]))
 SIGS.USE <- fread("metadata/markers.signatures.use.scRNA.tsv")
 SIGS.USE[, sig := paste(DB, Celltype)]
+SIGS.USE.DA <- fread("metadata/markers.signatures.use.scRNA2.tsv")
+SIGS.USE.DA[, sig := paste(DB, Celltype)]
 
 # Folders -----------------------------------------------------------------
 inDir.funcs <- list()
@@ -202,7 +204,7 @@ for(tx in TISSUES){
   out <- dirout(paste0(base.dir, "/", tx))
   
   pDT <- marker.signatures.DA[[tx]]
-  pDT <- merge(pDT, SIGS.USE, by=c("sig"))
+  pDT <- merge(pDT, SIGS.USE.DA, by=c("sig"))
   
   # Summarize across guides
   pDT[gene == "Pu.1", gene := "Spi1"]
@@ -223,7 +225,7 @@ for(tx in TISSUES){
   pDT[dir == FALSE, padj := 0]
   pDT[dir == FALSE, d := NA]
   
-  # setup for plotting
+  # setup for plotting and plotting
   pDT[padj == 0 | is.na(d), d := 0]
   pDT[, sig.perc := padj / N]
   pDT[,d_cap := pmin(abs(d), 5) * sign(d)]
@@ -236,7 +238,22 @@ for(tx in TISSUES){
     geom_point() +
     geom_point(shape=1, color="lightgrey") +
     ylab("Marker signature") + xlab("")
-  ggsaveNF(out("MarkerSignatures_DA.pdf"),w=2,h=1)
+  ggsaveNF(out("MarkerSignatures_DA.pdf"),w=1.5,h=0.7)
+  
+  dla <- fread("metadata/FIGS_Order_Fig2_CFs.tsv")$Factor
+  pDT <- pDT[gene %in% dla]
+  pDT$gene <- factor(as.character(pDT$gene), levels=dla)
+  ggplot(pDT, aes(x=gene,y=FinalName, color=d, size=sig.perc)) + 
+    themeNF(rotate = TRUE) +
+    scale_size_continuous(name="% sign.", range = c(0,4)) +
+    scale_color_gradient2(name="delta",low="#1f78b4", high="#e31a1c") +
+    geom_point() +
+    geom_point(shape=1, color="lightgrey") +
+    ylab("Marker signature") + xlab("")
+  ggsaveNF(out("MarkerSignatures_DA_DLA.pdf"),w=1.5,h=0.7)
+  
+  # export table
+  write.tsv(pDT, out("MarkerSignatures_DA.tsv"))
 }
 
 
@@ -367,6 +384,7 @@ inDir.current <- "in.vivo"
 out <- dirout(paste0(base.dir, "/", inDir.current))
 ann <- annList[tissue == inDir.current]
 fish.bcells <- fread(out("Cluster_enrichments","_basic", "_14d",".tsv"))
+fish.enrich.broad <- fread(out("Cluster_enrichments","_noBcells", "_14d",".tsv"))
 
 # . UMAP of timepoint / markers ---------------------------------------------------------
 ggplot(ann[perturbed == FALSE], aes(x=UMAP1, y=UMAP2)) + 
@@ -418,7 +436,21 @@ ggplot(pDT, aes(x=log2OR, y=gene, size=sig.perc, color = log2OR)) +
   geom_point(shape=1, color="lightgrey") + 
   scale_color_gradient2(low="blue", high="red") +
   ylab("") + xlab("Enrichment in immature B-cells")
-ggsaveNF(out("Cluster_enrichments_BcellsOnly.pdf"), w=2,h=2)
+ggsaveNF(out("ClusterEnrichments_manual_BcellsOnly.pdf"), w=2,h=2)
+
+# . Plot enrichments with DLA order
+dla <- fread("metadata/FIGS_Order_Fig2E_CFs.tsv")$Factor
+pDT <- fish.enrich.broad[gene %in% dla]
+pDT$gene <- factor(pDT$gene, levels = dla)
+pDT[, Clusters := cleanCelltypes(Clusters, clean=FALSE)]
+ggplot(pDT, aes(x=gene, y=Clusters, size=sig.perc, color=log2OR_cap)) + 
+  themeNF(rotate=TRUE) +
+  scale_color_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
+  scale_size_continuous(name="% sign.", range = c(0,5)) +
+  geom_point() +
+  geom_point(shape=1, color="lightgrey") +
+  xlab("Gene") + ylab("Cell type")
+ggsaveNF(out("ClusterEnrichments_manual_cleaned.pdf"), w=2,h=1.2)
 
 # . NTC distributions to assess clonality effects -------------------------------------------------
 pDT <- ann[mixscape_class.global == "NTC", .N, by=c("Clusters", "sample_broad", "CRISPR_Cellranger")]
@@ -477,6 +509,7 @@ ggplot(pDT, aes(x=group, y=perc, fill=group == "NTC")) +
 ggsaveNF(out("Displasia_Numbers_bars.pdf"), w=2,h=1, guides = TRUE)
 
 
+
 # EX VIVO---------------------------------------------------------
 
 # . load data ---------------------------------------------------------
@@ -484,7 +517,13 @@ inDir.current <- "ex.vivo"
 out <- dirout(paste0(base.dir, "/", inDir.current))
 ann <- annList[tissue == inDir.current]
 marker.signatures[DB == "Larry"]
+fish.enrich <- list(
+  day7=fread(out("Cluster_enrichments_basic_7d.tsv")),
+  day9=fread(out("Cluster_enrichments_basic_9d.tsv"))
+  )
+fish.enrich <- rbindlist(fish.enrich, idcol="day")
 
+# BULK Signatures
 pDT <- merge(umap.proj$izzo, marker.signatures.bulk, by="rn")
 pDT[, value.norm := scale(value), by="variable"]
 ggplot(pDT, aes(x=UMAP_1, y=UMAP_2)) +
@@ -495,6 +534,22 @@ ggplot(pDT, aes(x=UMAP_1, y=UMAP_2)) +
   xu + yu
 ggsaveNF(out("BulkSignatures.pdf"), w=2.5,h=1)
 
+# . Plot enrichments with good order
+dla <- fread("metadata/FIGS_Order_Fig2_CFs.tsv")
+pDT <- fish.enrich[gene %in% dla$Factor][Clusters %in% c("GMP", "Late GMP", "MkP", "Eo/Ba", "LSK")]
+pDT$gene <- factor(pDT$gene, levels = dla$Factor)
+#pDT$Complex <- dla[match(pDT$gene, Factor)]$Complex
+pDT[, Clusters := cleanCelltypes(Clusters, clean=FALSE, twoLines = FALSE, order = TRUE, reverse = FALSE)]
+ggplot(pDT, aes(x=gene, y=day, size=sig.perc, color=log2OR_cap)) + 
+  themeNF(rotate=TRUE) +
+  scale_color_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
+  scale_size_continuous(name="% sign.", range = c(0,4)) +
+  geom_point() +
+  geom_point(shape=1, color="lightgrey") +
+  xlab("Gene") + ylab("Cell type") +
+  facet_grid(Clusters ~ . , space="free", scales = "free") +
+  theme(strip.text.y = element_text(angle=0))
+ggsaveNF(out("ClusterEnrichments_manual_cleaned.pdf"), w=1.6,h=1)
 
 
 # LEUKEMIA---------------------------------------------------------
@@ -527,7 +582,7 @@ ggplot(pDT, aes(y=Clusters,x=Antibody, fill=Signal)) +
   scale_fill_gradient2(low="blue", high="red") +
   xRot() +
   ylab("Cell types")
-ggsaveNF(out("Antibodies_Average.pdf"), w=1, h=1)
+ggsaveNF(out("Antibodies_Average.pdf"), w=1, h=0.7)
 
 # . Cell cycle ------------------------------------------------------------
 # UMAP

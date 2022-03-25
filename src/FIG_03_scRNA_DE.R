@@ -22,7 +22,7 @@ umapDT.dim1 <- floor(max(abs(umapDT$UMAP1))) + 0.5
 umapDT.dim2 <- floor(max(abs(umapDT$UMAP2))) + 0.5
 gseaDT <- fread(inDir("UMAP_GSEA.tsv"))
 deDT <- fread(inDir("DEG_Statistics.tsv"))
-deDT[, use := grepl("_myeloid", tissue)]
+deDT[, use := grepl("_myeloid", tissue) | grepl("_linNeg", tissue)]
 
 atacDT.lsk <- fread(paste0(gsub("Data", "CollaborationData", PATHS$LOCATIONS$DATA), "LSK_narrowPeak_consensusPeaks.boolean.annotatePeaks.extended.fc.txt"))
 atacDT <- data.table::melt(
@@ -47,8 +47,15 @@ GOI.BAF <- c("Kmt2a", "Men1", "Brd9", "Smarcd1", "Smarcb1","Smarcd2", "Kmt2d")
 
 GOI.targets <- list(
   markers = c("Mpo","Elane","Ctsg","S100a9","S100a8","Mtf2","Car1","Car2","Epor","Pklr","Pf4","Cpa3","Hba","Hbb","Tfrc","Cpox","Mt2","Trem2","Mefv","F13a1","Ly6c2","Fcgr3","Cd34","Kit","Itgam"),
-  tfs = c("Spi1","Cebpa","Cebpb","Cebpe","Klf4","Gfi1","Irf8","Mef2c","Gata2","Gata1","Klf1","Zfpm1","Mafk","Sox6","Klf9","Lmo4","Nfia","Nfix","Nfe2","Nfe2l2","Tal1","Cited4")
+  tfs = c("Spi1","Cebpa","Cebpb","Cebpe","Klf4","Gfi1","Irf8","Mef2c","Gata2","Gata1","Klf1","Gfi1b", "Zfpm1","Mafk",
+          "Sox6","Klf9","Lmo4","Nfia","Nfix","Nfe2","Nfe2l2","Tal1","Cited4")
 )
+
+dla.vulcano.genes <- fread("metadata/FIGS_VulcanoGenes.tsv", header = FALSE)
+dla.vulcano.genes <- setdiff(unique(do.call(c, dla.vulcano.genes)), "")
+
+dla.factors <- fread("metadata/FIGS_Order_Fig3.tsv")
+dla.factors <- lapply(as.list(dla.factors), function(ll) setdiff(ll, ""))
 
 # SETUP ENDS HERE ---------------------------------------------------------
 
@@ -61,10 +68,10 @@ for(tx in unique(deDT[use == TRUE]$tissue)){
   pDT <- deDT[tissue == tx]
   lnam <- names(GOI.targets)[1]
   for(lnam in names(GOI.targets)){
-    xDT <- pDT[gene_id %in% GOI.targets[[lnam]] & guide %in% GOI.BAF]
+    xDT <- pDT[gene_id %in% GOI.targets[[lnam]]]
     xDT$gene_id <- factor(xDT$gene_id, levels = GOI.targets[[lnam]])
-    xDT$guide <- factor(xDT$guide, levels = GOI.BAF)
-    # xDT <- hierarch.ordering(xDT, "guide", "gene_id", value.var = "estimate")
+    #xDT$guide <- factor(xDT$guide, levels = GOI.BAF)
+    xDT <- hierarch.ordering(xDT, "guide", "gene_id", value.var = "estimate")
     # xDT <- hierarch.ordering(xDT, "gene_id", "guide", value.var = "estimate")
     ggplot(xDT, aes(x=guide, y=gene_id, color=estimate, size=pmin(5, -log10(q_value)))) + 
       themeNF(rotate=TRUE) +
@@ -73,7 +80,22 @@ for(tx in unique(deDT[use == TRUE]$tissue)){
       scale_size_continuous(name="-log10(padj)", range = c(0,5)) +
       ggtitle(tx) +
       ylab("Gene expression") + xlab("CRISPR targets")
-    ggsaveNF(out("GeneDE_", tx, "_", lnam, ".pdf"),w=1.5,h=2, guides = TRUE)
+    ggsaveNF(out("GeneDE_", tx, "_", lnam, ".pdf"),w=length(unique(xDT$guide)) * 0.07 + 0.6,h=2, guides = TRUE)
+    
+    (dla.nam <- names(dla.factors)[3])
+    for(dla.nam in names(dla.factors)){
+      dla <- dla.factors[[dla.nam]]
+      xDT2 <- xDT[guide %in% dla]
+      if(nrow(xDT2) == 0) next
+      xDT2$guide <- factor(xDT2$guide, levels=dla)
+      ggplot(xDT2, aes(x=guide, y=gene_id, color=estimate, size=pmin(5, -log10(q_value)))) + 
+        themeNF(rotate=TRUE) +
+        geom_point() +
+        scale_color_gradient2(name="log2FC", low="blue", high="red") +
+        scale_size_continuous(name="-log10(padj)", range = c(0,5)) +
+        ggtitle(tx) +
+        ylab("Gene expression") + xlab("CRISPR targets")
+      ggsaveNF(out("GeneDE_", tx, "_", lnam, "_", dla.nam,".pdf"),w=length(unique(xDT2$guide)) * 0.07 + 0.6,h=2, guides = TRUE)}
   }
 }
 
@@ -123,19 +145,6 @@ ggplot(pDT, aes(x=rn, y=variable, fill=value)) +
 ggsaveNF(out("Phenocopy_BAF.pdf"), w=2,h=1)
 
 
-# Number of up- and downregualted genes ----------------------------------------------------
-pDT.up_down <- copy(deDT[tissue == "leukemia_myeloid"])
-pDT.up_down[, direction := ifelse(estimate > 0, "up", "down")]
-pDT.up_down <- pDT.up_down[q_value < 0.05][abs(estimate) > 0.5][,length(unique(gene_id)), by=c("guide", "direction")]
-#pDT[direction == "down", V1 := -V1]
-p <- ggplot(pDT.up_down, aes(x=guide, y=V1, fill=direction)) +
-  themeNF() +
-  geom_bar(stat="identity", position="dodge") +
-  coord_flip()
-ggsaveNF(out("NumberOfGenes.pdf"), w=1,h=2, plot=p)
-ggsaveNF(out("NumberOfGenes_log.pdf"), w=1,h=2, plot=p + scale_y_log10())
-
-
 # Correlation Cancer vs Healthy ----------------------------------------------------
 pDT <- data.table::melt(data.table(cMT, keep.rownames = TRUE), id.vars = "rn")
 pDT[, guide1 := sub(" .+$", "", rn)]
@@ -169,13 +178,36 @@ pDT.cvh[,tissue2 := gsub("_.+","", tissue2)]
 # Cancer vs Healthy same factor Barplot
 pDT.sum <- pDT.cvh[guide1 == guide2 & tissue1 == "ex.vivo" & tissue1 != tissue2]
 pDT.sum$guide <- factor(pDT.sum$guide1, levels = pDT.sum[order(value)]$guide1)
+pDT.sum <- pDT.sum[guide != "Cbx3"]
 ggplot(pDT.sum, aes(x=guide, y=value)) + 
   themeNF() +
   geom_bar(stat="identity") + 
   ylab("Correlation normal vs cancer") +
   coord_flip() +
+  facet_grid(. ~ "x") +
   ylab("")
 ggsaveNF(out("Correlation_CVH_bars.pdf"), w=1,h=2, guides = TRUE)
+
+
+
+# Number of up- and downregualted genes
+pDT.up_down <- copy(deDT[tissue %in% tissues.use])
+pDT.up_down[, tissue := gsub("_noMixscape", "", tissue)]
+pDT.up_down[, direction := ifelse(estimate > 0, "up", "down")]
+pDT.up_down <- pDT.up_down[q_value < 0.05][abs(estimate) > 0.5][,length(unique(gene_id)), by=c("guide", "direction", "tissue")]
+pDT.up_down[direction == "down", V1 := -V1]
+pDT.up_down <- pDT.up_down[guide %in% pDT.sum$guide]
+pDT.up_down$guide <- factor(pDT.up_down$guide, levels=levels(pDT.sum$guide))
+#pDT[direction == "down", V1 := -V1]
+p <- ggplot(pDT.up_down, aes(x=guide, y=V1, fill=direction)) +
+  themeNF() +
+  geom_bar(stat="identity", position="stack") +
+  coord_flip() +
+  facet_grid(. ~ tissue)
+ggsaveNF(out("NumberOfGenes.pdf"), w=1,h=2, plot=p)
+#ggsaveNF(out("NumberOfGenes_log.pdf"), w=1,h=2, plot=p + scale_y_log10())
+
+
 
 # check relationship of correlation cvh to number of cells
 pDT.sum.control <- merge(
@@ -318,12 +350,13 @@ dir.create(out("Vulcanos/"))
 guidex <- deDT$guide[1]
 for(guidex in unique(deDT$guide)){
   pDT <- deDT[guide == guidex]
-  pDT.examples <- rbind(
-    pDT[order(estimate)][,head(.SD,n=5), by=c("tissue")],
-    pDT[order(-estimate)][,head(.SD,n=5), by=c("tissue")],
-    pDT[estimate > 0][order(p_value)][,head(.SD,n=5), by=c("tissue")],
-    pDT[estimate < 0][order(p_value)][,head(.SD,n=5), by=c("tissue")]
-  )
+  # pDT.examples <- rbind(
+  #   pDT[order(estimate)][,head(.SD,n=5), by=c("tissue")],
+  #   pDT[order(-estimate)][,head(.SD,n=5), by=c("tissue")],
+  #   pDT[estimate > 0][order(p_value)][,head(.SD,n=5), by=c("tissue")],
+  #   pDT[estimate < 0][order(p_value)][,head(.SD,n=5), by=c("tissue")]
+  # )
+  pDT.examples <- pDT[gene_id %in% dla.vulcano.genes]
   ggplot(pDT, aes(x=estimate, y=pmin(30, -log10(p_value)))) + 
     facet_grid(guide ~ tissue, scale="free_y") +
     stat_binhex(aes(fill=log10(..count..))) +
