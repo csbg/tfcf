@@ -3,6 +3,7 @@ out <- dirout("SCRNA_10_collect_UMAPs/")
 
 require(pdist)
 require(doMC)
+source("src/FUNC_Monocle_PLUS.R")
 registerDoMC(cores=10)
 
 # Original UMAPs ----------------------------------------------------------
@@ -12,6 +13,8 @@ for(tissuex in PATHS$SCRNA$MONOCLE.NAMES){
   mobjs[[tissuex]] <- monocle.obj
 }
 
+
+# Projection from Monocle (original) --------------------------------------
 res <- data.table()
 tx <- names(mobjs)[1]
 for(tx in names(mobjs)){
@@ -26,6 +29,19 @@ for(tx in names(mobjs)){
 }
 colnames(res)[colnames(res) %in% c("V1", "V2")] <- c("UMAP_1", "UMAP_2")
 saveRDS(res, out("ProjMonocle.RDS"))
+
+# Clusters
+mnam <- names(mobjs)[1]
+dDT.ct <- list()
+for(mnam in names(mobjs)){
+  monocle.obj <- mobjs[[mnam]]
+  dDT.ct[[mnam]] <- data.table(data.frame(colData(monocle.obj)@listData), keep.rownames = TRUE)[,c("rn", "sample")][match(colnames(monocle.obj), rn)]
+  dDT.ct[[mnam]]$functional.cluster <- getCL(monocle.obj)
+  dDT.ct[[mnam]]$functional.cluster.conf <- 1
+}
+dDT.ct <- rbindlist(dDT.ct)
+saveRDS(dDT.ct, out("ProjMonocle_Clusters.RDS"))
+
 
 # celltypes from singleR after manual curation -------------------------------------------------------
 ff <- list.files(dirout_load("SCRNA_06_02_MergeMarkers")(""), pattern="CellTypes_*", full.names = TRUE)

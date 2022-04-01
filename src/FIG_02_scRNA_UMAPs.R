@@ -271,14 +271,15 @@ for(tx in names(mobjs)){
 
 # Cluster enrichment analyses ---------------------------------------------
 tx <- "in.vivo"
-for(tx in names(inDir.funcs)){
+inDir <- dirout_load("SCRNA_21_ClusterEnrichments")
+#for(tx in names(inDir.funcs)){
   # out directory
-  out <- dirout(paste0(base.dir, "/", tx))
+  out <- dirout(paste0(base.dir, "/", "cluster.enrichments/"))
   
   # Collect enrichment scores
   typex <- "earlyMid"
-  for(typex in gsub(".+_(.+).pdf", "\\1", list.files(inDir.funcs[[tx]](""), pattern="Guides_Fisher_Mixscape_.*.pdf"))){
-    fish.file <- inDir.funcs[[tx]]("Guides_Fisher_Mixscape_",typex,".tsv")
+  for(typex in gsub("Guides_Fisher_Mixscape_(.+).pdf", "\\1", list.files(inDir(""), pattern="Guides_Fisher_Mixscape_.*.pdf"))){
+    fish.file <- inDir("Guides_Fisher_Mixscape_",typex,".tsv")
     if(!file.exists(fish.file)) next
     
     fish.full <- fread(fish.file)
@@ -322,6 +323,7 @@ for(tx in names(inDir.funcs)){
       fish[, sig.perc := padj / N]
       fish[,log2OR_cap := pmin(abs(log2OR), 5) * sign(log2OR)]
       fish <- hierarch.ordering(dt = fish, toOrder = "gene", orderBy = "Clusters", value.var = "log2OR")
+      fish[, Clusters := gsub("^Gran$", "Gran.", Clusters)]
       fish[, Clusters := cleanCelltypes(Clusters)]
       #fish <- hierarch.ordering(dt = fish, toOrder = "Clusters", orderBy = "gene", value.var = "log2OR")
       ggplot(fish, aes(x=gene, y=Clusters, size=sig.perc, color=log2OR_cap)) + 
@@ -338,7 +340,7 @@ for(tx in names(inDir.funcs)){
       write.tsv(fish, out("Cluster_enrichments_",typex,"_", timex,".tsv"))
     }
   }
-}
+#}
 
 
 
@@ -349,6 +351,7 @@ for(tx in names(inDir.funcs)){
   out <- dirout(paste0(base.dir, "/", tx))
   
   pDT.top <- annList[tissue == tx][timepoint != "28d"]
+  pDT.top <- pDT.top[tissue != "in.vivo" | markers == "lin-"]
   pDT.ntc <- pDT.top[mixscape_class.global == "NTC"]
   pDT.final <- copy(pDT.ntc)
   pDT.final$plot <- "NTC"
@@ -387,6 +390,22 @@ ann <- annList[tissue == inDir.current]
 fish.bcells <- fread(out("Cluster_enrichments","_basic", "_14d",".tsv"))
 fish.enrich.broad <- fread(out("Cluster_enrichments","_noBcells", "_14d",".tsv"))
 fish.early <- fread(out("Cluster_enrichments_earlyBranches_14d.tsv"))
+
+
+
+# Plot distribution of one gene -------------------------------------------
+pDT <- ann[markers == "lin-"][timepoint == "14d"]
+gg <- "Rbbp4"
+pDT <- pDT[(gene == gg & perturbed == TRUE) | mixscape_class == "NTC"]
+pDT <- pDT[, .N, by=c("gene", "Clusters")]
+pDT[, sum := sum(N), by=c("Clusters")]
+pDT[, rel2NTCs := N/(sum-N)]
+pDT[rel2NTCs == Inf, rel2NTCs := 1]
+pDT <- pDT[gene != "NTC"]
+ggplot(pDT, aes(x=cleanCelltypes(Clusters, reverse = FALSE), y=rel2NTCs)) + 
+  themeNF(rotate=TRUE) +
+  geom_bar(stat="identity") +
+  ggtitle(gg)
 
 # . UMAP of timepoint / markers ---------------------------------------------------------
 ggplot(ann[perturbed == FALSE], aes(x=UMAP1, y=UMAP2)) + 

@@ -30,7 +30,7 @@ for(tissuex in PATHS$SCRNA$MONOCLE.NAMES){
 # }
 
 # Monocle analysis with predicted celltypes ---------------------------------------------------------------
-(tissue.name <- names(mobjs)[3])
+(tissue.name <- names(mobjs)[2])
 cts <- readRDS(dirout_load("SCRNA_10_collect_UMAPs")("ProjMonocle_celltypes.RDS"))
 for(tissue.name in names(mobjs)){
 
