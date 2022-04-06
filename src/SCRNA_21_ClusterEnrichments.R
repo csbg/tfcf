@@ -20,13 +20,14 @@ clusters <- readRDS(dirout_load("SCRNA_10_collect_UMAPs")("ProjMonocle_Clusters.
 annList$Cluster.number <- clusters[match(annList$rn, rn)]$functional.cluster
 # Remove cells without guides
 annList <- annList[!is.na(mixscape_class)]
-annList <- annList[tissue != "in.vivo" | markers == "lin-"]
+# Use only lin- in vivo?
+# annList <- annList[tissue != "in.vivo" | markers == "lin-"]
 
 
 # Identify and remove bad clusters (clusters with only perturbations) ---------------------
 clDT <- dcast.data.table(annList[,.N, by=c("mixscape_class.global", "tissue", "Cluster.number")], tissue + Cluster.number ~ mixscape_class.global, value.var = "N")
 clDT[, frac := KO/NTC]
-clDT.remove <- clDT[(NTC < 5 | is.na(NTC)) & frac > 25]
+(clDT.remove <- clDT[(NTC < 5 | is.na(NTC)) & (frac > 25 | is.na(frac))])
 annList <- annList[!rn %in% merge(clDT.remove, annList, by=c("tissue", "Cluster.number"))$rn]
 
 

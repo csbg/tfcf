@@ -351,7 +351,7 @@ for(tx in names(inDir.funcs)){
   out <- dirout(paste0(base.dir, "/", tx))
   
   pDT.top <- annList[tissue == tx][timepoint != "28d"]
-  pDT.top <- pDT.top[tissue != "in.vivo" | markers == "lin-"]
+  #pDT.top <- pDT.top[tissue != "in.vivo" | markers == "lin-"]
   pDT.ntc <- pDT.top[mixscape_class.global == "NTC"]
   pDT.final <- copy(pDT.ntc)
   pDT.final$plot <- "NTC"
@@ -387,9 +387,9 @@ for(tx in names(inDir.funcs)){
 inDir.current <- "in.vivo"
 out <- dirout(paste0(base.dir, "/", inDir.current))
 ann <- annList[tissue == inDir.current]
-fish.bcells <- fread(out("Cluster_enrichments","_basic", "_14d",".tsv"))
-fish.enrich.broad <- fread(out("Cluster_enrichments","_noBcells", "_14d",".tsv"))
-fish.early <- fread(out("Cluster_enrichments_earlyBranches_14d.tsv"))
+fish.bcells <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments","_basic", "_in.vivo", "_withMixscape", "_14d",".tsv"))
+fish.enrich.broad <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments","_noBcells", "_in.vivo", "_withMixscape", "_14d",".tsv"))
+fish.EryVsMye <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments","_eryVsMye", "_in.vivo", "_withMixscape", "_14d",".tsv"))
 
 
 
@@ -475,15 +475,15 @@ ggplot(pDT, aes(x=gene, y=Clusters, size=sig.perc, color=log2OR_cap)) +
   xlab("Gene") + ylab("Cell type")
 ggsaveNF(out("ClusterEnrichments_manual_cleaned.pdf"), w=2,h=1.2)
 
-# Plot early enrichments with DLA order
-pDT <- fish.early[Clusters == "GMP"][abs(log2OR) > 0]
+# Plot my vs GMP enrichments with DLA order
+pDT <- fish.EryVsMye[Clusters == "GMP"][abs(log2OR) > 0]
 pDT$gene <- factor(pDT$gene, levels = pDT[order(log2OR)]$gene)
 ggplot(pDT, aes(x=log2OR, y=gene, size=sig.perc, color=log2OR_cap)) + 
   themeNF(rotate=TRUE) +
   scale_color_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
   scale_size_continuous(name="% sign.", range = c(0,5), limits = c(0,1)) +
   geom_point() +
-  ylab("") + xlab("GMP enrichment vs MEPs (log2OR)") +
+  ylab("") + xlab("Myeloid enrichment vs Erythroid (log2OR)") +
   geom_vline(xintercept = 0)
 ggsaveNF(out("ClusterEnrichments_manual_MEPvsGMP.pdf"), w=1,h=1)
 
@@ -553,8 +553,8 @@ out <- dirout(paste0(base.dir, "/", inDir.current))
 ann <- annList[tissue == inDir.current]
 marker.signatures[DB == "Larry"]
 fish.enrich <- list(
-  day7=fread(out("Cluster_enrichments_basic_7d.tsv")),
-  day9=fread(out("Cluster_enrichments_basic_9d.tsv"))
+  day7=fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_basic_ex.vivo_withMixscape_7d.tsv")),
+  day9=fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_basic_ex.vivo_withMixscape_9d.tsv"))
   )
 fish.enrich <- rbindlist(fish.enrich, idcol="day")
 
@@ -569,22 +569,39 @@ ggplot(pDT, aes(x=UMAP_1, y=UMAP_2)) +
   xu + yu
 ggsaveNF(out("BulkSignatures.pdf"), w=2.5,h=1)
 
-# . Plot enrichments with good order
+# . Plot enrichments with good order for day 7
 dla <- fread("metadata/FIGS_Order_Fig2_CFs.tsv")
-pDT <- fish.enrich[gene %in% dla$Factor][Clusters %in% c("GMP", "Late GMP", "MkP", "Eo/Ba", "LSK")]
+pDT <- fish.enrich[day == "day7"][gene %in% dla$Factor][Clusters %in% c("GMP", "MkP", "Eo/Ba", "LSK")]
 pDT$gene <- factor(pDT$gene, levels = dla$Factor)
 #pDT$Complex <- dla[match(pDT$gene, Factor)]$Complex
-pDT[, Clusters := cleanCelltypes(Clusters, clean=FALSE, twoLines = FALSE, order = TRUE, reverse = FALSE)]
-ggplot(pDT, aes(x=gene, y=day, size=sig.perc, color=log2OR_cap)) + 
+pDT[, Clusters := cleanCelltypes(Clusters, clean=FALSE, twoLines = FALSE, order = TRUE, reverse = TRUE)]
+ggplot(pDT, aes(x=gene, y=Clusters, size=sig.perc, color=log2OR_cap)) + 
   themeNF(rotate=TRUE) +
   scale_color_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
   scale_size_continuous(name="% sign.", range = c(0,4)) +
   geom_point() +
   geom_point(shape=1, color="lightgrey") +
   xlab("Gene") + ylab("Cell type") +
-  facet_grid(Clusters ~ . , space="free", scales = "free") +
+  #facet_grid(Clusters ~ . , space="free", scales = "free") +
   theme(strip.text.y = element_text(angle=0))
-ggsaveNF(out("ClusterEnrichments_manual_cleaned.pdf"), w=1.6,h=1)
+ggsaveNF(out("ClusterEnrichments_manual_cleaned_day7.pdf"), w=1.6,h=0.6)
+
+# . Plot enrichments with late GMPs from day 9
+dla <- fread("metadata/FIGS_Order_Fig2_CFs.tsv")
+pDT <- fish.enrich[day == "day9"][gene %in% dla$Factor][Clusters %in% c("Late GMP")][log2OR != 0]
+pDT$gene <- factor(pDT$gene, levels = pDT[order(log2OR)]$gene)
+#pDT$Complex <- dla[match(pDT$gene, Factor)]$Complex
+pDT[, Clusters := cleanCelltypes(Clusters, clean=FALSE, twoLines = FALSE, order = TRUE, reverse = TRUE)]
+ggplot(pDT, aes(y=gene, x=log2OR_cap, size=sig.perc, color=log2OR_cap)) + 
+  themeNF(rotate=TRUE) +
+  scale_color_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
+  scale_size_continuous(name="% sign.", range = c(0,4)) +
+  geom_point() +
+  geom_point(shape=1, color="lightgrey") +
+  xlab("log2 OR") + ylab("Gene") +
+  #facet_grid(Clusters ~ . , space="free", scales = "free") +
+  theme(strip.text.y = element_text(angle=0))
+ggsaveNF(out("ClusterEnrichments_manual_lateGMPs_day9.pdf"), w=1,h=1)
 
 
 # LEUKEMIA---------------------------------------------------------
