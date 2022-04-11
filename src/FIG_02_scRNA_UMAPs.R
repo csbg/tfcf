@@ -271,7 +271,7 @@ for(tx in names(mobjs)){
 
 # Cluster enrichment analyses ---------------------------------------------
 tx <- "in.vivo"
-inDir <- dirout_load("SCRNA_21_ClusterEnrichments")
+inDir <- dirout_load("SCRNA_21_02_ClusterEnrichments_simple")
 #for(tx in names(inDir.funcs)){
   # out directory
   out <- dirout(paste0(base.dir, "/", "cluster.enrichments/"))
@@ -283,40 +283,45 @@ inDir <- dirout_load("SCRNA_21_ClusterEnrichments")
     if(!file.exists(fish.file)) next
     
     fish.full <- fread(fish.file)
-    fish.full <- merge(fish.full, unique(SANN[,c("sample_broad", "timepoint"),with=F]), by.x="sample", by.y="sample_broad")
-    timex <- "all"
-    for(timex in c(unique(fish.full$timepoint), "all")){
+    #fish.full <- merge(fish.full, unique(SANN[,c("sample_broad", "timepoint"),with=F]), by.x="sample", by.y="sample_broad")
+    timex <- "14d"
+    for(timex in c(unique(fish.full$sample))){
       fish <- copy(fish.full)
-      if(timex != "all") fish <- fish[timepoint == timex]
+      #fish <- fish[mixscape_class == "Rbbp4"]
+      if(timex != "all") fish <- fish[sample == timex]
       
       # summarize across NTCs
       fish <- fish[, .(
         log2OR=mean(log2OR), 
-        dir=length(unique(sign(log2OR)))==1, 
-        padj=sum(padj < 0.01), 
+        dir=length(unique(sign(log2OR[padj < 0.01]))) <= 1, 
+        #dir=length(unique(sign(log2OR)))==1, 
+        padj=sum(padj < 0.01)/.N, 
         N=.N), by=c("sample", "Clusters", "mixscape_class")]
       fish[dir == FALSE, padj := 0]
       fish[dir == FALSE, log2OR := NA]
       
+      # legacy
+      fish[, gene := mixscape_class]
+      
       # Summarize across guides
-      fish[, gene := gsub("_.+", "", mixscape_class)]
-      fish[gene == "Pu.1", gene := "Spi1"]
-      fish <- fish[, .(
-        log2OR=mean(log2OR, na.rm=TRUE), 
-        dir=length(unique(sign(log2OR[!is.na(log2OR)])))==1, 
-        padj=sum(padj), 
-        N=sum(N)), by=c("sample", "Clusters", "gene")]
-      fish[dir == FALSE, padj := 0]
-      fish[dir == FALSE, log2OR := NA]
+      # fish[, gene := gsub("_.+", "", mixscape_class)]
+      # fish[gene == "Pu.1", gene := "Spi1"]
+      # fish <- fish[, .(
+      #   log2OR=mean(log2OR, na.rm=TRUE), 
+      #   dir=length(unique(sign(log2OR[!is.na(log2OR)])))==1, 
+      #   padj=sum(padj), 
+      #   N=sum(N)), by=c("sample", "Clusters", "gene")]
+      # fish[dir == FALSE, padj := 0]
+      # fish[dir == FALSE, log2OR := NA]
       
       # summarize across samples
-      fish <- fish[, .(
-        log2OR=mean(log2OR, na.rm=TRUE), 
-        dir=length(unique(sign(log2OR[!is.na(log2OR)])))==1, 
-        padj=sum(padj), 
-        N=sum(N)), by=c("Clusters", "gene")]
-      fish[dir == FALSE, padj := 0]
-      fish[dir == FALSE, log2OR := NA]
+      # fish <- fish[, .(
+      #   log2OR=mean(log2OR, na.rm=TRUE), 
+      #   dir=length(unique(sign(log2OR[!is.na(log2OR)])))==1, 
+      #   padj=sum(padj), 
+      #   N=sum(N)), by=c("Clusters", "gene")]
+      # fish[dir == FALSE, padj := 0]
+      # fish[dir == FALSE, log2OR := NA]
       
       # setup for plotting
       fish[padj == 0 | is.na(log2OR), log2OR := 0]
@@ -356,7 +361,8 @@ for(tx in names(inDir.funcs)){
   pDT.final <- copy(pDT.ntc)
   pDT.final$plot <- "NTC"
   for(x in unique(pDT.top[perturbed == TRUE]$gene)){
-    pDTg <- rbind(pDT.ntc, pDT.top[grepl(paste0("^", x), guide) & mixscape_class.global == "KO"])
+    #pDTg <- rbind(pDT.ntc, pDT.top[grepl(paste0("^", x), guide) & mixscape_class.global == "KO"])
+    pDTg <- rbind(pDT.ntc, pDT.top[grepl(paste0("^", x), guide)])
     pDTg$plot <- x
     pDT.final <- rbind(pDT.final, pDTg)
   }
@@ -387,9 +393,9 @@ for(tx in names(inDir.funcs)){
 inDir.current <- "in.vivo"
 out <- dirout(paste0(base.dir, "/", inDir.current))
 ann <- annList[tissue == inDir.current]
-fish.bcells <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments","_basic", "_in.vivo", "_withMixscape", "_14d",".tsv"))
-fish.enrich.broad <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments","_noBcells", "_in.vivo", "_withMixscape", "_14d",".tsv"))
-fish.EryVsMye <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments","_eryVsMye", "_in.vivo", "_withMixscape", "_14d",".tsv"))
+fish.bcells <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments","_basic", "_in.vivo", "_noMixscape", "_14d",".tsv"))
+fish.enrich.broad <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_broadBranches_in.vivo_noMixscape_14d",".tsv"))
+fish.EryVsMye <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments","_eryVsMye", "_in.vivo", "_noMixscape", "_14d",".tsv"))
 
 
 
@@ -553,8 +559,8 @@ out <- dirout(paste0(base.dir, "/", inDir.current))
 ann <- annList[tissue == inDir.current]
 marker.signatures[DB == "Larry"]
 fish.enrich <- list(
-  day7=fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_basic_ex.vivo_withMixscape_7d.tsv")),
-  day9=fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_basic_ex.vivo_withMixscape_9d.tsv"))
+  day7=fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_basic_ex.vivo_noMixscape_7d.tsv")),
+  day9=fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_basic_ex.vivo_noMixscape_9d.tsv"))
   )
 fish.enrich <- rbindlist(fish.enrich, idcol="day")
 
@@ -613,6 +619,7 @@ ann <- annList[tissue == inDir.current]
 #ann <- merge(ann[,-c("UMAP1", "UMAP2"),with=F], setNames(umap.proj[["in.vivo.X"]][,c("rn", "UMAP_1", "UMAP_2")], c("rn", "UMAP1", "UMAP2")), by="rn")
 abs <- fread(inDir.funcs[[inDir.current]]("Antibodies.tsv"))
 abs <- merge(abs[,-c("UMAP1", "UMAP2"),with=F], setNames(umap.proj[["in.vivo.X"]][,c("rn", "UMAP_1", "UMAP_2")], c("rn", "UMAP1", "UMAP2")), by="rn")
+fish.enrich <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_basic_leukemia_noMixscape_6d.tsv"))
 
 # . Antibodies on UMAP ----------------------------------------------------
 ggplot(abs, aes(x=UMAP1, y=UMAP2)) +
@@ -685,6 +692,23 @@ ggplot(pDT, aes(x=CRISPR_Cellranger,y=perc,fill=Phase)) +
   ylab("Percentage of cells") + xlab("")
 ggsaveNF(out("CellCycle_Numbers.pdf"), w=3,h=1.2)
 
+
+# . manual enrichments ----------------------------------------------------
+dla <- fread("metadata/FIGS_Order_Fig2_CFs.tsv")
+pDT <- fish.enrich[gene %in% dla$Factor]
+pDT$gene <- factor(pDT$gene, levels = dla$Factor)
+#pDT$Complex <- dla[match(pDT$gene, Factor)]$Complex
+pDT[, Clusters := cleanCelltypes(Clusters, clean=FALSE, twoLines = FALSE, order = TRUE, reverse = TRUE)]
+ggplot(pDT, aes(x=gene, y=Clusters, size=sig.perc, color=log2OR_cap)) + 
+  themeNF(rotate=TRUE) +
+  scale_color_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
+  scale_size_continuous(name="% sign.", range = c(0,4)) +
+  geom_point() +
+  geom_point(shape=1, color="lightgrey") +
+  xlab("Gene") + ylab("Cell type") +
+  #facet_grid(Clusters ~ . , space="free", scales = "free") +
+  theme(strip.text.y = element_text(angle=0))
+ggsaveNF(out("ClusterEnrichments_manual_cleaned.pdf"), w=1.6,h=0.6)
 
 
 # Cancer vs Healthy -------------------------------------------------------

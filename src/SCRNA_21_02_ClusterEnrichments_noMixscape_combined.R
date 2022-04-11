@@ -1,5 +1,5 @@
 source("src/00_init.R")
-out <- dirout("SCRNA_21_ClusterEnrichments/")
+out <- dirout("SCRNA_21_02_ClusterEnrichments_simple/")
 
 
 require(doMC)
@@ -22,14 +22,23 @@ annList$Cluster.number <- clusters[match(annList$rn, rn)]$functional.cluster
 annList <- annList[!is.na(mixscape_class)]
 # Use only lin- in vivo?
 # annList <- annList[tissue != "in.vivo" | markers == "lin-"]
+annList[, gene := gsub("_.+$", "", CRISPR_Cellranger)]
 
 
-# Identify and remove bad clusters (clusters with only perturbations) ---------------------
+# Identify and remove or label perturbed clusters (clusters with only perturbations) ---------------------
 clDT <- dcast.data.table(annList[,.N, by=c("mixscape_class.global", "tissue", "Cluster.number")], tissue + Cluster.number ~ mixscape_class.global, value.var = "N")
 clDT[, frac := KO/NTC]
-(clDT.remove <- clDT[(NTC < 5 | is.na(NTC)) & (frac > 25 | is.na(frac))])
-annList <- annList[!rn %in% merge(clDT.remove, annList, by=c("tissue", "Cluster.number"))$rn]
 
+# remove clusters from in vivo
+(clDT.remove <- clDT[tissue == "in.vivo"][(NTC < 5 | is.na(NTC)) & (frac > 25 | is.na(frac))])
+annList[tissue == "in.vivo" & Cluster.number %in% clDT.remove$Cluster.number, Clusters := "remove"]
+
+# Label clusters in leukemia
+(clDT.remove <- clDT[tissue == "leukemia" & frac > 30])
+annList[tissue == "leukemia" & Cluster.number %in% clDT.remove$Cluster.number, Clusters := "novel"]
+
+# remove clusters to remove
+annList <- annList[Clusters != "remove"]
 
 
 # Define sets to analyze ------------------------------------------------------
@@ -64,6 +73,16 @@ xxx <- x[Clusters %in% do.call(c, eba)]
 for(xnam in names(eba)){xxx[Clusters %in% eba[[xnam]], Clusters := xnam]}
 fish.test.sets[[paste("eryVsMye", tx, sep="_")]] <- xxx
 
+# broad groups
+xxx <- x[!(grepl("B.cell", Clusters) | grepl("CLP", Clusters) | grepl("EBMP", Clusters))]
+eba <- list(
+  MEP=c(grep("Ery", CELLTYPES, value=TRUE), grep("MEP", CELLTYPES, value=TRUE)),
+  GMP=c(grep("Gran", CELLTYPES, value=TRUE), grep("GMP", CELLTYPES, value=TRUE))
+)
+for(xnam in names(eba)){xxx[Clusters %in% eba[[xnam]], Clusters := xnam]}
+table(xxx$Clusters)
+fish.test.sets[[paste("broadBranches", tx, sep="_")]] <- xxx
+
 # Terminal diff Ery
 eba <- list(
   Ery=setdiff(c(grep("Ery", CELLTYPES, value=TRUE), grep("MEP", CELLTYPES, value=TRUE)), "MEP (early)"),
@@ -91,22 +110,24 @@ sapply(fish.test.sets, nrow)
 fish.test.sets <- fish.test.sets[sapply(fish.test.sets, nrow) > 0]
 
 
+
 # START ANALYSIS
 (fish.test.x <- names(fish.test.sets)[1])
 foreach(fish.test.x = names(fish.test.sets)) %dopar% {
   res <- data.table()
   pDT1 <- fish.test.sets[[fish.test.x]]
-  #pDT1 <- pDT1[!grepl("B.cell", Clusters) & !grepl("CLP", Clusters)]
+  write.tsv(pDT1[,"rn",with=F], out("Guides_Fisher_Mixscape_",fish.test.x,"_Cells.tsv"))
   stopifnot(sum(is.na(pDT1$CRISPR_Cellranger)) == 0)
-  sx <- pDT1$sample_broad[1]
-  for(sx in unique(pDT1$sample_broad)){
-    pDT2 <- pDT1[sample_broad == sx]
-    gx <- pDT2$CRISPR_Cellranger[1]
-    for(gx in unique(pDT2[mixscape_class != "NTC"]$CRISPR_Cellranger)){
+  sx <- pDT1$timepoint[1]
+  for(sx in unique(pDT1$timepoint)){
+    pDT2 <- pDT1[timepoint == sx]
+    gx <- pDT2$gene[1]
+    for(gx in unique(pDT2[mixscape_class != "NTC"]$gene)){
+      cx <- pDT2$Clusters[1]
       for(cx in unique(pDT2$Clusters)){
         ntc <- unique(pDT2[mixscape_class == "NTC"][,.N, by="CRISPR_Cellranger"][N > 20]$CRISPR_Cellranger)[1]
         for(ntc in unique(pDT2[mixscape_class == "NTC"][,.N, by="CRISPR_Cellranger"][N > 20]$CRISPR_Cellranger)){
-          mx <- as.matrix(with(pDT2[CRISPR_Cellranger %in% c(gx, ntc)], table(Clusters == cx, CRISPR_Cellranger == gx)))
+          mx <- as.matrix(with(pDT2[gene == gx | CRISPR_Cellranger == ntc], table(Clusters == cx, gene == gx)))
           if(all(dim(mx) == c(2,2))){
             fish <- fisher.test(mx)
             res <- rbind(res, data.table(

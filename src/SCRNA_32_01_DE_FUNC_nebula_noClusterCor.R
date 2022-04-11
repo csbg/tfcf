@@ -6,8 +6,8 @@ neb.file <- out("Nebular.RDS")
 # DE for GUIDES -----------------------------------------
 obj.de <- monocle.obj#[,monocle.obj$clusterDE %in% c("1", "21")]
 
-# Keep only KO and NTCs
-obj.de <- obj.de[,obj.de$mixscape_class.global %in% c("KO", "NTC")]
+# Keep only KO, NPs, and NTCs
+obj.de <- obj.de[,obj.de$mixscape_class.global %in% c("KO", "NTC", "NP")]
 obj.de <- obj.de[,obj.de$clusterDE %in% names(which(table(obj.de$clusterDE) > 30))]
 
 # Remove lowly expressed genes
@@ -49,7 +49,7 @@ total.count <- data.table(obj.de.ann)[,.(totalCount = .N), by="GuideDE"]
 # Run nebula --------------------------------------------------------------
 
 # Model matrix
-mm <- model.matrix(data=obj.de.ann, ~ GuideDE + ClusterDE)
+mm <- model.matrix(data=obj.de.ann, ~ GuideDE)
 #colnames(mm) <- gsub("^(GuideDE.+)$", paste0("\\1_"), colnames(mm))
 mm <- mm[,colSums(mm) != 0]
 
