@@ -50,6 +50,13 @@ marker.signatures <- merge(marker.signatures, SIGS.USE, by.x=c("DB", "variable")
 marker.signatures.DA <- lapply(TISSUES, function(tx) fread(inDir.funcs[[tx]]("SigDA.tsv")))
 names(marker.signatures.DA) <- TISSUES
 
+# Doublet scores?
+ff <- list.files(dirout_load("SCRNA_03_01_Duplets")(""), pattern="^Duplet_Scores_.+.tsv$", full.names = TRUE)
+names(ff) <- gsub("^Duplet_Scores_(.+).tsv$", "\\1", basename(ff))
+ff <- lapply(ff, fread)
+duplet.scores <- rbindlist(ff, idcol="sample")
+duplet.scores[, rn := paste0(rn, "_", sample)]
+
 # Cell annotations
 annList <- lapply(names(inDir.funcs), function(inDir.current){
   ann <- fread(inDir.funcs[[inDir.current]]("Annotation.tsv"))
@@ -58,6 +65,8 @@ annList <- lapply(names(inDir.funcs), function(inDir.current){
   ann
   })
 annList <- rbindlist(annList, fill=TRUE)
+annList$dupletScore <- duplet.scores[match(annList$rn, rn),]$dupletScore
+
 
 # Other projections
 umap.proj <- list(
@@ -125,6 +134,14 @@ ggplot(umap.proj$izzo[tissue != "Izzo_WT1"], aes(x=UMAP_1, UMAP_2)) +
 ggsaveNF(outBase("UMAP_Izzo_projected.pdf"), w=3,h=1.5)
 
 
+# Dupletscores ------------------------------------------------------------
+ggplot(annList, aes(x=UMAP1, y=UMAP2)) + 
+  themeNF() +
+  stat_summary_hex(aes(z=dupletScore),fun=mean, bins=100) +
+  facet_grid(. ~ tissue)
+ggsaveNF(outBase("Duplets.pdf"),w=3,h=10, guides = TRUE)
+
+
 # UMAP Projections ---------------------------------------------------------
 tx <- "in.vivo"
 tx <- "leukemia"
@@ -143,7 +160,7 @@ for(tx in names(inDir.funcs)){
     xDT <- umap.proj[[x]][match(ann$rn, rn)]
     hex.obj <- hexbin::hexbin(x=xDT$UMAP_1, y=xDT$UMAP_2, xbins = 100, IDs=TRUE)
     pDT <- cbind(ann, data.table(hex.x=hex.obj@xcm, hex.y=hex.obj@ycm, hex.cell=hex.obj@cell)[match(hex.obj@cID, hex.cell),])
-    pDT <- pDT[,.N, by=c("hex.x", "hex.y", "Clusters")]
+    pDT <- pDT[,.(N=.N, dupletScore=mean(dupletScore)), by=c("hex.x", "hex.y", "Clusters")]
     pDT[, sum := sum(N), by=c("hex.x", "hex.y")]
     pDT[, frac := N / sum]
     pDT <- pDT[order(frac, decreasing = TRUE)][,head(.SD, 1), by=c("hex.x", "hex.y")]
@@ -277,7 +294,7 @@ inDir <- dirout_load("SCRNA_21_02_ClusterEnrichments_simple")
   out <- dirout(paste0(base.dir, "/", "cluster.enrichments/"))
   
   # Collect enrichment scores
-  typex <- "earlyMid"
+  typex <- "basic_in.vivo_noMixscape"
   for(typex in gsub("Guides_Fisher_Mixscape_(.+).pdf", "\\1", list.files(inDir(""), pattern="Guides_Fisher_Mixscape_.*.pdf"))){
     fish.file <- inDir("Guides_Fisher_Mixscape_",typex,".tsv")
     if(!file.exists(fish.file)) next
@@ -295,8 +312,9 @@ inDir <- dirout_load("SCRNA_21_02_ClusterEnrichments_simple")
         log2OR=mean(log2OR), 
         dir=length(unique(sign(log2OR[padj < 0.01]))) <= 1, 
         #dir=length(unique(sign(log2OR)))==1, 
-        padj=sum(padj < 0.01)/.N, 
-        N=.N), by=c("sample", "Clusters", "mixscape_class")]
+        padj=sum(padj < 0.01)/.N,
+        N=.N,
+        Ncells=sum(unique(guide.cells))), by=c("sample", "Clusters", "mixscape_class")]
       fish[dir == FALSE, padj := 0]
       fish[dir == FALSE, log2OR := NA]
       
@@ -361,6 +379,7 @@ for(tx in names(inDir.funcs)){
   pDT.final <- copy(pDT.ntc)
   pDT.final$plot <- "NTC"
   for(x in unique(pDT.top[perturbed == TRUE]$gene)){
+    # FIX MIXSCAPE
     #pDTg <- rbind(pDT.ntc, pDT.top[grepl(paste0("^", x), guide) & mixscape_class.global == "KO"])
     pDTg <- rbind(pDT.ntc, pDT.top[grepl(paste0("^", x), guide)])
     pDTg$plot <- x
@@ -376,15 +395,15 @@ for(tx in names(inDir.funcs)){
     xu + yu
   ggsaveNF(out("UMAP_Guides_all.pdf"), w=4,h=4)
   
-  pDT.final <- cbind(pDT.final, umap.proj[["in.vivo.X"]][match(pDT.final$rn, rn)][,c("UMAP_1", "UMAP_2"),with=F])
-  ggplot(pDT.final, aes(x=UMAP_1, y=UMAP_2)) + 
-    themeNF() +
-    geom_hex(data=pDT.final[mixscape_class.global == "NTC"], bins=100, fill="lightgrey") +
-    geom_hex(data=pDT.final[mixscape_class.global != "NTC" | plot == "NTC"], bins=100) +
-    scale_fill_gradientn(colours=c("#1f78b4", "#e31a1c")) +
-    facet_wrap(~plot, ncol=6) + 
-    xu + yu
-  ggsaveNF(out("UMAP_Guides_all_Crossprojected.pdf"), w=4,h=4)
+  # pDT.final <- cbind(pDT.final, umap.proj[["in.vivo.X"]][match(pDT.final$rn, rn)][,c("UMAP_1", "UMAP_2"),with=F])
+  # ggplot(pDT.final, aes(x=UMAP_1, y=UMAP_2)) + 
+  #   themeNF() +
+  #   geom_hex(data=pDT.final[mixscape_class.global == "NTC"], bins=100, fill="lightgrey") +
+  #   geom_hex(data=pDT.final[mixscape_class.global != "NTC" | plot == "NTC"], bins=100) +
+  #   scale_fill_gradientn(colours=c("#1f78b4", "#e31a1c")) +
+  #   facet_wrap(~plot, ncol=6) + 
+  #   xu + yu
+  # ggsaveNF(out("UMAP_Guides_all_Crossprojected.pdf"), w=4,h=4)
 }
 
 
@@ -393,10 +412,10 @@ for(tx in names(inDir.funcs)){
 inDir.current <- "in.vivo"
 out <- dirout(paste0(base.dir, "/", inDir.current))
 ann <- annList[tissue == inDir.current]
+# FIX MIXSCAPE
 fish.bcells <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments","_basic", "_in.vivo", "_noMixscape", "_14d",".tsv"))
-fish.enrich.broad <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_broadBranches_in.vivo_noMixscape_14d",".tsv"))
+fish.enrich.broad <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_broadBranchesWithB_in.vivo_noMixscape_14d",".tsv"))
 fish.EryVsMye <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments","_eryVsMye", "_in.vivo", "_noMixscape", "_14d",".tsv"))
-
 
 
 # Plot distribution of one gene -------------------------------------------
@@ -432,24 +451,24 @@ ggplot(ann[perturbed == FALSE], aes(x=UMAP1, y=UMAP2)) +
 ggsaveNF(out("UMAP_Samples.pdf"), w=2,h=2)
 
 # . Plot top guides ---------------------------------------------------------
-pDT.top <- ann[timepoint == "14d"]
-pDT.ntc <- pDT.top[mixscape_class.global == "NTC"]
-pDT.final <- copy(pDT.ntc)
-pDT.final$plot <- "NTC"
-for(x in c("Wdr82", "Rcor1", "Ehmt1", "Setdb1", "Hdac3")){
-  pDTg <- rbind(pDT.ntc, pDT.top[grepl(paste0("^", x), guide) & perturbed == TRUE])
-  pDTg$plot <- x
-  pDT.final <- rbind(pDT.final, pDTg)
-}
-pDT.final$plot <- relevel(factor(pDT.final$plot), ref = "NTC")
-ggplot(pDT.final, aes(x=UMAP1, y=UMAP2)) + 
-  themeNF() +
-  geom_hex(data=pDT.final[mixscape_class.global == "NTC"], bins=100, fill="lightgrey") +
-  geom_hex(data=pDT.final[mixscape_class.global != "NTC" | plot == "NTC"], bins=100) +
-  scale_fill_gradientn(colours=c("#1f78b4", "#e31a1c")) +
-  facet_wrap(~plot, ncol=3) +
-  xu + yu
-ggsaveNF(out("UMAP_Guides.pdf"), w=2,h=2)
+# pDT.top <- ann[timepoint == "14d"]
+# pDT.ntc <- pDT.top[mixscape_class.global == "NTC"]
+# pDT.final <- copy(pDT.ntc)
+# pDT.final$plot <- "NTC"
+# for(x in c("Wdr82", "Rcor1", "Ehmt1", "Setdb1", "Hdac3")){
+#   pDTg <- rbind(pDT.ntc, pDT.top[grepl(paste0("^", x), guide) & perturbed == TRUE])
+#   pDTg$plot <- x
+#   pDT.final <- rbind(pDT.final, pDTg)
+# }
+# pDT.final$plot <- relevel(factor(pDT.final$plot), ref = "NTC")
+# ggplot(pDT.final, aes(x=UMAP1, y=UMAP2)) + 
+#   themeNF() +
+#   geom_hex(data=pDT.final[mixscape_class.global == "NTC"], bins=100, fill="lightgrey") +
+#   geom_hex(data=pDT.final[mixscape_class.global != "NTC" | plot == "NTC"], bins=100) +
+#   scale_fill_gradientn(colours=c("#1f78b4", "#e31a1c")) +
+#   facet_wrap(~plot, ncol=3) +
+#   xu + yu
+# ggsaveNF(out("UMAP_Guides.pdf"), w=2,h=2)
 
 
 # . Plot manual enrichments -------------------------------------------------
@@ -479,10 +498,10 @@ ggplot(pDT, aes(x=gene, y=Clusters, size=sig.perc, color=log2OR_cap)) +
   geom_point() +
   geom_point(shape=1, color="lightgrey") +
   xlab("Gene") + ylab("Cell type")
-ggsaveNF(out("ClusterEnrichments_manual_cleaned.pdf"), w=2,h=1.2)
+ggsaveNF(out("ClusterEnrichments_manual_cleaned.pdf"), w=2.5,h=0.8)
 
 # Plot my vs GMP enrichments with DLA order
-pDT <- fish.EryVsMye[Clusters == "GMP"][abs(log2OR) > 0]
+pDT <- fish.EryVsMye[Clusters == "GMP"][log2OR > 0 | log2OR < -2]
 pDT$gene <- factor(pDT$gene, levels = pDT[order(log2OR)]$gene)
 ggplot(pDT, aes(x=log2OR, y=gene, size=sig.perc, color=log2OR_cap)) + 
   themeNF(rotate=TRUE) +
@@ -512,7 +531,7 @@ pDT.ntc <- pDT.top[mixscape_class.global == "NTC"]
 pDT.final <- copy(pDT.ntc)
 pDT.final$plot <- "NTC"
 for(x in c("Brd9", "Phf10")){
-  pDTg <- rbind(pDT.ntc, pDT.top[grepl(paste0("^", x), guide) & perturbed == TRUE])
+  pDTg <- rbind(pDT.ntc, pDT.top[grepl(paste0("^", x), guide)])
   pDTg$plot <- x
   pDT.final <- rbind(pDT.final, pDTg)
 }
@@ -530,10 +549,10 @@ ggsaveNF(out("UMAP_Guides_displasia.pdf"), w=2,h=1)
 pDT <- copy(ann[markers=="lin-"])
 pDT[, group := gsub("_.+", "", guide)]
 pDT <- pDT[!is.na(group)]
-pDT <- pDT[,.N, by=c("timepoint", "mixscape_class.global", "group")]
+pDT <- pDT[,.N, by=c("timepoint", "group")]
 pDT[, sum := sum(N), by="timepoint"]
 pDT[, perc := N/sum*100]
-pDT <- pDT[mixscape_class.global != "NP"]
+#pDT <- pDT[mixscape_class.global != "NP"]
 pDT <- pDT[group %in% pDT[, .N, by="group"][N == 2]$group]
 
 # Bar plot
@@ -558,6 +577,7 @@ inDir.current <- "ex.vivo"
 out <- dirout(paste0(base.dir, "/", inDir.current))
 ann <- annList[tissue == inDir.current]
 marker.signatures[DB == "Larry"]
+# FIX MIXSCAPE
 fish.enrich <- list(
   day7=fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_basic_ex.vivo_noMixscape_7d.tsv")),
   day9=fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_basic_ex.vivo_noMixscape_9d.tsv"))
@@ -619,6 +639,7 @@ ann <- annList[tissue == inDir.current]
 #ann <- merge(ann[,-c("UMAP1", "UMAP2"),with=F], setNames(umap.proj[["in.vivo.X"]][,c("rn", "UMAP_1", "UMAP_2")], c("rn", "UMAP1", "UMAP2")), by="rn")
 abs <- fread(inDir.funcs[[inDir.current]]("Antibodies.tsv"))
 abs <- merge(abs[,-c("UMAP1", "UMAP2"),with=F], setNames(umap.proj[["in.vivo.X"]][,c("rn", "UMAP_1", "UMAP_2")], c("rn", "UMAP1", "UMAP2")), by="rn")
+# FIX MIXSCAPE
 fish.enrich <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_basic_leukemia_noMixscape_6d.tsv"))
 
 # . Antibodies on UMAP ----------------------------------------------------

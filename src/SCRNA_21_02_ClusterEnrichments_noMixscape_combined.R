@@ -83,6 +83,16 @@ for(xnam in names(eba)){xxx[Clusters %in% eba[[xnam]], Clusters := xnam]}
 table(xxx$Clusters)
 fish.test.sets[[paste("broadBranches", tx, sep="_")]] <- xxx
 
+# broad groups with B cells
+xxx <- x[!Clusters %in% c("B-cell", "CLP", "EBMP")]
+eba <- list(
+  MEP=c(grep("Ery", CELLTYPES, value=TRUE), grep("MEP", CELLTYPES, value=TRUE)),
+  GMP=c(grep("Gran", CELLTYPES, value=TRUE), grep("GMP", CELLTYPES, value=TRUE))
+)
+for(xnam in names(eba)){xxx[Clusters %in% eba[[xnam]], Clusters := xnam]}
+table(xxx$Clusters)
+fish.test.sets[[paste("broadBranchesWithB", tx, sep="_")]] <- xxx
+
 # Terminal diff Ery
 eba <- list(
   Ery=setdiff(c(grep("Ery", CELLTYPES, value=TRUE), grep("MEP", CELLTYPES, value=TRUE)), "MEP (early)"),
@@ -138,7 +148,7 @@ foreach(fish.test.x = names(fish.test.sets)) %dopar% {
               OR=fish$estimate, 
               sample=sx, 
               total.cells=sum(mx),
-              guide.cells=nrow(pDT2[CRISPR_Cellranger  == gx])
+              guide.cells=nrow(pDT2[gene  == gx])
             ))
           }
         }

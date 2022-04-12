@@ -22,7 +22,7 @@ umapDT.dim1 <- floor(max(abs(umapDT$UMAP1))) + 0.5
 umapDT.dim2 <- floor(max(abs(umapDT$UMAP2))) + 0.5
 gseaDT <- fread(inDir("UMAP_GSEA.tsv"))
 deDT <- fread(inDir("DEG_Statistics.tsv"))
-deDT[, use := grepl("_myeloid", tissue) | grepl("_linNeg", tissue)]
+deDT[, use := TRUE]
 
 atacDT.lsk <- fread(paste0(gsub("Data", "CollaborationData", PATHS$LOCATIONS$DATA), "LSK_narrowPeak_consensusPeaks.boolean.annotatePeaks.extended.fc.txt"))
 atacDT <- data.table::melt(
@@ -347,9 +347,9 @@ for(tx in unique(deDT$tissue)){
 
 # Vulcano plots -----------------------------------------------------------
 dir.create(out("Vulcanos/"))
-guidex <- deDT$guide[1]
-for(guidex in unique(deDT$guide)){
-  pDT <- deDT[guide == guidex]
+tissuex <- deDT$tissue[1]
+for(tissuex in unique(deDT$tissue)){
+  pDT <- deDT[tissue == tissuex]
   # pDT.examples <- rbind(
   #   pDT[order(estimate)][,head(.SD,n=5), by=c("tissue")],
   #   pDT[order(-estimate)][,head(.SD,n=5), by=c("tissue")],
@@ -357,13 +357,15 @@ for(guidex in unique(deDT$guide)){
   #   pDT[estimate < 0][order(p_value)][,head(.SD,n=5), by=c("tissue")]
   # )
   pDT.examples <- pDT[gene_id %in% dla.vulcano.genes]
-  ggplot(pDT, aes(x=estimate, y=pmin(30, -log10(p_value)))) + 
-    facet_grid(guide ~ tissue, scale="free_y") +
+  cnt <- length(unique(pDT$guide))
+  ncol=5
+  p <- ggplot(pDT, aes(x=estimate, y=pmin(30, -log10(p_value)))) + 
+    facet_wrap(~ guide, scale="free", ncol = ncol) +
     stat_binhex(aes(fill=log10(..count..))) +
     scale_fill_gradient(low="lightgrey", high="blue")+ 
     geom_text_repel(data=pDT.examples, aes(label=gene_id)) +
     themeNF()
-  ggsaveNF(out("Vulcanos/",guidex,".pdf"), w=length(unique(pDT$tissue))*2,h=2, limitsize=FALSE)
+  ggsaveNF(out("Vulcanos/",tissuex,".pdf"), h=ceiling(cnt/ncol),w=ncol, limitsize=FALSE, plot=p)
 }
 
 
