@@ -71,6 +71,7 @@ GOI.targets <- list(
     Baso=c("Cpa3","Prss34","Fcer1a"),
     "B-cell"=c("Il7r","Cd19","Pax5","Ebf1"))
 )
+GOI.targets$LSC <- list(LSC=c("Hif1a", "Myc", "Bcat1", grep("Hox", unique(deDT$gene_id), value=TRUE)))
 
 
 
@@ -109,7 +110,7 @@ for(tx in unique(deDT[use == TRUE]$tissue)){
       ggtitle(tx) +
       facet_grid(celltype ~ ., space = "free", scales = "free") +
       ylab("Gene expression") + xlab("CRISPR targets")
-    ggsaveNF(out("GeneDE_", tx, "_", lnam, ".pdf"),w=w,h=h, guides = TRUE)
+    ggsaveNF(out("GeneDE_", tx, "_", lnam, "_allGuides.pdf"),w=w,h=h, guides = TRUE)
     
     (dla.nam <- names(dla.factors)[3])
     for(dla.nam in names(dla.factors)){

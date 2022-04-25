@@ -32,8 +32,8 @@ cells <- list(
 )
 ct.use <- "everything"
 (tissue.name <- "leukemia")
-for(tissue.name in "leukemia"){
-#for(tissue.name in TISSUES){
+#for(tissue.name in "leukemia"){
+for(tissue.name in TISSUES){
   
   (timex <- mobjs[[tissue.name]]$timepoint[1])
   for(timex in unique(mobjs[[tissue.name]]$timepoint)){
