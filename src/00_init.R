@@ -173,12 +173,13 @@ cleanComparisons <- function(x, order=TRUE, ggtext=FALSE, dm="clean", reverse=FA
 }
 
 
-cleanCelltypes <- function(x, order=TRUE, twoLines=FALSE, reverse=TRUE, clean=TRUE){
+cleanCelltypes <- function(x, order=TRUE, twoLines=FALSE, reverse=TRUE, clean=TRUE, drop=FALSE){
   if(clean){
     stopifnot(all(x %in% CLEAN.CELLTYPES$Name))
     x <- CLEAN.CELLTYPES[match(x, Name)]$NewName
   }
   order.levels <- if(reverse) rev(CLEAN.CELLTYPES$NewName) else CLEAN.CELLTYPES$NewName
+  if(drop==TRUE) order.levels <- order.levels[order.levels %in% x]
   if(order) x <- factor(x, levels=order.levels)
   if(twoLines) x <- sub(" ", "\n", x)
   return(x)

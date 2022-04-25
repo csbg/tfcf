@@ -8,5 +8,7 @@ Larry	EryB	Good	Erythrocyte 2	#e31a1c
 IzzoEtAl	Ery.4	Good	Erythrocyte 1	#e31a1c
 IzzoEtAl	IMP1	Good	IMP	#b2df8a
 IzzoEtAl	MkP.1	Good	Megakaryocyte	#33a02c
+IzzoEtAl	HSC.1	Good	HSC	#33a02c
+IzzoEtAl	Ba.1	Good	Basophils	#33a02c
 PanglaoDB	B.cells	Good	B.cells	#1f78b4
 PanglaoDB	Neutrophils	Good	Neutrophils	#b15928

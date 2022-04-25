@@ -37,6 +37,10 @@ write.tsv(data.table(obj.de.ann, keep.rownames = TRUE), out("DEG_Annnotation.tsv
 
 
 
+# Skip if no cells left ---------------------------------------------------
+if(ncol(obj.de) < 100) next
+
+
 # Calculate non-zero values -----------------------------------------------
 guide.barcodes <- split(row.names(obj.de.ann), factor(obj.de.ann$GuideDE))
 m <- counts(obj.de)

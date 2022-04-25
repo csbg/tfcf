@@ -317,9 +317,10 @@ ggsaveNF(out("Aggregated_Edges.pdf"), w=3,h=6, guide=TRUE)
 # Selected comparisons (David) --------------------------------------------
 dla.list <- list(
   main = fread("metadata/FIGS_Order_Fig1E.tsv"),
-  supp = fread("metadata/FIGS_Order_Fig1E_supp.tsv")
+  supp = fread("metadata/FIGS_Order_Fig1E_supp.tsv"),
+  all = data.table(Factor=sort(unique(RESULTS.wt.agg.gene[hit == TRUE]$Gene)), Complex="NA")
 )
-dla.nam <- names(dla.list)[1]
+(dla.nam <- names(dla.list)[3])
 for(dla.nam in names(dla.list)){
   dla <- dla.list[[dla.nam]]
   pDT.stats <- copy(RESULTS.wt.agg.gene)
@@ -331,7 +332,7 @@ for(dla.nam in names(dla.list)){
   # pDT.stats <- pDT.stats[!Gene %in% "Ctcf"]
   pDT.stats <- pDT.stats[Comparison %in% COMPARISONS.healthy]
   pDT.stats <- merge(pDT.stats, ANN.genes, by.x="Gene", by.y="GENE", all.x=TRUE)
-  pDT.stats <- hierarch.ordering(pDT.stats, toOrder = "Gene", orderBy = "Comparison", value.var="z")
+  #pDT.stats <- hierarch.ordering(pDT.stats, toOrder = "Gene", orderBy = "Comparison", value.var="z")
   write.tsv(pDT.stats, out("SimpleHM_",dla.nam,".tsv"))
   
   # Plot
@@ -351,11 +352,11 @@ for(dla.nam in names(dla.list)){
     xlab("") +
     theme(panel.spacing = unit(0.01, "cm"))
   w=length(unique(pDT.stats$Gene)) * 0.06 + 0.6
-  ggsaveNF(out("SimpleHM_",dla.nam,"_RedBlue.pdf"), w=w,h=1, 
+  ggsaveNF(out("SimpleHM_",dla.nam,"_RedBlue.pdf"), w=w,h=1, limitsize = FALSE,
            plot = p + scale_fill_gradient2(
              name=TeX(r'($\\overset{\Delta_{Cas9-WT}}$)'), 
              low="#0000B3", high="#A60000"))
-  ggsaveNF(out("SimpleHM_",dla.nam,"_GreenPurple.pdf"), w=w,h=1, 
+  ggsaveNF(out("SimpleHM_",dla.nam,"_GreenPurple.pdf"), w=w,h=1, limitsize = FALSE,
            plot = p + scale_fill_gradient2(
              name=TeX(r'($\\overset{\Delta_{Cas9-WT}}$)'), 
              high="#0D5E04", low="#5700C2"))

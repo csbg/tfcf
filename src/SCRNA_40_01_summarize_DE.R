@@ -18,12 +18,12 @@ ds <- function(path){load(path); return(monocle.obj)}
 
 
 # Load data ---------------------------------------------------------------
-ff <- list.files(dirout_load("SCRNA_30_DE_Nebula")(""), full.names = TRUE)
-ff2 <- list.files(dirout_load("SCRNA_32_DE_Nebula_simple")(""), full.names = TRUE)
-names(ff) <- basename(ff)
-names(ff2) <- paste0(basename(ff2), "_s")
+ff <- list.files(dirout_load("SCRNA_30_DE_Nebula")(""), pattern="DEG_Results_all.tsv", full.names = TRUE, recursive = TRUE)
+ff2 <- list.files(dirout_load("SCRNA_32_DE_Nebula_simple")(""), pattern="DEG_Results_all.tsv", full.names = TRUE, recursive = TRUE)
+names(ff) <- gsub("^.+\\/", "", dirname(ff))
+names(ff2) <- paste0(gsub("^.+\\/", "", dirname(ff2)), "_s")
 ff <- c(ff, ff2)
-ff <- lapply(ff, function(x) paste0(x, "/DEG_Results_all.tsv"))
+#ff <- lapply(ff, function(x) paste0(x, "/DEG_Results_all.tsv"))
 ff <- lapply(ff, fread)
 DE.RES <- rbindlist(ff, idcol = "tissue")
 stopifnot(all(grepl("^GuideDE", DE.RES$term)))
