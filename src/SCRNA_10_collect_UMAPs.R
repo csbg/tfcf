@@ -87,3 +87,10 @@ saveRDS(dDT.umap, out("ProjIzzo.RDS"))
 
 dDT.ct <- dDT[,c("rn", "sample", "functional.cluster", "functional.cluster.conf"), with=F]
 saveRDS(dDT.ct, out("ProjIzzo_celltypes.RDS"))
+
+
+
+# Export TSV for Jake -----------------------------------------------------
+dDT <- readRDS(out("ProjMonocle_celltypes.RDS"))
+write.tsv(dDT, out("ProjMonocle_celltypes.tsv"))
+table(dDT$sample)
