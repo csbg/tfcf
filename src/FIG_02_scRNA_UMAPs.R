@@ -381,7 +381,7 @@ inDir <- dirout_load("SCRNA_21_02_ClusterEnrichments_simple")
       fish[,log2OR_cap := pmin(abs(log2OR), 5) * sign(log2OR)]
       fish <- hierarch.ordering(dt = fish, toOrder = "gene", orderBy = "Clusters", value.var = "log2OR")
       fish[, Clusters := gsub("^Gran$", "Gran.", Clusters)]
-      fish[, Clusters := cleanCelltypes(Clusters)]
+      #fish[, Clusters := cleanCelltypes(Clusters)]
       #fish <- hierarch.ordering(dt = fish, toOrder = "Clusters", orderBy = "gene", value.var = "log2OR")
       ggplot(fish, aes(x=gene, y=Clusters, size=sig.perc, color=log2OR_cap)) + 
         themeNF(rotate=TRUE) +
@@ -497,7 +497,7 @@ out <- dirout(paste0(base.dir, "/", inDir.current))
 ann <- annList[tissue == inDir.current]
 # FIX MIXSCAPE
 fish.bcells <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments","_basic", "_in.vivo", "_noMixscape", "_14d",".tsv"))
-fish.enrich.broad <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_broadBranchesWithB_in.vivo_noMixscape_14d",".tsv"))
+fish.enrich.broad <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_broad_in.vivo_noMixscape_14d",".tsv"))
 fish.EryVsMye <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments","_eryVsMye", "_in.vivo", "_noMixscape", "_14d",".tsv"))
 
 
@@ -587,9 +587,10 @@ ggsaveNF(out("UMAP_Samples.pdf"), w=2,h=2)
 
 
 # . Plot manual enrichments -------------------------------------------------
+dla <- fread("metadata/FIGS_02_CFs.main.txt", header = F)$V1
 
 # B cell enrichments
-pDT <- fish.bcells[Clusters == "Imm. B-cell"]
+pDT <- fish.bcells[Clusters == "Imm. B-cell"][abs(log2OR) > 0.5]
 pDT$gene <- factor(pDT$gene, levels = pDT[order(log2OR)]$gene)
 ggplot(pDT, aes(x=log2OR, y=gene, size=sig.perc, color = log2OR)) + 
   themeNF(12) +
@@ -599,13 +600,12 @@ ggplot(pDT, aes(x=log2OR, y=gene, size=sig.perc, color = log2OR)) +
   geom_point(shape=1, color="lightgrey") + 
   scale_color_gradient2(low="blue", high="red") +
   ylab("") + xlab("Enrichment in immature B-cells")
-ggsaveNF(out("ClusterEnrichments_manual_BcellsOnly.pdf"), w=2,h=2)
+ggsaveNF(out("ClusterEnrichments_manual_BcellsOnly.pdf"), w=1,h=1.5)
 
 # Plot enrichments with DLA order
-dla <- fread("metadata/FIGS_Order_Fig2E_CFs.tsv")$Factor
 pDT <- fish.enrich.broad[gene %in% dla]
 pDT$gene <- factor(pDT$gene, levels = dla)
-pDT[, Clusters := cleanCelltypes(Clusters, clean=FALSE)]
+pDT[, Clusters := cleanCelltypesBroad(Clusters, clean=FALSE)]
 ggplot(pDT, aes(x=gene, y=Clusters, size=sig.perc, color=log2OR_cap)) + 
   themeNF(rotate=TRUE) +
   scale_color_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
@@ -613,10 +613,10 @@ ggplot(pDT, aes(x=gene, y=Clusters, size=sig.perc, color=log2OR_cap)) +
   geom_point() +
   geom_point(shape=1, color="lightgrey") +
   xlab("Gene") + ylab("Cell type")
-ggsaveNF(out("ClusterEnrichments_manual_cleaned.pdf"), w=2.5,h=0.8)
+ggsaveNF(out("ClusterEnrichments_manual_cleaned.pdf"), w=1.5,h=0.7)
 
 # Plot my vs GMP enrichments with DLA order
-pDT <- fish.EryVsMye[Clusters == "GMP"][log2OR > 0 | log2OR < -2]
+pDT <- fish.EryVsMye[Clusters == "GMP"][gene %in% dla]#[log2OR > 0 | log2OR < -2]
 pDT$gene <- factor(pDT$gene, levels = pDT[order(log2OR)]$gene)
 ggplot(pDT, aes(x=log2OR, y=gene, size=sig.perc, color=log2OR_cap)) + 
   themeNF(rotate=TRUE) +

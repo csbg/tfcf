@@ -15,6 +15,10 @@ for(fx in list.files(inDir(""), pattern="*singleR$")){
 annListOriginal <- rbindlist(annList, fill = TRUE)
 annList <- copy(annListOriginal)
 
+
+# Cell types --------------------------------------------------------------
+celltype.ann <- CLEAN.CELLTYPES
+
 # Load cluster numbers ----------------------------------------------------
 clusters <- readRDS(dirout_load("SCRNA_10_collect_UMAPs")("ProjMonocle_Clusters.RDS"))
 annList$Cluster.number <- clusters[match(annList$rn, rn)]$functional.cluster
@@ -32,10 +36,12 @@ clDT[, frac := KO/NTC]
 # remove clusters from in vivo
 (clDT.remove <- clDT[tissue == "in.vivo"][(NTC < 5 | is.na(NTC)) & (frac > 25 | is.na(frac))])
 annList[tissue == "in.vivo" & Cluster.number %in% clDT.remove$Cluster.number, Clusters := "remove"]
+write.tsv(clDT.remove, out("ClustersRemoved_in.vivo.tsv"))
 
 # Label clusters in leukemia
 (clDT.remove <- clDT[tissue == "leukemia" & frac > 30])
 annList[tissue == "leukemia" & Cluster.number %in% clDT.remove$Cluster.number, Clusters := "novel"]
+write.tsv(clDT.remove, out("ClustersRemoved_leukemia.tsv"))
 
 # remove clusters to remove
 annList <- annList[Clusters != "remove"]
@@ -50,6 +56,14 @@ CELLTYPES <- unique(annList$Clusters)
 for(tx in TISSUES){
   fish.test.sets[[paste("basic", tx, sep="_")]] <- annList[tissue == tx]
 }
+
+for(tx in TISSUES){
+  x <- annList[tissue == tx]
+  x <- merge(x, celltype.ann, by.x="Clusters", by.y="Name")[,-"Clusters",with=F]
+  x[,Clusters := Type]
+  fish.test.sets[[paste("broad", tx, sep="_")]] <- x
+}
+
 
 # IN VIVO SETS
 tx <- "in.vivo"
@@ -73,39 +87,39 @@ xxx <- x[Clusters %in% do.call(c, eba)]
 for(xnam in names(eba)){xxx[Clusters %in% eba[[xnam]], Clusters := xnam]}
 fish.test.sets[[paste("eryVsMye", tx, sep="_")]] <- xxx
 
-# broad groups
-xxx <- x[!(grepl("B.cell", Clusters) | grepl("CLP", Clusters) | grepl("EBMP", Clusters))]
-eba <- list(
-  MEP=c(grep("Ery", CELLTYPES, value=TRUE), grep("MEP", CELLTYPES, value=TRUE)),
-  GMP=c(grep("Gran", CELLTYPES, value=TRUE), grep("GMP", CELLTYPES, value=TRUE))
-)
-for(xnam in names(eba)){xxx[Clusters %in% eba[[xnam]], Clusters := xnam]}
-table(xxx$Clusters)
-fish.test.sets[[paste("broadBranches", tx, sep="_")]] <- xxx
+# # broad groups
+# xxx <- x[!(grepl("B.cell", Clusters) | grepl("CLP", Clusters) | grepl("EBMP", Clusters))]
+# eba <- list(
+#   MEP=c(grep("Ery", CELLTYPES, value=TRUE), grep("MEP", CELLTYPES, value=TRUE)),
+#   GMP=c(grep("Gran", CELLTYPES, value=TRUE), grep("GMP", CELLTYPES, value=TRUE))
+# )
+# for(xnam in names(eba)){xxx[Clusters %in% eba[[xnam]], Clusters := xnam]}
+# table(xxx$Clusters)
+# fish.test.sets[[paste("broadBranches", tx, sep="_")]] <- xxx
+# 
+# # broad groups with B cells
+# xxx <- x[!Clusters %in% c("B-cell", "CLP", "EBMP")]
+# eba <- list(
+#   MEP=c(grep("Ery", CELLTYPES, value=TRUE), grep("MEP", CELLTYPES, value=TRUE)),
+#   GMP=c(grep("Gran", CELLTYPES, value=TRUE), grep("GMP", CELLTYPES, value=TRUE))
+# )
+# for(xnam in names(eba)){xxx[Clusters %in% eba[[xnam]], Clusters := xnam]}
+# table(xxx$Clusters)
+# fish.test.sets[[paste("broadBranchesWithB", tx, sep="_")]] <- xxx
 
-# broad groups with B cells
-xxx <- x[!Clusters %in% c("B-cell", "CLP", "EBMP")]
-eba <- list(
-  MEP=c(grep("Ery", CELLTYPES, value=TRUE), grep("MEP", CELLTYPES, value=TRUE)),
-  GMP=c(grep("Gran", CELLTYPES, value=TRUE), grep("GMP", CELLTYPES, value=TRUE))
-)
-for(xnam in names(eba)){xxx[Clusters %in% eba[[xnam]], Clusters := xnam]}
-table(xxx$Clusters)
-fish.test.sets[[paste("broadBranchesWithB", tx, sep="_")]] <- xxx
-
-# Terminal diff Ery
-eba <- list(
-  Ery=setdiff(c(grep("Ery", CELLTYPES, value=TRUE), grep("MEP", CELLTYPES, value=TRUE)), "MEP (early)"),
-  MEP=c("MEP (early)"))
-xxx <- x[Clusters %in% do.call(c, eba)]
-for(xnam in names(eba)){xxx[Clusters %in% eba[[xnam]], Clusters := xnam]}
-fish.test.sets[[paste("diffGran", tx, sep="_")]] <- xxx
-
-# Terminal diff Gran
-eba <- list("Gran."=c("Gran.", "Gran. P"),GMP=c("GMP (early)", "GMP", "GMP (late)"))
-xxx <- x[Clusters %in% do.call(c, eba)]
-for(xnam in names(eba)){xxx[Clusters %in% eba[[xnam]], Clusters := xnam]}
-fish.test.sets[[paste("diffGran", tx, sep="_")]] <- xxx
+# # Terminal diff Ery
+# eba <- list(
+#   Ery=setdiff(c(grep("Ery", CELLTYPES, value=TRUE), grep("MEP", CELLTYPES, value=TRUE)), "MEP (early)"),
+#   MEP=c("MEP (early)"))
+# xxx <- x[Clusters %in% do.call(c, eba)]
+# for(xnam in names(eba)){xxx[Clusters %in% eba[[xnam]], Clusters := xnam]}
+# fish.test.sets[[paste("diffGran", tx, sep="_")]] <- xxx
+# 
+# # Terminal diff Gran
+# eba <- list("Gran."=c("Gran.", "Gran. P"),GMP=c("GMP (early)", "GMP", "GMP (late)"))
+# xxx <- x[Clusters %in% do.call(c, eba)]
+# for(xnam in names(eba)){xxx[Clusters %in% eba[[xnam]], Clusters := xnam]}
+# fish.test.sets[[paste("diffGran", tx, sep="_")]] <- xxx
 
 
 

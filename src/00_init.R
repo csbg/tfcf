@@ -185,6 +185,20 @@ cleanCelltypes <- function(x, order=TRUE, twoLines=FALSE, reverse=TRUE, clean=TR
   return(x)
 }
 
+cleanCelltypesBroad <- function(x, order=TRUE, twoLines=FALSE, reverse=TRUE, clean=TRUE, drop=FALSE){
+  stopifnot(all(x %in% CLEAN.CELLTYPES$Type))
+  # if(clean){
+  #   stopifnot(all(x %in% CLEAN.CELLTYPES$Name))
+  #   x <- CLEAN.CELLTYPES[match(x, Name)]$NewName
+  # }
+  order.leves <- unique(CLEAN.CELLTYPES$Type)
+  order.levels <- if(reverse) rev(order.leves) else order.leves
+  if(drop==TRUE) order.levels <- order.levels[order.levels %in% x]
+  if(order) x <- factor(x, levels=order.levels)
+  if(twoLines) x <- sub(" ", "\n", x)
+  return(x)
+}
+
 
 # Paths -------------------------------------------------------------------
 

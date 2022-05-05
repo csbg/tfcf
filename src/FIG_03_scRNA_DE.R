@@ -63,13 +63,14 @@ GOI.targets <- list(
   # markers = list(markers=c("Mpo","Elane","Ctsg","S100a9","S100a8","Mtf2","Car1","Car2","Epor","Pklr","Pf4","Cpa3","Hba","Hbb","Tfrc","Cpox","Mt2","Trem2","Mefv","F13a1","Ly6c2","Fcgr3","Cd34","Kit","Itgam")),
   # tfs = list(tfs=c("Spi1","Cebpa","Cebpb","Cebpe","Klf4","Gfi1","Irf8","Mef2c","Gata2","Gata1","Klf1","Gfi1b", "Zfpm1","Mafk",
   #         "Sox6","Klf9","Lmo4","Nfia","Nfix","Nfe2","Nfe2l2","Tal1","Cited4")),
-  markers2 = list(
-    Prog=c("Cd34","Kit","Meis1","Hoxa5","Hoxa7","Hoxa9"),
-    Mye=c("Elane","Mpo","Csf1r","Spi1","Cebpa","Cebpb","Cebpe","Gfi1","Irf8"," Mef2c"),
-    "Mega-ery"=c("Car1","Gypa","Hbb-bt","Hbb-1","Hba-a1","Gata2","Gata1","Gfi1b","Klf1","Sox6","Klf9","Nfe2l2","Cited4","Tal1"),
-    "Mega-only"=c("Itga2b","Cavin2","Vwf","Gp1ba","Gp1bb","Nfix","Nfia"),
-    Baso=c("Cpa3","Prss34","Fcer1a"),
-    "B-cell"=c("Il7r","Cd19","Pax5","Ebf1"))
+  # markers2 = list(
+  #   Prog=c("Cd34","Kit","Meis1","Hoxa5","Hoxa7","Hoxa9"),
+  #   Mye=c("Elane","Mpo","Csf1r","Spi1","Cebpa","Cebpb","Cebpe","Gfi1","Irf8"," Mef2c"),
+  #   "Mega-ery"=c("Car1","Gypa","Hbb-bt","Hbb-1","Hba-a1","Gata2","Gata1","Gfi1b","Klf1","Sox6","Klf9","Nfe2l2","Cited4","Tal1"),
+  #   "Mega-only"=c("Itga2b","Cavin2","Vwf","Gp1ba","Gp1bb","Nfix","Nfia"),
+  #   Baso=c("Cpa3","Prss34","Fcer1a"),
+  #   "B-cell"=c("Il7r","Cd19","Pax5","Ebf1"))
+  markers2 = with(fread("metadata/FIGS_02_DE_Genes.tsv", check.names = TRUE), split(Gene.list, Programme))
 )
 GOI.targets$LSC <- list(LSC=c("Hif1a", "Myc", "Bcat1", grep("Hox", unique(deDT$gene_id), value=TRUE)))
 
@@ -78,8 +79,12 @@ GOI.targets$LSC <- list(LSC=c("Hif1a", "Myc", "Bcat1", grep("Hox", unique(deDT$g
 dla.vulcano.genes <- fread("metadata/FIGS_VulcanoGenes.tsv", header = FALSE)
 dla.vulcano.genes <- setdiff(unique(do.call(c, dla.vulcano.genes)), "")
 
-dla.factors <- fread("metadata/FIGS_Order_Fig3_v2.tsv")
-dla.factors <- lapply(as.list(dla.factors), function(ll) setdiff(ll, ""))
+# dla.factors <- fread("metadata/FIGS_Order_Fig3_v2.tsv")
+# dla.factors <- lapply(as.list(dla.factors), function(ll) setdiff(ll, ""))
+dla.factors <- list(
+  supp=fread("metadata/FIGS_02_CFs.supp.txt")$Factor,
+  main=fread("metadata/FIGS_02_CFs.main.txt")$Factor
+)
 
 # SETUP ENDS HERE ---------------------------------------------------------
 
