@@ -139,72 +139,137 @@ for(tx in setdiff(PATHS$SCRNA$MONOCLE.NAMES, "in.vivo")){
 
 
 
-# # Summarize results -------------------------------------------------------
-# ff <- list.files(out(""), pattern="Output_")
-# ff <- lapply(ff, function(fx) fread(out(fx)))
-# 
-# ff2 <- list.files(out(""), pattern="OutputCrossprojection_")
-# ff2 <- lapply(ff2, function(fx) fread(out(fx)))
-# 
-# pDT.list <- list(
-#   original=rbindlist(ff, fill=TRUE),
-#   crossproject=rbindlist(ff2, fill=TRUE)
-#   )
-# 
-# for(xx in names(pDT.list)){
-#   pDT <- pDT.list[[xx]]
-#   
-#   # Hex plot
-#   ggplot(pDT, aes(x=UMAP_1, y=UMAP_2)) + 
-#     theme_bw(12) +
-#     geom_hex(data=pDT[tissue == "in.vivo"], bins=100) + 
-#     geom_density_2d(data=pDT[tissue != "in.vivo"], aes(color=tissue))
-#   ggsave(out(xx, "_Hexplot.pdf"), w=6,h=5)
-#   
-#   # Hexplot by tissue
-#   ggplot(pDT, aes(x=UMAP_1, y=UMAP_2)) + 
-#     theme_bw(12) +
-#     stat_binhex(aes(fill=log10(..count..)), bins=100) + 
-#     facet_grid(. ~ tissue)
-#   ggsave(out(xx, "_Hexplot.byTissue.pdf"), w=16,h=5)
-#   
-#   # Celltypes
-#   ggplot(pDT, aes(x=UMAP_1, y=UMAP_2, color=functional.cluster)) + 
-#     theme_bw(12) +
-#     scale_color_brewer(palette = "Paired") +
-#     geom_point(shape=1, alpha=0.3)
-#   ggsave(out(xx, "_Celltypes.png"), w=7,h=5)
-#   
-#   # Numbers of cell types
-#   ggplot(pDT, aes(x=functional.cluster)) + 
-#     theme_bw(12) +
-#     geom_bar() + 
-#     facet_grid(. ~ tissue) +
-#     xRot() +
-#     scale_y_log10()
-#   ggsave(out(xx, "_Celltypes.numbers.pdf"), w=9,h=4)
-#   
-#   
-#   # Compare to SingleR ------------------------------------------------------
-#   xDT <- merge(pDT, singleR.cell.types, by.x="rn", by.y="cellname")
-#   
-#   if(nrow(xDT) == 0) next
-#   
-#   jDT <- data.table()
-#   for(tx in unique(xDT$tissue)){
-#     jMT <- jaccard.twolists(
-#       l1=with(xDT[tissue == tx], split(rn, functional.cluster)),
-#       l2=with(xDT[tissue == tx], split(rn, labels))
-#     )
-#     
-#     jDT <- rbind(jDT, data.table(melt(data.table(jMT, keep.rownames = TRUE), id.vars = "rn"), tissue=tx))
-#   }
-#   ggplot(jDT, aes(x=rn, y=variable, fill=value)) +
-#     theme_bw(12) +
-#     geom_tile() +
-#     facet_grid(. ~ tissue) +
-#     xRot() +
-#     scale_fill_gradient(low="white", high="blue")
-#   ggsave(out(xx, "_ComparisonToSingleR.pdf"), w=13,h=5)
-# }
 
+
+# test statistcs ---------------------------------------------------------------
+ann1 <- fread(dirout_load("SCRNA_20_Summary/ex.vivo_monocle.singleR")("Annotation.tsv"))
+ann2 <- fread(dirout_load("SCRNA_20_Summary/leukemia_monocle.singleR")("Annotation.tsv"))
+ann <- rbind(ann1, ann2, fill=TRUE)
+
+ff <- list.files(out(""), pattern=".tsv")
+ff <- ff[!grepl("in.vivo", ff)]
+names(ff) <- gsub("Output_leukemia_(.+).tsv", "\\1", ff)
+pDT <- rbindlist(lapply(ff, function(fx) fread(out(fx))), idcol = "sample")
+pDT[, traj := pseudotime]
+pDT$pseudotime <- NULL
+write.tsv(pDT, out("Values.tsv"))
+pDT <- merge(pDT, ann, by="rn")[!is.na(mixscape_class.global)]
+pDT[, gene := gsub("_.+$", "", CRISPR_Cellranger)]
+pDT[, celltype := ct]
+pDT[, traj.scale := scale(traj), by="celltype"]
+pDT[, id := paste0(tissue, "_", timepoint)]
+
+(idx <- unique(pDT$id)[3])
+for(idx in unique(pDT$id)){
+  outS <- dirout(paste0(base.dir, idx))
+  pDTx <- pDT[id == idx]
+
+  # . test ------------------------------------------------------------------
+  typex <- "Ery"
+  gx <- "Rcor1"
+  res <- data.table()
+  for(typex in unique(pDT$celltype)){
+    pDT1 <- pDTx[celltype == typex]
+    for(gx in unique(pDT1[mixscape_class.global != "NTC"]$gene)){
+      x1 <- pDT1[gene == gx]$traj
+      x2 <- pDT1[gene == "NTC"]$traj
+      if(length(x1) > 10 & length(x2) > 10){
+        res <- rbind(res, data.table(
+          p.wx=wilcox.test(x1, x2)$p.value,
+          p.ks=ks.test(x1, x2)$p.value,
+          d=median(x1) - median(x2),
+          type=typex,
+          gene=gx
+        ))
+      }
+    }
+  }
+  res[, padj.wx := p.adjust(p.wx, method="BH")]
+  res[, padj.ks := p.adjust(p.ks, method="BH")]
+  write.tsv(res, outS("Statistics.tsv"))
+  
+  
+  # . load ------------------------------------------------------------------
+  #res <- fread(outS("Statistics.tsv"))
+  
+  # . plot stats ------------------------------------------------------------
+  ggplot(res, aes(y=-log10(p.wx+1e-10), x=-log10(p.ks+1e-10), color=d)) + 
+    geom_point() +
+    geom_point(shape=1, color="black") +
+    theme_bw(12)+ 
+    geom_text_repel(aes(label=paste(gene)), color="black")+
+    scale_color_gradient2(low="blue", high="red") +
+    facet_grid(. ~ type)
+  ggsave(outS("Statistics_Comparison.pdf"),w=20,h=6)
+  
+  # xDT <- melt(res, id.vars = c("type", "gene"))
+  # xDT[, measurement := gsub("\\..+$", "", variable)]
+  # xDT[, type := gsub("^.+?\\.", "", variable)]
+  ggplot(res, aes(y=gene, x=type, size=pmin(5, -log10(padj.wx)), color=d)) + 
+    geom_point() +
+    theme_bw(12)+ 
+    scale_color_gradient2(low="blue", high="red") +
+    xRot()
+  ggsave(outS("Statistics.pdf"), w=4,h=10)
+  
+  # . UMAP ------------------------------------------------------------------
+  pDT.UMAP <- pDTx[abs(traj.scale) < 3]
+  ggplot(pDT.UMAP, aes(x=UMAP1, y=UMAP2)) + 
+    stat_summary_hex(bins = 100, aes(z=traj.scale),fun=mean) +
+    theme_bw(12) +
+    scale_fill_gradientn(colors=c("lightgrey", "blue", "purple", "red", "orange")) 
+  ggsave(outS("UMAP.pdf"), w=5,h=5)
+  
+
+  # . celltypes -------------------------------------------------------------
+  ggplot(pDTx, aes(x=UMAP1, y=UMAP2, color=celltype)) + 
+    geom_point() +
+    theme_bw(12)
+  ggsave(outS("Celltypes_UMAP.jpg"), w=5,h=5)
+  
+  ggplot(pDTx, aes(x=celltype)) + 
+    geom_bar() +
+    scale_y_log10() +
+    theme_bw(12)
+  ggsave(outS("Celltypes_Nubmers.pdf"), w=5,h=5)
+  
+  # . plot distributions ----------------------------------------------------
+  pDT.distr <- copy(pDTx)
+  ggplot(pDT.distr, aes(x=traj, y=traj.scale)) + geom_hex() + facet_wrap(~celltype, scales = "free")
+  pDT.distr <- pDT.distr[abs(traj.scale) < 3]
+  pDT.sum <- pDT.distr[, .(traj = median(traj), q1 = quantile(traj, 0.25), q2 = quantile(traj, 0.75)),by=c("gene", "celltype")]
+  pDT.stats <- copy(res)
+  pDT.stats[, celltype := type]
+  pDT.stats[, type := "not.sig"]
+  pDT.stats[padj.ks < 0.1, type := "sig.low"]
+  pDT.stats[padj.ks < 0.01, type := "sig.high"]
+  pDT.distr <- merge(pDT.distr, pDT.stats[,c("gene", "celltype", "type"),with=F], by=c("gene", "celltype"), all.x=TRUE)
+  pDT.distr[gene == "NTC", type := "NTC"]
+  ggplot(pDT.distr, aes(y=gene, x=traj)) + 
+    geom_violin(color=NA, aes(fill=type), scale="width") + 
+    scale_fill_manual(values=c(not.sig = "grey", sig.low="#fb9a99", sig.high="#e31a1c", NTC="#a6cee3")) +
+    geom_point(data=pDT.sum, color="black") + 
+    geom_errorbarh(data=pDT.sum, color="black", aes(xmin=q1, xmax=q2), height = .2) + 
+    theme_bw(12) + 
+    facet_grid(. ~ celltype, scale="free_x") +
+    xRot()
+  ggsave(outS("Distribution.pdf"), w=20,h=10)
+  
+  ggplot(pDT.distr[gene %in% c("Brd9", "Smarcd2", "Smarcd1", 'NTC')][celltype %in% "Mye"],
+         aes(x=traj, color=gene)) + 
+    theme_bw(12) +
+    geom_density()
+  ggsave(outS("Distribution_Brd9.pdf"), w=5,h=4)
+  
+  
+  # . scatterplot -----------------------------------------------------------
+  pDT2 <- pDTx[celltype %in% c("Ery", "Mye")][, median(traj), by=c("celltype", "gene")]
+  pDT2[, V1 := scale(V1), by="celltype"]
+  pDT2 <- dcast.data.table(pDT2, gene ~ celltype, value.var = "V1")
+  ggplot(pDT2, aes(x=Ery, y=Mye)) + 
+    geom_point() + 
+    theme_bw(12) +
+    geom_abline() + 
+    geom_text_repel(aes(label=gene))
+  ggsave(outS("Scatter_EryVsMye.pdf"),w=8,h=8)
+}

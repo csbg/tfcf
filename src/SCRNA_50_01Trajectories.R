@@ -54,7 +54,7 @@ write.tsv(pDT, out("Values.tsv"))
 pDT <- merge(pDT, ann[Clusters != "HSC"], by="rn")[!is.na(mixscape_class.global)]
 pDT[, gene := gsub("_.+$", "", CRISPR_Cellranger)]
 pDT[, traj.scale := scale(traj), by="celltype"]
-
+pDT <- pDT[timepoint != "28d"]
 
 # . test ------------------------------------------------------------------
 typex <- "Ery"
@@ -65,13 +65,15 @@ for(typex in unique(pDT$celltype)){
   for(gx in unique(pDT1[mixscape_class.global != "NTC"]$gene)){
     x1 <- pDT1[gene == gx]$traj
     x2 <- pDT1[gene == "NTC"]$traj
-    res <- rbind(res, data.table(
-      p.wx=wilcox.test(x1, x2)$p.value,
-      p.ks=ks.test(x1, x2)$p.value,
-      d=median(x1) - median(x2),
-      type=typex,
-      gene=gx
-    ))
+    if(length(x1) > 10 & length(x2) > 10){
+      res <- rbind(res, data.table(
+        p.wx=wilcox.test(x1, x2)$p.value,
+        p.ks=ks.test(x1, x2)$p.value,
+        d=median(x1) - median(x2),
+        type=typex,
+        gene=gx
+      ))
+    }
   }
 }
 res[, padj.wx := p.adjust(p.wx, method="BH")]
@@ -139,7 +141,7 @@ ggsave(out("Distribution.pdf"), w=20,h=10)
 ggplot(pDT.distr[gene %in% c("Brd9", "Smarcd2", "Smarcd1", 'NTC')][celltype %in% "Mye"],
        aes(x=traj, color=gene)) + 
   theme_bw(12) +
-  stat_ecdf()
+  geom_density()
 ggsave(out("Distribution_Brd9.pdf"), w=5,h=4)
 
 
