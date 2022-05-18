@@ -1,5 +1,7 @@
 source("src/00_init.R")
 
+require(ggrepel)
+
 inp.dir <- "SCRNA_51_01_LeukemiaTrajectories/"
 base.dir <- "SCRNA_51_02_LeukemiaTrajectories_simple/"
 out <- dirout(base.dir)
@@ -42,18 +44,18 @@ ggplot(trajDT, aes(x=UMAP_1, y=UMAP_2)) +
   scale_color_gradient2(mid="#fdbf6f") +
   facet_grid(. ~ cell.type) +
   geom_point(data=ct.centroids)
-
+ggsave(out("Trajectories.jpg"), w=16, h=5)
 table(in.pred$cell.type)
 
+write.tsv(trajDT, out("Trajectories.tsv"))
 
 # test KOs ---------------------------------------------------------------
 ann.kos <- fread(dirout_load("SCRNA_20_Summary/leukemia_monocle.singleR")("Annotation.tsv"))
-koDT <- merge(ann.kos, fread(out("Predictions_prob.tsv")), by="rn")
+koDT <- merge(ann.kos, trajDT[, -c("tissue", "sample"),with=F], by="rn")
 
 pDTx <- koDT[!is.na(CRISPR_Cellranger)]
 pDTx[, celltype := cell.type]
 pDTx[, gene := gsub("_.+$", "", CRISPR_Cellranger)]
-pDTx[, traj := cell.type.prob]
 
 
 # . test ------------------------------------------------------------------
@@ -123,3 +125,10 @@ ggplot(pDT.distr, aes(y=gene, x=traj)) +
   facet_grid(. ~ celltype, scale="free_x") +
   xRot()
 ggsave(out("Statistics_Distribution.pdf"), w=20,h=10)
+
+
+ggplot(pDT.distr[gene %in% c("NTC", "Kmt2d")], aes(x=traj, color=gene)) + 
+  geom_density() + 
+  theme_bw(12) +
+  facet_grid(. ~ celltype)
+ggsave(out("Kmt2d.pdf"), w=15,h=5)
