@@ -146,7 +146,7 @@ ann1 <- fread(dirout_load("SCRNA_20_Summary/ex.vivo_monocle.singleR")("Annotatio
 ann2 <- fread(dirout_load("SCRNA_20_Summary/leukemia_monocle.singleR")("Annotation.tsv"))
 ann <- rbind(ann1, ann2, fill=TRUE)
 
-ff <- list.files(out(""), pattern=".tsv")
+ff <- list.files(out(""), pattern="Output.*.tsv")
 ff <- ff[!grepl("in.vivo", ff)]
 names(ff) <- gsub("Output_leukemia_(.+).tsv", "\\1", ff)
 pDT <- rbindlist(lapply(ff, function(fx) fread(out(fx))), idcol = "sample")
@@ -159,7 +159,7 @@ pDT[, celltype := ct]
 pDT[, traj.scale := scale(traj), by="celltype"]
 pDT[, id := paste0(tissue, "_", timepoint)]
 
-(idx <- unique(pDT$id)[3])
+(idx <- unique(pDT$id)[1])
 for(idx in unique(pDT$id)){
   outS <- dirout(paste0(base.dir, idx))
   pDTx <- pDT[id == idx]
@@ -226,6 +226,12 @@ for(idx in unique(pDT$id)){
     geom_point() +
     theme_bw(12)
   ggsave(outS("Celltypes_UMAP.jpg"), w=5,h=5)
+  
+  ggplot(pDTx, aes(x=UMAP1, y=UMAP2)) + 
+    geom_hex() +
+    facet_grid(. ~ celltype) + 
+    theme_bw(12)
+  ggsave(outS("Celltypes_UMAP_hex.pdf"), w=20,h=5)
   
   ggplot(pDTx, aes(x=celltype)) + 
     geom_bar() +

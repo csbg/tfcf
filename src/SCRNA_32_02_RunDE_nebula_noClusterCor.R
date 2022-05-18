@@ -30,13 +30,15 @@ cells <- list(
   ex.vivo = fread(dirout_load("SCRNA_21_02_ClusterEnrichments_simple")("Guides_Fisher_Mixscape_basic_ex.vivo_noMixscape_Cells.tsv"))$rn,
   leukemia = fread(dirout_load("SCRNA_21_02_ClusterEnrichments_simple")("Guides_Fisher_Mixscape_basic_leukemia_noMixscape_Cells.tsv"))$rn
 )
-ct.use <- "everything"
-(tissue.name <- "leukemia")
+ct.use <- ""
+(tissue.name <- "in.vivo")
 #for(tissue.name in "leukemia"){
-for(tissue.name in TISSUES){
+#for(tissue.name in TISSUES){
+for(tissue.name in "in.vivo"){
   
   (timex <- mobjs[[tissue.name]]$timepoint[1])
-  for(timex in unique(mobjs[[tissue.name]]$timepoint)){
+  for(timex in "28d"){ #unique(mobjs[[tissue.name]]$timepoint)){
+  #for(timex in unique(mobjs[[tissue.name]]$timepoint)){
 
     # Monocle object
     monocle.obj <- mobjs[[tissue.name]]

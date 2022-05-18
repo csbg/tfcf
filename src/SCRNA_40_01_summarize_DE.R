@@ -19,6 +19,7 @@ ds <- function(path){load(path); return(monocle.obj)}
 
 # Load data ---------------------------------------------------------------
 ff <- list.files(dirout_load("SCRNA_30_DE_Nebula")(""), pattern="DEG_Results_all.tsv", full.names = TRUE, recursive = TRUE)
+ff <- c(ff, list.files(dirout_load("SCRNA_30_DE_Nebula_OLD")(""), pattern="DEG_Results_all.tsv", full.names = TRUE, recursive = TRUE))
 ff2 <- list.files(dirout_load("SCRNA_32_DE_Nebula_simple")(""), pattern="DEG_Results_all.tsv", full.names = TRUE, recursive = TRUE)
 names(ff) <- gsub("^.+\\/", "", dirname(ff))
 names(ff2) <- paste0(gsub("^.+\\/", "", dirname(ff2)), "_s")
