@@ -64,6 +64,13 @@ for(tx in TISSUES){
   fish.test.sets[[paste("broad", tx, sep="_")]] <- x
 }
 
+for(tx in TISSUES){
+  x <- annList[tissue == tx]
+  x[, Clusters := paste("cl", Cluster.number)]
+  fish.test.sets[[paste("numeric", tx, sep="_")]] <- x
+}
+
+
 
 # IN VIVO SETS
 tx <- "in.vivo"

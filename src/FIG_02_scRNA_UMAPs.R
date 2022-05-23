@@ -72,6 +72,25 @@ annList <- lapply(names(inDir.funcs), function(inDir.current){
 annList <- rbindlist(annList, fill=TRUE)
 annList$dupletScore <- duplet.scores[match(annList$rn, rn),]$dupletScore
 
+# numeric clusters
+ann.numeric <- readRDS(dirout_load("SCRNA_10_collect_UMAPs")("ProjMonocle_Clusters.RDS"))
+annList$Cluster.number <- ann.numeric[match(annList$rn, rn)]$functional.cluster
+
+# leukemia update clusters
+ann.leukemia.original <- readRDS(dirout_load("SCRNA_06_02_MergeMarkers")("CellTypes_leukemia.RDS"))
+lsc.clusters <- ann.leukemia.original[, .N, by=c("Cluster", "labels")][order(N,decreasing = TRUE)][,head(.SD,n=1),by=c("Cluster")][labels == "LSC"]$Cluster
+ct.centroids <- annList[tissue == "leukemia" & Clusters %in% c("GMP (late)", "Mono", "Eo/Ba")][, .(UMAP1 = median(UMAP1), UMAP2 = median(UMAP2)), by="Clusters"]
+cl.centroids <- annList[tissue == "leukemia"][, .(UMAP1 = median(UMAP1), UMAP2 = median(UMAP2)), by="Cluster.number"]
+mt <- as.matrix(dist(rbind(
+  as.matrix.data.frame(data.frame(ct.centroids[,c("UMAP1", "UMAP2"),with=F], row.names = ct.centroids$Clusters)),
+  as.matrix.data.frame(data.frame(cl.centroids[,c("UMAP1", "UMAP2"),with=F], row.names = paste0("cl", cl.centroids$Cluster.number)))
+)))[ct.centroids$Clusters, paste0("cl", cl.centroids$Cluster.number)]
+cl.celltypes <- setNames(row.names(mt)[apply(mt, 2, which.min)], colnames(mt))
+cl.celltypes[paste0("cl", lsc.clusters)] <- "LSC"
+annList$Clusters.new <- cl.celltypes[paste0("cl", annList$Cluster.number)]
+annList[tissue == "leukemia", Clusters := Clusters.new]
+annList$Clusters.new <- NULL
+
 
 # Other projections
 umap.proj <- list(
@@ -233,65 +252,65 @@ for(tx in names(inDir.funcs)){
 }
 
 
-# . Signatures DE with CRISPR KOs -------------------------------------------
-tx <-TISSUES[1]
-for(tx in TISSUES){
-  
-  out <- dirout(paste0(base.dir, "/", tx))
-  
-  pDT <- marker.signatures.DA[[tx]]
-  pDT <- merge(pDT, SIGS.USE.DA, by=c("sig"))
-  
-  # Summarize across guides
-  pDT[gene == "Pu.1", gene := "Spi1"]
-  pDT <- pDT[, .(
-    d=mean(d, na.rm=TRUE), 
-    dir=length(unique(sign(d[!is.na(d)])))==1, 
-    padj=sum(padj < 0.01), 
-    N=.N), by=c("sample", "FinalName", "gene")]
-  pDT[dir == FALSE, padj := 0]
-  pDT[dir == FALSE, d := NA]
-  
-  # summarize across samples
-  pDT <- pDT[, .(
-    d=mean(d, na.rm=TRUE), 
-    dir=length(unique(sign(d[!is.na(d)])))==1, 
-    padj=sum(padj), 
-    N=sum(N)), by=c("FinalName", "gene")]
-  pDT[dir == FALSE, padj := 0]
-  pDT[dir == FALSE, d := NA]
-  
-  # setup for plotting and plotting
-  pDT[padj == 0 | is.na(d), d := 0]
-  pDT[, sig.perc := padj / N]
-  pDT[,d_cap := pmin(abs(d), 5) * sign(d)]
-  pDT$FinalName <- factor(pDT$FinalName, levels=rev(SIGS.USE.DA$FinalName))
-  #pDT <- hierarch.ordering(dt = pDT, toOrder = "FinalName", orderBy = "gene", value.var = "d")
-  pDT <- hierarch.ordering(dt = pDT, toOrder = "gene", orderBy = "FinalName", value.var = "d")
-  ggplot(pDT, aes(x=gene,y=FinalName, color=d, size=sig.perc)) + 
-    themeNF(rotate = TRUE) +
-    scale_size_continuous(name="% sign.", range = c(0,4)) +
-    scale_color_gradient2(name="delta",low="#1f78b4", high="#e31a1c") +
-    geom_point() +
-    geom_point(shape=1, color="lightgrey") +
-    ylab("Marker signature") + xlab("")
-  ggsaveNF(out("MarkerSignatures_DA.pdf"),w=2,h=0.7)
-  
-  dla <- fread("metadata/FIGS_Order_Fig2_CFs.tsv")$Factor
-  pDT <- pDT[gene %in% dla]
-  pDT$gene <- factor(as.character(pDT$gene), levels=dla)
-  ggplot(pDT, aes(x=gene,y=FinalName, color=d, size=sig.perc)) + 
-    themeNF(rotate = TRUE) +
-    scale_size_continuous(name="% sign.", range = c(0,4)) +
-    scale_color_gradient2(name="delta",low="#1f78b4", high="#e31a1c") +
-    geom_point() +
-    geom_point(shape=1, color="lightgrey") +
-    ylab("Marker signature") + xlab("")
-  ggsaveNF(out("MarkerSignatures_DA_DLA.pdf"),w=1.5,h=0.7)
-  
-  # export table
-  write.tsv(pDT, out("MarkerSignatures_DA.tsv"))
-}
+# # . Signatures DE with CRISPR KOs -------------------------------------------
+# tx <-TISSUES[1]
+# for(tx in TISSUES){
+#   
+#   out <- dirout(paste0(base.dir, "/", tx))
+#   
+#   pDT <- marker.signatures.DA[[tx]]
+#   pDT <- merge(pDT, SIGS.USE.DA, by=c("sig"))
+#   
+#   # Summarize across guides
+#   pDT[gene == "Pu.1", gene := "Spi1"]
+#   pDT <- pDT[, .(
+#     d=mean(d, na.rm=TRUE), 
+#     dir=length(unique(sign(d[!is.na(d)])))==1, 
+#     padj=sum(padj < 0.01), 
+#     N=.N), by=c("sample", "FinalName", "gene")]
+#   pDT[dir == FALSE, padj := 0]
+#   pDT[dir == FALSE, d := NA]
+#   
+#   # summarize across samples
+#   pDT <- pDT[, .(
+#     d=mean(d, na.rm=TRUE), 
+#     dir=length(unique(sign(d[!is.na(d)])))==1, 
+#     padj=sum(padj), 
+#     N=sum(N)), by=c("FinalName", "gene")]
+#   pDT[dir == FALSE, padj := 0]
+#   pDT[dir == FALSE, d := NA]
+#   
+#   # setup for plotting and plotting
+#   pDT[padj == 0 | is.na(d), d := 0]
+#   pDT[, sig.perc := padj / N]
+#   pDT[,d_cap := pmin(abs(d), 5) * sign(d)]
+#   pDT$FinalName <- factor(pDT$FinalName, levels=rev(SIGS.USE.DA$FinalName))
+#   #pDT <- hierarch.ordering(dt = pDT, toOrder = "FinalName", orderBy = "gene", value.var = "d")
+#   pDT <- hierarch.ordering(dt = pDT, toOrder = "gene", orderBy = "FinalName", value.var = "d")
+#   ggplot(pDT, aes(x=gene,y=FinalName, color=d, size=sig.perc)) + 
+#     themeNF(rotate = TRUE) +
+#     scale_size_continuous(name="% sign.", range = c(0,4)) +
+#     scale_color_gradient2(name="delta",low="#1f78b4", high="#e31a1c") +
+#     geom_point() +
+#     geom_point(shape=1, color="lightgrey") +
+#     ylab("Marker signature") + xlab("")
+#   ggsaveNF(out("MarkerSignatures_DA.pdf"),w=2,h=0.7)
+#   
+#   dla <- fread("metadata/FIGS_Order_Fig2_CFs.tsv")$Factor
+#   pDT <- pDT[gene %in% dla]
+#   pDT$gene <- factor(as.character(pDT$gene), levels=dla)
+#   ggplot(pDT, aes(x=gene,y=FinalName, color=d, size=sig.perc)) + 
+#     themeNF(rotate = TRUE) +
+#     scale_size_continuous(name="% sign.", range = c(0,4)) +
+#     scale_color_gradient2(name="delta",low="#1f78b4", high="#e31a1c") +
+#     geom_point() +
+#     geom_point(shape=1, color="lightgrey") +
+#     ylab("Marker signature") + xlab("")
+#   ggsaveNF(out("MarkerSignatures_DA_DLA.pdf"),w=1.5,h=0.7)
+#   
+#   # export table
+#   write.tsv(pDT, out("MarkerSignatures_DA.tsv"))
+# }
 
 
 # . Marker gene expression --------------------------------------------------
@@ -757,11 +776,15 @@ ggsaveNF(out("ClusterEnrichments_manual_lateGMPs_day9.pdf"), w=1,h=1)
 inDir.current <- "leukemia"
 out <- dirout(paste0(base.dir, "/", inDir.current))
 ann <- annList[tissue == inDir.current]
+# Use in vivo projected UMAP?
 #ann <- merge(ann[,-c("UMAP1", "UMAP2"),with=F], setNames(umap.proj[["in.vivo.X"]][,c("rn", "UMAP_1", "UMAP_2")], c("rn", "UMAP1", "UMAP2")), by="rn")
 abs <- fread(inDir.funcs[[inDir.current]]("Antibodies.tsv"))
 abs <- merge(abs[,-c("UMAP1", "UMAP2"),with=F], setNames(umap.proj[["in.vivo.X"]][,c("rn", "UMAP_1", "UMAP_2")], c("rn", "UMAP1", "UMAP2")), by="rn")
+abs$Clusters <- ann[match(abs$rn, rn)]$Clusters
+
 # FIX MIXSCAPE
-fish.enrich <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_basic_leukemia_noMixscape_6d.tsv"))
+fish.enrich <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_numeric_leukemia_noMixscape_6d.tsv"))
+fish.enrich$celltype <- unique(ann[,c("Cluster.number", "Clusters"),with=F])[match(fish.enrich$Clusters, paste("cl", Cluster.number))]$Clusters
 
 # . Antibodies on UMAP ----------------------------------------------------
 ggplot(abs, aes(x=UMAP1, y=UMAP2)) +
@@ -840,17 +863,18 @@ dla <- fread("metadata/FIGS_Order_Fig2_CFs.tsv")
 pDT <- fish.enrich[gene %in% dla$Factor]
 pDT$gene <- factor(pDT$gene, levels = dla$Factor)
 #pDT$Complex <- dla[match(pDT$gene, Factor)]$Complex
-pDT[, Clusters := cleanCelltypes(Clusters, clean=FALSE, twoLines = FALSE, order = TRUE, reverse = TRUE)]
+pDT[, celltype := cleanCelltypes(celltype, clean=TRUE, twoLines = FALSE, order = TRUE, reverse = TRUE)]
+pDT[, log2OR_cap := pmin(2, abs(log2OR)) * sign(log2OR)]
 ggplot(pDT, aes(x=gene, y=Clusters, size=sig.perc, color=log2OR_cap)) + 
   themeNF(rotate=TRUE) +
   scale_color_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
   scale_size_continuous(name="% sign.", range = c(0,4)) +
   geom_point() +
   geom_point(shape=1, color="lightgrey") +
-  xlab("Gene") + ylab("Cell type") +
-  #facet_grid(Clusters ~ . , space="free", scales = "free") +
+  xlab("Gene") + ylab("Cluster / cell type") +
+  facet_grid(celltype ~ . , space="free", scales = "free") +
   theme(strip.text.y = element_text(angle=0))
-ggsaveNF(out("ClusterEnrichments_manual_cleaned.pdf"), w=1.6,h=0.6)
+ggsaveNF(out("ClusterEnrichments_manual_cleaned.pdf"), w=1.6,h=1.3)
 
 
 # Cancer vs Healthy -------------------------------------------------------
