@@ -21,7 +21,8 @@ umapDT <- fread(inDir("RegulatoryMap_UMAP_","all",".tsv"))
 umapDT.dim1 <- floor(max(abs(umapDT$UMAP1))) + 0.5
 umapDT.dim2 <- floor(max(abs(umapDT$UMAP2))) + 0.5
 gseaDT <- fread(inDir("UMAP_GSEA.tsv"))
-deDT <- fread(inDir("DEG_Statistics.tsv"))
+stop("Better define what to import? The next commented command takes forever")
+# deDT <- fread(inDir("DEG_Statistics.tsv"))
 deDT$use <- FALSE
 deDT[tissue %in% grep("_s", unique(deDT$tissue), value=TRUE), use := TRUE]
 
@@ -202,6 +203,44 @@ p <- ggplot(pDT, aes(x=gene_x, y=gene_y, fill=value)) +
   themeNF(rotate=TRUE) +
   xlab("") + ylab("")
 ggsaveNF(out("ExpressionCorrelation_Figure2.pdf"), w=2,h=1, plot=p)
+
+
+# Repressors ------------------------------------------------------------
+
+# Correlation HM
+gg <- c("Setdb1", "Atf7ip", "Chd4", "Rbbp4", "Hdac3", "Hdac1")
+pDT <- cDT[tissue_x == "in.vivo" & time_x == "14d"]
+pDT <- pDT[time_y == time_x & tissue_x == tissue_y]
+pDT <- pDT[gene_x %in% gg & gene_y %in% gg]
+pDT <- pDT[gene_x != gene_y]
+pDT <- hierarch.ordering(pDT, "gene_x", "gene_y", "value", TRUE)
+pDT$gene_y <- factor(pDT$gene_y, levels = levels(pDT$gene_x))
+p <- ggplot(pDT, aes(x=gene_x, y=gene_y, fill=value)) + 
+  geom_tile() +
+  scale_fill_gradient2(low="blue", high="red", limits=c(-1,1))+
+  facet_grid(. ~ tissue_x) +
+  themeNF(rotate=TRUE) +
+  xlab("") + ylab("")
+ggsaveNF(out("Repressors_ExpressionCorrelation.pdf"), w=0.8,h=0.8, plot=p)
+
+# Genes
+pDT <- deDT[tissue == "in.vivo_14d_everything_s"]
+pDT <- pDT[guide %in% gg]
+pDT[, direction := ifelse(estimate < 0, "down", "up")]
+xDT <- pDT[gene_id %in% pDT[q_value < 0.05 & abs(estimate) > 1][, .N, by=c("gene_id", "direction")][direction == "up"][!grepl("Rik$", gene_id)][order(N, decreasing = TRUE)][1:50]$gene_id]
+xDT <- hierarch.ordering(xDT, "guide", "gene_id", value.var = "estimate")
+xDT <- hierarch.ordering(xDT, "gene_id", "guide", value.var = "estimate")
+# xDT <- hierarch.ordering(xDT, "gene_id", "guide", value.var = "estimate")
+h=length(unique(xDT$gene_id)) * 0.05 + 0.5
+w=length(unique(xDT$guide)) * 0.07 + 0.7
+ggplot(xDT, aes(x=guide, y=gene_id, color=estimate, size=pmin(5, -log10(q_value)))) + 
+  themeNF(rotate=TRUE) +
+  geom_point() +
+  scale_color_gradient2(name="log2FC", low="blue", high="red") +
+  scale_size_continuous(name="-log10(padj)", range = c(0,5)) +
+  #facet_grid(celltype ~ ., space = "free", scales = "free") +
+  ylab("Gene expression") + xlab("CRISPR targets")
+ggsaveNF(out("Repressors_CommonGenes.pdf"),w=w,h=h, guides = TRUE)
 
 
 # Correlation in BAF ------------------------------------------------------

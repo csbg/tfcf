@@ -781,10 +781,37 @@ ann <- annList[tissue == inDir.current]
 abs <- fread(inDir.funcs[[inDir.current]]("Antibodies.tsv"))
 abs <- merge(abs[,-c("UMAP1", "UMAP2"),with=F], setNames(umap.proj[["in.vivo.X"]][,c("rn", "UMAP_1", "UMAP_2")], c("rn", "UMAP1", "UMAP2")), by="rn")
 abs$Clusters <- ann[match(abs$rn, rn)]$Clusters
+abs$Cluster.number <- ann[match(abs$rn, rn)]$Cluster.number
+clusters.plot <- c(8,16,12,5,11,22,15,6,7,18)
 
 # FIX MIXSCAPE
 fish.enrich <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_numeric_leukemia_noMixscape_6d.tsv"))
 fish.enrich$celltype <- unique(ann[,c("Cluster.number", "Clusters"),with=F])[match(fish.enrich$Clusters, paste("cl", Cluster.number))]$Clusters
+
+
+# . Clusters on UMAP --------------------------------------------------------
+typex <- "original"
+for(typex in c("original", "in.vivo.X")){
+  xDT <- umap.proj[[typex]][match(ann$rn, rn)]
+  hex.obj <- hexbin::hexbin(x=xDT$UMAP_1, y=xDT$UMAP_2, xbins = 100, IDs=TRUE)
+  pDT <- cbind(ann, data.table(hex.x=hex.obj@xcm, hex.y=hex.obj@ycm, hex.cell=hex.obj@cell)[match(hex.obj@cID, hex.cell),])
+  pDT <- pDT[,.(N=.N, dupletScore=mean(dupletScore)), by=c("hex.x", "hex.y", "Cluster.number", "Clusters")]
+  pDT[, sum := sum(N), by=c("hex.x", "hex.y")]
+  pDT[, frac := N / sum]
+  pDT <- pDT[order(frac, decreasing = TRUE)][,head(.SD, 1), by=c("hex.x", "hex.y")]
+  pDT.labels <- pDT[, .(hex.x = median(hex.x), hex.y=median(hex.y)), by=c("Cluster.number")]
+  cols <- COLORS.CELLTYPES.scRNA.ainhoa
+  cols["other"] <- "grey"
+  pDT[, Clusters := cleanCelltypes(Clusters)]
+  pDT[!Cluster.number %in% clusters.plot, Clusters := "other"]
+  p <- ggplot(pDT, aes(x=hex.x, y=hex.y)) +
+    themeNF() + xu + yu +
+    geom_point(aes(color=Clusters), size=0.5) + 
+    scale_color_manual(values=cols) +
+    geom_text(data=pDT.labels, aes(label=Cluster.number), lineheight = 0.8)
+  ggsaveNF(out("UMAP_numeric_",typex,"_main.pdf"), w=1.5,h=1.5, plot=p)
+}
+
 
 # . Antibodies on UMAP ----------------------------------------------------
 ggplot(abs, aes(x=UMAP1, y=UMAP2)) +
@@ -795,18 +822,24 @@ ggplot(abs, aes(x=UMAP1, y=UMAP2)) +
   xu + yu
 ggsaveNF(out("Antibodies_UMAP.pdf"), w=2, h=2)
 
+
 # . Combine signatures with Antibodies --------------------------------------
-pDT <- abs[, .(Signal=mean(Signal.norm, na.rm=TRUE)), by=c("Clusters", "Antibody")]
-pDT[, Clusters := cleanCelltypes(Clusters)]
+pDT <- abs[, .(Signal=mean(Signal.norm, na.rm=TRUE)), by=c("Cluster.number", "Antibody", "Clusters")]
+#pDT[, Clusters := cleanCelltypes(Clusters)]
 #pDT <- hierarch.ordering(pDT, "Clusters", "Antibody", "Signal")
-pDT <- hierarch.ordering(pDT, "Antibody", "Clusters", "Signal")
-ggplot(pDT, aes(y=Clusters,x=Antibody, fill=Signal)) +
-  themeNF() +
-  geom_tile() +
-  scale_fill_gradient2(low="blue", high="red") +
-  xRot() +
-  ylab("Cell types")
-ggsaveNF(out("Antibodies_Average.pdf"), w=1, h=0.7)
+pDT <- hierarch.ordering(pDT, "Antibody", "Cluster.number", "Signal")
+for(suppx in c("main", "supp")){
+  pDTx <- if(suppx == "main") pDT[Cluster.number %in% clusters.plot] else pDT
+  ggplot(pDTx, aes(y=Cluster.number,x=Antibody, fill=Signal)) +
+    themeNF() +
+    geom_tile() +
+    scale_fill_gradient2(low="blue", high="red") +
+    xRot() +
+    facet_grid(Clusters ~ ., space = "free", scales = "free") +
+    ylab("Clusters")
+  ggsaveNF(out("Antibodies_Average_",suppx,".pdf"), w=1, h=length(unique(pDTx$Cluster.number)) * 0.05 + 0.3)
+}
+
 
 # . Cell cycle ------------------------------------------------------------
 # UMAP
@@ -865,16 +898,19 @@ pDT$gene <- factor(pDT$gene, levels = dla$Factor)
 #pDT$Complex <- dla[match(pDT$gene, Factor)]$Complex
 pDT[, celltype := cleanCelltypes(celltype, clean=TRUE, twoLines = FALSE, order = TRUE, reverse = TRUE)]
 pDT[, log2OR_cap := pmin(2, abs(log2OR)) * sign(log2OR)]
-ggplot(pDT, aes(x=gene, y=Clusters, size=sig.perc, color=log2OR_cap)) + 
-  themeNF(rotate=TRUE) +
-  scale_color_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
-  scale_size_continuous(name="% sign.", range = c(0,4)) +
-  geom_point() +
-  geom_point(shape=1, color="lightgrey") +
-  xlab("Gene") + ylab("Cluster / cell type") +
-  facet_grid(celltype ~ . , space="free", scales = "free") +
-  theme(strip.text.y = element_text(angle=0))
-ggsaveNF(out("ClusterEnrichments_manual_cleaned.pdf"), w=1.6,h=1.3)
+for(suppx in c("main", "supp")){
+  pDTx <- if(suppx == "main") pDT[Clusters %in% paste("cl", clusters.plot)] else pDT
+  ggplot(pDTx, aes(x=gene, y=Clusters, size=sig.perc, color=log2OR_cap)) + 
+    themeNF(rotate=TRUE) +
+    scale_color_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
+    scale_size_continuous(name="% sign.", range = c(0,4)) +
+    geom_point() +
+    geom_point(shape=1, color="lightgrey") +
+    xlab("Gene") + ylab("Cluster / cell type") +
+    facet_grid(celltype ~ . , space="free", scales = "free") +
+    theme(strip.text.y = element_text(angle=0))
+  ggsaveNF(out("ClusterEnrichments_manual_cleaned_",suppx,".pdf"), w=1.6,h=length(unique(pDTx$Clusters)) * 0.06 + 0.3)
+}
 
 
 # Cancer vs Healthy -------------------------------------------------------
