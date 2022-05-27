@@ -114,7 +114,7 @@ umap.proj <- list(
 
 # load Monocle Objects
 mobjs <- list()
-tissuex <- PATHS$SCRNA$MONOCLE.NAMES[1]
+tissuex <- PATHS$SCRNA$MONOCLE.NAMES[3]
 for(tissuex in PATHS$SCRNA$MONOCLE.NAMES){
   (load(PATHS$SCRNA$MONOCLE.DIR(tissuex)))
   mobjs[[tissuex]] <- monocle.obj
@@ -322,7 +322,6 @@ for(tx in names(inDir.funcs)){
 #     xlab("Cell type")
 #   ggsaveNF(out("Markers_Clusters.pdf"), w=1.5,h=2.5)
 # }
-
 pDT <- lapply(mobjs, function(obj) DotPlotData(cds = obj, markers = marker.genes, cols = "CellType"))
 pDT <- rbindlist(pDT, idcol="tissue")
 pDT <- pDT[tissue %in% c("ex.vivo", "in.vivo")]
@@ -911,6 +910,60 @@ for(suppx in c("main", "supp")){
     theme(strip.text.y = element_text(angle=0))
   ggsaveNF(out("ClusterEnrichments_manual_cleaned_",suppx,".pdf"), w=1.6,h=length(unique(pDTx$Clusters)) * 0.06 + 0.3)
 }
+
+
+# . ChIP seq target gene sets ---------------------------------------------------------------
+targets <- fread("metadata/FIGS_06_ChIPtargetsJulen.txt")
+#gplots::venn(split(targets$Gene, paste(targets$CF, targets$Population)))
+#targets <- targets[Gene %in% targets[, .N, by="Gene"][N == 1]$Gene]
+targets[,id := paste(CF, Population)]
+mt <- monocle3::aggregate_gene_expression(norm_method = "log", cds = mobjs[["leukemia"]], gene_group_df = targets[,c("Gene", "id")])
+pDT <- merge(ann, melt(data.table(data.frame(t(mt)), keep.rownames = TRUE), id.vars = "rn"), by="rn")
+pDT[, chip_target := gsub("\\..+$", "", variable)]
+pDT[, chip_target_population := gsub("^.+?\\.", "", variable)]
+p <- ggplot(pDT, aes(x=UMAP1, y=UMAP2)) +
+  stat_summary_hex(aes(z=value),fun=mean, bins=100) +
+  facet_grid(chip_target_population ~ chip_target) +
+  scale_fill_gradient2(high="#e31a1c", low="#1f78b4") +
+  themeNF()
+ggsaveNF(out("ChIP_targets.pdf"), w=5,h=3)
+
+pDT.cl <- pDT[, .(sig=mean(value)), by=c("Cluster.number", "chip_target", "chip_target_population", "Clusters")]
+suppx <- "main"
+popx <- "subset"
+for(suppx in c("supp", "main")){
+  for(popx in c("all", "subset")){
+    pDTx <- if(suppx == "main") pDT.cl[Cluster.number %in% clusters.plot] else pDT.cl
+    pDTx <- if(popx == "subset") pDTx[chip_target_population %in% c("Leukemia", "MatureMye")] else pDTx
+    w=length(unique(pDTx$chip_target_population)) * 0.2 + 0.4
+    h=length(unique(pDTx$Cluster.number)) * 0.07 + 0.2
+    ggplot(pDTx, aes(x=chip_target_population, y=Cluster.number, fill=sig)) + geom_tile() +
+      facet_grid(Clusters ~ chip_target, space="free", scales = "free") +
+      themeNF(rotate = TRUE) +
+      scale_fill_gradient2(high="#e31a1c", low="#1f78b4")
+    ggsaveNF(out("ChIP_targets_aggregate_", suppx,"_population_", popx, ".pdf"), w=w, h=h)
+  }
+}
+
+
+# . LSC marker plot ---------------------------------------------------------
+gg <- c("Bcat1", "Hif1a", "Myc", "Gata1", "Prss34", "Hba-a1", "Irf8", "S100a9", "Ltf")
+cds <- mobjs[["leukemia"]]
+cds$Cluster.number <- monocle3::clusters(cds)
+pDT <- DotPlotData(cds = cds, markers = gg, cols = "Cluster.number")
+#pDT <- pDT[Gene %in% pDT[,max(percentage), by="Gene"][V1 > 75]$Gene]
+pDT[, scale := scale(mean), by=c("Gene")]
+pDT <- hierarch.ordering(pDT, "Gene", "Cluster.number", "scale", aggregate = TRUE)
+pDT <- merge(pDT, unique(ann[,c("Clusters", "Cluster.number"),with=F]),by=c("Cluster.number"))
+ggplot(pDT, aes(y=factor(as.numeric(Cluster.number)), x=Gene, color=scale, size=percentage)) + 
+  geom_point() +
+  geom_point(color="black", shape=1) + 
+  scale_size_continuous(range=c(0,5), limits = c(0,100)) +
+  scale_color_gradient2(high="#e31a1c", low="#1f78b4") +
+  facet_grid(Clusters ~ ., space="free", scales = "free") +
+  themeNF(rotate = TRUE)
+ggsaveNF(out("Markers_Leukemia.pdf"), w=0.8,h=1.5)
+
 
 
 # Cancer vs Healthy -------------------------------------------------------

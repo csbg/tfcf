@@ -20,11 +20,11 @@ fcMT <- as.matrix(read.csv(inDir("FoldChanges.csv"), row.names=1))
 umapDT <- fread(inDir("RegulatoryMap_UMAP_","all",".tsv"))
 umapDT.dim1 <- floor(max(abs(umapDT$UMAP1))) + 0.5
 umapDT.dim2 <- floor(max(abs(umapDT$UMAP2))) + 0.5
-gseaDT <- fread(inDir("UMAP_GSEA.tsv"))
-stop("Better define what to import? The next commented command takes forever")
-# deDT <- fread(inDir("DEG_Statistics.tsv"))
-deDT$use <- FALSE
-deDT[tissue %in% grep("_s", unique(deDT$tissue), value=TRUE), use := TRUE]
+gseaDT.umap <- fread(inDir("UMAP_GSEA.tsv"))
+gseaDT <- readRDS(dirout_load("SCRNA_41_01_GSEA")("FGSEA.RDS"))
+deDT <- readRDS(inDir("DEG_Statistics_simple.RDS"))
+deDT$use <- TRUE
+#deDT[tissue %in% grep("_s", unique(deDT$tissue), value=TRUE), use := TRUE]
 
 # Reformat correlations
 pDT <- cMT[grepl("_s$", rownames(cMT)), grepl("_s$", colnames(cMT))]
@@ -36,14 +36,14 @@ pDT <- pDT[, -c("rn", "variable"), with=F]
 cDT <- pDT
 
 # ATAC
-atacDT.lsk <- fread(paste0(gsub("Data", "CollaborationData", PATHS$LOCATIONS$DATA), "LSK_narrowPeak_consensusPeaks.boolean.annotatePeaks.extended.fc.txt"))
-atacDT <- data.table::melt(
-  atacDT.lsk,
-  id.vars = c("chr", "start", "end", "Distance to TSS", "Gene Name"),
-  measure.vars = grep("log2FC$", colnames(atacDT.lsk), value = TRUE)
-  )
-atacDT[, variable := gsub("LSK-(.+?)_.+", "\\L\\1", variable, perl=TRUE)]
-atacDT[, variable := gsub("^(.)", "\\U\\1", variable, perl=TRUE)]
+# atacDT.lsk <- fread(paste0(gsub("Data", "CollaborationData", PATHS$LOCATIONS$DATA), "LSK_narrowPeak_consensusPeaks.boolean.annotatePeaks.extended.fc.txt"))
+# atacDT <- data.table::melt(
+#   atacDT.lsk,
+#   id.vars = c("chr", "start", "end", "Distance to TSS", "Gene Name"),
+#   measure.vars = grep("log2FC$", colnames(atacDT.lsk), value = TRUE)
+#   )
+# atacDT[, variable := gsub("LSK-(.+?)_.+", "\\L\\1", variable, perl=TRUE)]
+# atacDT[, variable := gsub("^(.)", "\\U\\1", variable, perl=TRUE)]
 
 
 # Link UMAP and DE --------------------------------------------------------
@@ -93,10 +93,10 @@ dla.factors <- list(
 
 
 # Plot specific genes -----------------------------------------------------
-tx <- deDT[use == TRUE]$tissue[1]
+(tx <- deDT[use == TRUE]$tissue[1])
 for(tx in unique(deDT[use == TRUE]$tissue)){
   pDT <- deDT[tissue == tx]
-  lnam <- names(GOI.targets)[2]
+  (lnam <- names(GOI.targets)[2])
   for(lnam in names(GOI.targets)){
     goi <- rbindlist(lapply(GOI.targets[[lnam]], data.table), idcol = "celltype")
     goi[! V1 %in% pDT$gene_id]
@@ -108,6 +108,7 @@ for(tx in unique(deDT[use == TRUE]$tissue)){
     # xDT <- hierarch.ordering(xDT, "gene_id", "guide", value.var = "estimate")
     h=length(unique(xDT$gene_id)) * 0.05 + length(unique(xDT$celltype)) * 0.05 + 0.5
     w=length(unique(xDT$guide)) * 0.07 + 0.7
+    xDT[abs(estimate) > 5, estimate := pmin(abs(estimate),5) * sign(estimate)]
     ggplot(xDT, aes(x=guide, y=gene_id, color=estimate, size=pmin(5, -log10(q_value)))) + 
       themeNF(rotate=TRUE) +
       geom_point() +
@@ -139,21 +140,21 @@ for(tx in unique(deDT[use == TRUE]$tissue)){
 
 
 # ATAC-seq comparison -----------------------------------------------------
-atacDT[order(abs(get("Distance to TSS")), decreasing = FALSE)][, head(.SD, n=1), by=c("Gene Name")]
-pDT <- merge(
-  deDT[tissue == "ex.vivo_7d_everything_s"][, c("gene_id", "guide", "estimate"), with=FALSE],
-  atacDT[order(abs(get("Distance to TSS")), decreasing = FALSE)][, head(.SD, n=1), by=c("Gene Name", "variable")][,c("Gene Name", "variable", "value")],
-  by.x=c("gene_id", "guide"), by.y=c("Gene Name", "variable"))
-pCor <- pDT[, cor(estimate, value, use="pairwise.complete.obs", method="spearman"), by=c("guide")]
-ggplot(pDT, aes(x=estimate, y=value)) + 
-  themeNF() +
-  stat_binhex(aes(fill=log10(..count..))) + 
-  #ggtitle(paste(round(pt$estimate, 3))) +
-  geom_text(data=pCor, aes(label=paste0("R=", round(V1,3))), x=-Inf,y=Inf, hjust=0, vjust=1)+
-  facet_grid(. ~ guide) +
-  xlab("RNA-seq logFC KO vs WT") +
-  ylab("ATAC-seq logFC KO vs WT")
-ggsaveNF(out("ATAC_correlation.pdf"), w=4,h=1)
+# atacDT[order(abs(get("Distance to TSS")), decreasing = FALSE)][, head(.SD, n=1), by=c("Gene Name")]
+# pDT <- merge(
+#   deDT[tissue == "ex.vivo_7d_everything_s"][, c("gene_id", "guide", "estimate"), with=FALSE],
+#   atacDT[order(abs(get("Distance to TSS")), decreasing = FALSE)][, head(.SD, n=1), by=c("Gene Name", "variable")][,c("Gene Name", "variable", "value")],
+#   by.x=c("gene_id", "guide"), by.y=c("Gene Name", "variable"))
+# pCor <- pDT[, cor(estimate, value, use="pairwise.complete.obs", method="spearman"), by=c("guide")]
+# ggplot(pDT, aes(x=estimate, y=value)) + 
+#   themeNF() +
+#   stat_binhex(aes(fill=log10(..count..))) + 
+#   #ggtitle(paste(round(pt$estimate, 3))) +
+#   geom_text(data=pCor, aes(label=paste0("R=", round(V1,3))), x=-Inf,y=Inf, hjust=0, vjust=1)+
+#   facet_grid(. ~ guide) +
+#   xlab("RNA-seq logFC KO vs WT") +
+#   ylab("ATAC-seq logFC KO vs WT")
+# ggsaveNF(out("ATAC_correlation.pdf"), w=4,h=1)
 
 
 # Vulcano plots -----------------------------------------------------------
@@ -241,6 +242,26 @@ ggplot(xDT, aes(x=guide, y=gene_id, color=estimate, size=pmin(5, -log10(q_value)
   #facet_grid(celltype ~ ., space = "free", scales = "free") +
   ylab("Gene expression") + xlab("CRISPR targets")
 ggsaveNF(out("Repressors_CommonGenes.pdf"),w=w,h=h, guides = TRUE)
+
+# GSEA
+pDT <- gseaDT[tissue == "in.vivo_14d_everything"]
+pDT <- pDT[grp %in% gg]
+pDT[, direction := ifelse(NES < 0, "down", "up")]
+# xDT <- pDT[gene_id %in% pDT[padj < 0.05][, .N, by=c("pathway", "direction", "db")][direction == "up"][order(N, decreasing = TRUE)][1:50]]
+# xDT <- hierarch.ordering(xDT, "guide", "gene_id", value.var = "estimate")
+# xDT <- hierarch.ordering(xDT, "gene_id", "guide", value.var = "estimate")
+# # xDT <- hierarch.ordering(xDT, "gene_id", "guide", value.var = "estimate")
+# h=length(unique(xDT$gene_id)) * 0.05 + 0.5
+# w=length(unique(xDT$guide)) * 0.07 + 0.7
+# ggplot(xDT, aes(x=guide, y=gene_id, color=estimate, size=pmin(5, -log10(q_value)))) + 
+#   themeNF(rotate=TRUE) +
+#   geom_point() +
+#   scale_color_gradient2(name="log2FC", low="blue", high="red") +
+#   scale_size_continuous(name="-log10(padj)", range = c(0,5)) +
+#   #facet_grid(celltype ~ ., space = "free", scales = "free") +
+#   ylab("Gene expression") + xlab("CRISPR targets")
+# ggsaveNF(out("Repressors_CommonGenes.pdf"),w=w,h=h, guides = TRUE)
+
 
 
 # Correlation in BAF ------------------------------------------------------

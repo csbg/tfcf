@@ -24,12 +24,12 @@ ff2 <- list.files(dirout_load("SCRNA_32_DE_Nebula_simple")(""), pattern="DEG_Res
 names(ff) <- gsub("^.+\\/", "", dirname(ff))
 names(ff2) <- paste0(gsub("^.+\\/", "", dirname(ff2)), "_s")
 ff <- c(ff, ff2)
-#ff <- lapply(ff, function(x) paste0(x, "/DEG_Results_all.tsv"))
 ff <- lapply(ff, fread)
 DE.RES <- rbindlist(ff, idcol = "tissue")
 stopifnot(all(grepl("^GuideDE", DE.RES$term)))
 DE.RES[abs(estimate) > 15, estimate := min(15,  abs(estimate)) * sign(estimate)]
 write.tsv(DE.RES[, -c("se", "convergence", "estimate_raw", "term"), with=F], out("DEG_Statistics.tsv"))
+saveRDS(DE.RES[grepl("_s$", tissue)][, -c("se", "convergence", "estimate_raw", "term"), with=F], out("DEG_Statistics_simple.RDS"))
 write.tsv(DE.RES[, -c("se", "convergence", "estimate_raw", "term"), with=F][q_value < 0.05], out("DEG_Statistics_significant.tsv"))
 
 DE.RES[, id := paste(guide, make.names(tissue))]
