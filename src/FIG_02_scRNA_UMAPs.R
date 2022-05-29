@@ -114,7 +114,7 @@ umap.proj <- list(
 
 # load Monocle Objects
 mobjs <- list()
-tissuex <- PATHS$SCRNA$MONOCLE.NAMES[3]
+(tissuex <- PATHS$SCRNA$MONOCLE.NAMES[3])
 for(tissuex in PATHS$SCRNA$MONOCLE.NAMES){
   (load(PATHS$SCRNA$MONOCLE.DIR(tissuex)))
   mobjs[[tissuex]] <- monocle.obj
@@ -891,7 +891,7 @@ ggsaveNF(out("CellCycle_Numbers.pdf"), w=3,h=1.2)
 
 
 # . manual enrichments ----------------------------------------------------
-dla <- fread("metadata/FIGS_Order_Fig2_CFs.tsv")
+dla <- fread("metadata/FIGS_02_CFs.main.txt")
 pDT <- fish.enrich[gene %in% dla$Factor]
 pDT$gene <- factor(pDT$gene, levels = dla$Factor)
 #pDT$Complex <- dla[match(pDT$gene, Factor)]$Complex
@@ -955,14 +955,21 @@ pDT <- DotPlotData(cds = cds, markers = gg, cols = "Cluster.number")
 pDT[, scale := scale(mean), by=c("Gene")]
 pDT <- hierarch.ordering(pDT, "Gene", "Cluster.number", "scale", aggregate = TRUE)
 pDT <- merge(pDT, unique(ann[,c("Clusters", "Cluster.number"),with=F]),by=c("Cluster.number"))
-ggplot(pDT, aes(y=factor(as.numeric(Cluster.number)), x=Gene, color=scale, size=percentage)) + 
-  geom_point() +
-  geom_point(color="black", shape=1) + 
-  scale_size_continuous(range=c(0,5), limits = c(0,100)) +
-  scale_color_gradient2(high="#e31a1c", low="#1f78b4") +
-  facet_grid(Clusters ~ ., space="free", scales = "free") +
-  themeNF(rotate = TRUE)
-ggsaveNF(out("Markers_Leukemia.pdf"), w=0.8,h=1.5)
+suppx <- "main"
+for(suppx in c("supp", "main")){
+    pDTx <- if(suppx == "main") pDT[Cluster.number %in% clusters.plot] else pDT
+    h=length(unique(pDTx$Cluster.number)) * 0.07 + 0.2
+    ggplot(pDTx, aes(y=factor(as.numeric(Cluster.number)), x=Gene, color=scale, size=percentage)) + 
+      geom_point() +
+      geom_point(color="black", shape=1) + 
+      scale_size_continuous(range=c(0,5), limits = c(0,100)) +
+      scale_color_gradient2(high="#e31a1c", low="#1f78b4") +
+      facet_grid(Clusters ~ ., space="free", scales = "free") +
+      themeNF(rotate = TRUE) +
+      ylab("Cluster") + xlab("Gene")
+    ggsaveNF(out("Markers_Leukemia_",suppx,".pdf"), w=0.8,h=h)
+}
+
 
 
 
