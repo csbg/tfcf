@@ -651,7 +651,7 @@ ggplot(pDT, aes(x=log2OR, y=gene, size=sig.perc, color=log2OR_cap)) +
   geom_point() +
   ylab("") + xlab("Myeloid enrichment vs Erythroid (log2OR)") +
   geom_vline(xintercept = 0)
-ggsaveNF(out("ClusterEnrichments_manual_MEPvsGMP.pdf"), w=1,h=1.2)
+ggsaveNF(out("ClusterEnrichments_manual_MEPvsGMP.pdf"), w=0.6,h=1.2)
 
 # . Plot displasia guides ---------------------------------------------------------
 pDT.top <- ann[timepoint == "28d"][grepl("OP1", sample)][mixscape_class.global == "NTC" | perturbed == TRUE]

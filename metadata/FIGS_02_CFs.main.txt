@@ -11,6 +11,8 @@ Chd4
 Rbbp4
 Hdac3
 Setdb1
+Atf7ip
+Ehmt1
 Rcor1
 Stag2
 Prmt1
