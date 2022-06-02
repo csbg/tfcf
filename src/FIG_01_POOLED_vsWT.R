@@ -219,7 +219,7 @@ ggplot(pDT, aes(x=label, y=Score, color=grepl("^NTC", label))) +
   xRot() +
   ylab(TeX(paste(cleanComparisons(pDT[1]$Comparison), "log_{2}FC"))) +
   xlab("")
-ggsaveNF(out("Scores_Example_Scores.pdf"), w=1.5)
+ggsaveNF(out("Scores_Example_Scores.pdf"), w=2, h=1)
 
 
 # Distribution
@@ -320,9 +320,10 @@ dla.list <- list(
   supp = fread("metadata/FIGS_Order_Fig1E_supp.tsv"),
   all = data.table(Factor=sort(unique(RESULTS.wt.agg.gene[hit == TRUE]$Gene)), Complex="NA")
 )
-(dla.nam <- names(dla.list)[3])
+(dla.nam <- names(dla.list)[1])
 for(dla.nam in names(dla.list)){
   dla <- dla.list[[dla.nam]]
+  if(is.null(dla$Heatmap)) dla$Heatmap <- 1
   pDT.stats <- copy(RESULTS.wt.agg.gene)
   pDT.stats <- unique(pDT.stats[,-"Comparison.Group"])
   pDT.stats <- pDT.stats[Gene %in% dla$Factor]
@@ -389,54 +390,59 @@ for(dla.nam in names(dla.list)){
 
 # Comparison of two main populations (2D - Scatterplot) --------------------------------------
 cap <- 5
-cx <- c("GMP.MEP", "CKIT.LSK")
 
-# Prepare data
-pDT <- rbind(RESULTS.wt.agg.gene.wt, RESULTS.wt.agg.gene)
-pDT <- pDT[Comparison %in% cx]
-pDT.sig <- pDT[Genotype == "Cas9"][hit == TRUE][,paste(sort(unique(cleanComparisons(Comparison))), collapse = ","), by="Gene"]
-pDT.sig[grepl(",", V1),V1 := "Both"]
-pDT <- dcast.data.table(pDT, Gene + Genotype ~ Comparison, value.var = "z")
-pDT <- merge(pDT, pDT.sig, by="Gene", all.x=TRUE)
-pDT[, sig := V1]
-pDT[is.na(sig), sig := "None"]
-pDT$sig <- factor(pDT$sig, levels=c("Both", cleanComparisons(cx, order = FALSE), "None"))
-pDT[, colorCode := abs(get(cx[1])) + abs(get(cx[2])) > 5]
+xxx <- list(
+  c("GMP.MEP", "CKIT.LSK"),
+  c("MYE.UND", "GMPcd11.DN")
+)
 
-# Define dimensions
-pDT$dim1 <- pDT[[cx[1]]]
-pDT$dim2 <- pDT[[cx[2]]]
-pDT[,dim1 := pmin(cap, abs(dim1)) * sign(dim1)]
-pDT[,dim2 := pmin(cap, abs(dim2)) * sign(dim2)]
-
-# Axis labels with axes
-formatArrows <- function(x){
-  paste0(gsub("^(.+?)\\.(.+)$", "\\1", x),"  ", r'($\leftarrow$)',"  .  ",r'($\rightarrow$)',"  ", gsub("^(.+?)\\.(.+)$", "\\2", x))
+for(cx in xxx){
+  # Prepare data
+  pDT <- rbind(RESULTS.wt.agg.gene.wt, RESULTS.wt.agg.gene)
+  pDT <- pDT[Comparison %in% cx]
+  pDT.sig <- pDT[Genotype == "Cas9"][hit == TRUE][,paste(sort(unique(cleanComparisons(Comparison))), collapse = ","), by="Gene"]
+  pDT.sig[grepl(",", V1),V1 := "Both"]
+  pDT <- dcast.data.table(pDT, Gene + Genotype ~ Comparison, value.var = "z")
+  pDT <- merge(pDT, pDT.sig, by="Gene", all.x=TRUE)
+  pDT[, sig := V1]
+  pDT[is.na(sig), sig := "None"]
+  pDT$sig <- factor(pDT$sig, levels=c("Both", cleanComparisons(cx, order = FALSE), "None"))
+  pDT[, colorCode := abs(get(cx[1])) + abs(get(cx[2])) > 5]
+  
+  # Define dimensions
+  pDT$dim1 <- pDT[[cx[1]]]
+  pDT$dim2 <- pDT[[cx[2]]]
+  pDT[,dim1 := pmin(cap, abs(dim1)) * sign(dim1)]
+  pDT[,dim2 := pmin(cap, abs(dim2)) * sign(dim2)]
+  
+  # Axis labels with axes
+  formatArrows <- function(x){
+    paste0(gsub("^(.+?)\\.(.+)$", "\\1", x),"  ", r'($\leftarrow$)',"  .  ",r'($\rightarrow$)',"  ", gsub("^(.+?)\\.(.+)$", "\\2", x))
+  }
+  
+  # Define complexes
+  pDT$Complex <- ANN.genes[match(pDT$Gene, GENE)]$Complex_simple
+  pDT[is.na(Complex), Complex := "None"]
+  
+  write.tsv(pDT, out("Comparison_2D_Scatter_", paste(cx, collapse = "vs"),".tsv"))
+  
+  dlim <- cap
+  ggplot(pDT, aes(x=dim1, y=dim2)) + 
+    themeNF() +
+    geom_hline(yintercept = 0, color="lightgrey", alpha=0.5) +
+    geom_vline(xintercept = 0, color="lightgrey", alpha=0.5) +
+    stat_density_2d(geom = "polygon", contour = TRUE, aes(fill = after_stat(level)), colour = NA, bins = 10) +
+    #scale_fill_distiller(palette = "Blues", direction = 1) +
+    scale_fill_gradientn(colours=c("white", "#a6cee3", "#fdbf6f")) +
+    geom_point(data=pDT[Genotype == "Cas9" & grepl("NTC", Gene)], size=1, shape=3, color="#1f78b4") +
+    geom_point(data=pDT[Genotype == "Cas9" & !grepl("NTC", Gene) & sig != "None"], alpha=1, color="#e31a1c", size=2, shape=4) +
+    geom_point(data=pDT[Genotype == "Cas9" & !grepl("NTC", Gene) & sig == "None"], alpha=0.5, color="#000000", size=1, shape=16) +
+    geom_text_repel(data=pDT[Genotype == "Cas9" & !grepl("NTC", Gene) & colorCode == TRUE], aes(label=Gene)) +
+    xlab(TeX(formatArrows(cx[1]))) +
+    ylab(TeX(formatArrows(cx[2]))) +
+    ylim(-dlim, dlim) + xlim(-dlim,dlim)
+  ggsaveNF(out("Comparison_2D_Scatter_", paste(cx, collapse = "vs"),".pdf"), w=2,h=2)
 }
-
-# Define complexes
-pDT$Complex <- ANN.genes[match(pDT$Gene, GENE)]$Complex_simple
-pDT[is.na(Complex), Complex := "None"]
-
-write.tsv(pDT, out("Comparison_2D_Scatter.tsv"))
-
-dlim <- cap
-ggplot(pDT, aes(x=dim1, y=dim2)) + 
-  themeNF() +
-  geom_hline(yintercept = 0, color="lightgrey", alpha=0.5) +
-  geom_vline(xintercept = 0, color="lightgrey", alpha=0.5) +
-  stat_density_2d(geom = "polygon", contour = TRUE, aes(fill = after_stat(level)), colour = NA, bins = 10) +
-  #scale_fill_distiller(palette = "Blues", direction = 1) +
-  scale_fill_gradientn(colours=c("white", "#a6cee3", "#fdbf6f")) +
-  geom_point(data=pDT[Genotype == "Cas9" & grepl("NTC", Gene)], size=1, shape=3, color="#1f78b4") +
-  geom_point(data=pDT[Genotype == "Cas9" & !grepl("NTC", Gene) & sig != "None"], alpha=1, color="#e31a1c", size=2, shape=4) +
-  geom_point(data=pDT[Genotype == "Cas9" & !grepl("NTC", Gene) & sig == "None"], alpha=0.5, color="#000000", size=1, shape=16) +
-  geom_text_repel(data=pDT[Genotype == "Cas9" & !grepl("NTC", Gene) & colorCode == TRUE], aes(label=Gene)) +
-  xlab(TeX(formatArrows(cx[1]))) +
-  ylab(TeX(formatArrows(cx[2]))) +
-  ylim(-dlim, dlim) + xlim(-dlim,dlim)
-ggsaveNF(out("Comparison_2D_Scatter.pdf"), w=2,h=2)
-
 
 
 # Plot networks ------------------------------------------------------------

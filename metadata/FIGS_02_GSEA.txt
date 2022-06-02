@@ -1,0 +1,91 @@
+pathway	db
+Toll like Receptor signaling pathway	KEGG_2019_Mouse
+NOD like receptor	KEGG_2019_Mouse
+Rap1 Signaling pathway	KEGG_2019_Mouse
+cAMP signaling	KEGG_2019_Mouse
+p53 signaling	WikiPathways_2019_Mouse
+Non-odorant GPCRs	WikiPathways_2019_Mouse
+Chemokine signaling pathway	WikiPathways_2019_Mouse
+Kit Receptor signaling pathway	WikiPathways_2019_Mouse
+Alpha6-Beta 4 Integring Signaling pathway	WikiPathways_2019_Mouse
+B cell receptor signaling pathway	KEGG_2019_Mouse
+Il5 signaling pathway	WikiPathways_2019_Mouse
+Antigen processing presentation	KEGG_2019_Mouse
+Inflammatory response pathway	WikiPathways_2019_Mouse
+Complement Activation Classical Pathway	WikiPathways_2019_Mouse
+Complement and Coagulation cascades	WikiPathways_2019_Mouse
+Micorglia Pathogen Phagocytosis pathway	WikiPathways_2019_Mouse
+TYROBP Causal Networks	WikiPathways_2019_Mouse
+Th17 Cell differentiation	KEGG_2019_Mouse
+Th1 th2 Cell differentiation	KEGG_2019_Mouse
+Platelet activation	KEGG_2019_Mouse
+Cell Adhesion molecules	KEGG_2019_Mouse
+ECM Receptor Interaction	KEGG_2019_Mouse
+Focal Adhesion	WikiPathways_2019_Mouse
+Oxidative Phosphorylation	WikiPathways_2019_Mouse
+Oxidative phosphorylation	KEGG_2019_Mouse
+Electron Transport Chain	WikiPathways_2019_Mouse
+Amino sugar and nucleotide sugar metabolism	KEGG_2019_Mouse
+Alanine, asprtate and glutamate metabolism	KEGG_2019_Mouse
+Heme biosyntesis	WikiPathways_2019_Mouse
+Prostaglandin Synthesis and Regulation	WikiPathways_2019_Mouse
+Ribosome Biogenesis	KEGG_2019_Mouse
+Translation Factors	WikiPathways_2019_Mouse
+RNA transport	KEGG_2019_Mouse
+Spliceosome	KEGG_2019_Mouse
+DNA replication	WikiPathways_2019_Mouse
+DNA replication	KEGG_2019_Mouse
+Nucleotide excision repair	KEGG_2019_Mouse
+Homologous Recombination	KEGG_2019_Mouse
+JUND human 	TRRUST_Transcription_Factors_2019
+FOS human 	TRRUST_Transcription_Factors_2019
+POU2AF1 mouse 	TRRUST_Transcription_Factors_2019
+PAX5 mouse	TRRUST_Transcription_Factors_2019
+ZEB1 human	TRRUST_Transcription_Factors_2019
+RUNX3 mouse 	TRRUST_Transcription_Factors_2019
+SNAI2 human	TRRUST_Transcription_Factors_2019
+TCF12 mouse	TRRUST_Transcription_Factors_2019
+RUNX1 human	TRRUST_Transcription_Factors_2019
+RUNX2 mouse 	TRRUST_Transcription_Factors_2019
+SPI1 human 	TRRUST_Transcription_Factors_2019
+SPI1 mouse 	TRRUST_Transcription_Factors_2019
+ETS1 mouse 	TRRUST_Transcription_Factors_2019
+RELA mouse 	TRRUST_Transcription_Factors_2019
+NFKB1 mouse	TRRUST_Transcription_Factors_2019
+JUN human 	TRRUST_Transcription_Factors_2019
+EBF1 mouse	TRRUST_Transcription_Factors_2019
+TCF3 mouse 	TRRUST_Transcription_Factors_2019
+FOXO1 mouse	TRRUST_Transcription_Factors_2019
+RELA human 	TRRUST_Transcription_Factors_2019
+NFKB1 human	TRRUST_Transcription_Factors_2019
+SP1 mouse 	TRRUST_Transcription_Factors_2019
+SP1 human	TRRUST_Transcription_Factors_2019
+JUN human 	TRRUST_Transcription_Factors_2019
+EGR1 mouse	TRRUST_Transcription_Factors_2019
+IKZF1 mouse	TRRUST_Transcription_Factors_2019
+Gata1 (mouse)	TRANSFAC_and_JASPAR_PWMs
+EGR1 (mouse) 	TRANSFAC_and_JASPAR_PWMs
+SP3 (human)	TRANSFAC_and_JASPAR_PWMs
+SP1 (human)	TRANSFAC_and_JASPAR_PWMs
+ZNF281 (human)	TRANSFAC_and_JASPAR_PWMs
+HINFP (human)	TRANSFAC_and_JASPAR_PWMs
+SP1 (mouse	TRANSFAC_and_JASPAR_PWMs
+SMAD4 (mouse)	TRANSFAC_and_JASPAR_PWMs
+HIF1A (mouse)	TRANSFAC_and_JASPAR_PWMs
+POU2F1 (human)	TRANSFAC_and_JASPAR_PWMs
+ZBTB16 (human) 	TRANSFAC_and_JASPAR_PWMs
+CBEPB (human) 	TRANSFAC_and_JASPAR_PWMs
+STAT5B (human)	TRANSFAC_and_JASPAR_PWMs
+NRF1 (human)	TRANSFAC_and_JASPAR_PWMs
+SPI1 (mouse)	TRANSFAC_and_JASPAR_PWMs
+RUNX2 (mouse)	TRANSFAC_and_JASPAR_PWMs
+CEBPB (human) 	TRANSFAC_and_JASPAR_PWMs
+TP63 (human)	TRANSFAC_and_JASPAR_PWMs
+RUNX1 (human)	TRANSFAC_and_JASPAR_PWMs
+NFIA (human)	TRANSFAC_and_JASPAR_PWMs
+KLF4 (human) 	TRANSFAC_and_JASPAR_PWMs
+KLF11 (human)	TRANSFAC_and_JASPAR_PWMs
+ELF5 (mouse)	TRANSFAC_and_JASPAR_PWMs
+ NR3C1 (mouse) 	TRANSFAC_and_JASPAR_PWMs
+JUND (mouse) 	TRANSFAC_and_JASPAR_PWMs
+NR2C2 (human)	TRANSFAC_and_JASPAR_PWMs

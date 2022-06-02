@@ -74,7 +74,7 @@ GOI.targets <- list(
   markers2 = with(fread("metadata/FIGS_02_DE_Genes.tsv", check.names = TRUE), split(Gene.list, Programme))
 )
 GOI.targets$LSC <- list(LSC=c("Hif1a", "Myc", "Bcat1", grep("Hox", unique(deDT$gene_id), value=TRUE)))
-
+GOI.targets$ISGs <- list("Interferon stimulated genes"=fread("metadata/FIGS_02_ISG_Core.txt")$Gene)
 
 
 dla.vulcano.genes <- fread("metadata/FIGS_VulcanoGenes.tsv", header = FALSE)
@@ -243,24 +243,49 @@ ggplot(xDT, aes(x=guide, y=gene_id, color=estimate, size=pmin(5, -log10(q_value)
   ylab("Gene expression") + xlab("CRISPR targets")
 ggsaveNF(out("Repressors_CommonGenes.pdf"),w=w,h=h, guides = TRUE)
 
-# GSEA
+# GSEA ------------------------------------------------------
+dla <- fread("metadata/FIGS_02_GSEA.txt")
 pDT <- gseaDT[tissue == "in.vivo_14d_everything"]
-pDT <- pDT[grp %in% gg]
-pDT[, direction := ifelse(NES < 0, "down", "up")]
-# xDT <- pDT[gene_id %in% pDT[padj < 0.05][, .N, by=c("pathway", "direction", "db")][direction == "up"][order(N, decreasing = TRUE)][1:50]]
-# xDT <- hierarch.ordering(xDT, "guide", "gene_id", value.var = "estimate")
-# xDT <- hierarch.ordering(xDT, "gene_id", "guide", value.var = "estimate")
-# # xDT <- hierarch.ordering(xDT, "gene_id", "guide", value.var = "estimate")
-# h=length(unique(xDT$gene_id)) * 0.05 + 0.5
-# w=length(unique(xDT$guide)) * 0.07 + 0.7
-# ggplot(xDT, aes(x=guide, y=gene_id, color=estimate, size=pmin(5, -log10(q_value)))) + 
-#   themeNF(rotate=TRUE) +
-#   geom_point() +
-#   scale_color_gradient2(name="log2FC", low="blue", high="red") +
-#   scale_size_continuous(name="-log10(padj)", range = c(0,5)) +
-#   #facet_grid(celltype ~ ., space = "free", scales = "free") +
-#   ylab("Gene expression") + xlab("CRISPR targets")
-# ggsaveNF(out("Repressors_CommonGenes.pdf"),w=w,h=h, guides = TRUE)
+pDT.sel <- pDT[grp %in% dla.factors$main]
+pval.cutoff <- 1e-4
+i <- 1
+xDT <- data.table()
+for(i in 1:nrow(dla)){
+  ret <- pDT[pathway == dla[1]$pathway & db == dla[i]$db]
+  if(nrow(ret) == 0){
+    pw <- dla[i]$pathway
+    pw <- gsub(" ", ".", pw)
+    pw <- gsub("([\\(\\)])", "\\\\\\1", pw)
+    ret <- pDT[grepl(pw, pathway, ignore.case = TRUE) & db == dla[i]$db]
+  }
+  xDT <- rbind(xDT, ret)
+}
+#gsea.ll <- list(
+  #JAKSTAT = unique(pDT.sel[grepl("STAT", pathway, ignore.case = FALSE)][!grepl("PROSTATE", pathway)][padj < pval.cutoff]$pathway),
+  #AP1 = unique(pDT.sel[grepl("JUN", pathway) | grepl("FOS", pathway) | grepl("AP1", pathway) | grepl("ATF4", pathway)][padj < pval.cutoff]$pathway),
+  #GPCR = pDT.sel[grepl("GPCR", pathway)][padj < pval.cutoff]$pathway,
+  #DLA = merge(pDT.sel, dla, by = c("pathway", "db"))$pathway
+  #TFs = pDT.sel[db %in% c("TRRUST_Transcription_Factors_2019", "TRANSFAC_and_JASPAR_PWMs")][padj < pval.cutoff]$pathway
+#)
+#xDT <- pDT[pathway %in% do.call(c,gsea.ll)]
+#xDT <- hierarch.ordering(xDT, "grp", "pathway", value.var = "NES")
+xDT <- hierarch.ordering(xDT, "pathway", "grp", value.var = "NES", aggregate = TRUE)
+xDT <- xDT[grp %in% dla.factors$main]
+xDT$grp <- factor(xDT$grp, levels=dla.factors$main)
+h=length(unique(xDT$pathway)) * 0.07 + 0.5
+w=length(unique(xDT$grp)) * 0.07 + 2
+xDT$db <- factor(gsub("\\_", "\n", xDT$db), levels = unique(gsub("\\_", "\n", dla$db)))
+ggplot(xDT, aes(x=grp, y=pathway, color=NES, size=pmin(5, -log10(padj)))) + 
+  themeNF(rotate=TRUE) +
+  geom_point() +
+  scale_color_gradient2(name="NES", low="blue", high="red") +
+  scale_size_continuous(name="-log10(padj)", range = c(0,5)) +
+  facet_grid(db ~ ., space = "free", scales = "free") +
+  theme(strip.text.y = element_text(angle=0)) +
+  ylab("") + xlab("")
+ggsaveNF(out("GSEA.pdf"),w=w,h=h, guides = TRUE)
+
+
 
 
 
