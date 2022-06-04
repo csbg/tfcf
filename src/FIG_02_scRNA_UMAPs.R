@@ -26,9 +26,14 @@ source("src/FUNC_Monocle_PLUS.R")
 # Load data ---------------------------------------------------------------
 
 # Factors
-dla.factors <- list(
+dla.healthy <- list(
   supp=fread("metadata/FIGS_02_CFs.supp.txt")$Factor,
   main=fread("metadata/FIGS_02_CFs.main.txt")$Factor
+)
+
+dla.cancer <- list(
+  supp=fread("metadata/FIGS_06_CFs.supp.txt")$Factor,
+  main=fread("metadata/FIGS_06_CFs.main.txt")$Factor
 )
 
 # Annotations
@@ -632,8 +637,8 @@ ggsaveNF(out("UMAP_Samples.pdf"), w=2,h=2)
 # ggsaveNF(out("ClusterEnrichments_manual_BcellsOnly.pdf"), w=1,h=1.5)
 
 typex <- "main"
-for(typex in names(dla.factors)){
-  dla <- dla.factors[[typex]]
+for(typex in names(dla.healthy)){
+  dla <- dla.healthy[[typex]]
 
   # Plot enrichments with DLA order
   pDT <- fish.enrich.broad[gene %in% dla]
@@ -907,7 +912,7 @@ pDT <- copy(fish.enrich)
 pDT[, celltype := cleanCelltypes(celltype, clean=TRUE, twoLines = FALSE, order = TRUE, reverse = TRUE)]
 pDT[, log2OR_cap := pmin(2, abs(log2OR)) * sign(log2OR)]
 for(suppx in c("main", "supp")){
-  dla <- dla.factors[[suppx]]
+  dla <- dla.cancer[[suppx]]
   pDTx <- if(suppx == "main") pDT[Clusters %in% paste("cl", clusters.plot)] else pDT
   pDTx <- pDTx[gene %in% dla]
   pDTx$gene <- factor(pDTx$gene, levels = dla)
