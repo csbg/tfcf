@@ -6,6 +6,7 @@ require(latex2exp)
 require(ggrepel)
 require(igraph)
 require(ggtext)
+require(WriteXLS)
 
 
 # Load data ---------------------------------------------------------------
@@ -114,8 +115,15 @@ REPLICATES.VALUES[, guide_i := as.numeric(factor(rn)), by=c("Gene")]
 # REPLICATES.VALUES[, guide_i := rank(rn), by=c("Gene")]
 
 
-
 # SETUP ENDS HERE ---------------------------------------------------------
+
+
+
+# Supp Table --------------------------------------------------------------
+xDT <- RESULTS.wt.agg.gene[!grepl("NTC", Gene)][order(Population1, Population2, -n, -percSig, -z)][,c("Gene", "Population1", "Population2", "z", "sig", "n"),with=F]
+colnames(xDT) <- c("Gene", "Population 1", "Population 2", "Normalized lineage score", "Significant guides", "Total guides")
+WriteXLS(x=xDT, ExcelFileName=out("Supplementary_Table_FACSscreen.xls"), AdjWidth=TRUE, BoldHeaderRow=TRUE, FreezeRow=1, SheetNames="Table")
+write.tsv(xDT, out("Supplementary_Table_FACSscreen.tsv"))
 
 
 

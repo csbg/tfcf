@@ -244,6 +244,8 @@ ggplot(xDT, aes(x=guide, y=gene_id, color=estimate, size=pmin(5, -log10(q_value)
 ggsaveNF(out("Repressors_CommonGenes.pdf"),w=w,h=h, guides = TRUE)
 
 # GSEA ------------------------------------------------------
+
+# . in vivo 14d -----------------------------------------------------------
 dla <- fread("metadata/FIGS_02_GSEA.txt")
 pDT <- gseaDT[tissue == "in.vivo_14d_everything"]
 pDT.sel <- pDT[grp %in% dla.factors$main]
@@ -286,6 +288,32 @@ ggplot(xDT, aes(x=grp, y=pathway, color=NES, size=pmin(5, -log10(padj)))) +
 ggsaveNF(out("GSEA.pdf"),w=w,h=h, guides = TRUE)
 
 
+# . in vivo 28d / ex vivo 9d -----------------------------------------------------------
+pDT <- gseaDT[grepl("in.vivo", tissue) | grepl("ex.vivo", tissue)]
+pDT.sel <- pDT[grp %in% dla.factors$main]
+pval.cutoff <- 1e-2
+
+gsea.ll <- list(
+JAKSTAT = unique(pDT.sel[grepl("STAT", pathway, ignore.case = FALSE)][!grepl("PROSTATE", pathway)][padj < pval.cutoff]$pathway),
+IFN = unique(pDT.sel[grepl("IFN", pathway, ignore.case = TRUE)][padj < pval.cutoff]$pathway),
+TNF = unique(pDT.sel[grepl("TNF", pathway, ignore.case = TRUE)][padj < pval.cutoff]$pathway)
+)
+xDT <- pDT[pathway %in% do.call(c,gsea.ll)]
+xDT <- hierarch.ordering(xDT, "pathway", "grp", value.var = "NES", aggregate = TRUE)
+xDT <- xDT[grp %in% dla.factors$main]
+xDT$grp <- factor(xDT$grp, levels=dla.factors$main)
+h=length(unique(xDT$pathway)) * 0.07 + 0.5
+w=length(unique(xDT$grp)) * 0.07 * 4 + 2
+xDT$db <- gsub("\\_", "\n", xDT$db)#, levels = unique(xDT$db))
+ggplot(xDT, aes(x=grp, y=pathway, color=NES, size=pmin(5, -log10(padj)))) + 
+  themeNF(rotate=TRUE) +
+  geom_point() +
+  scale_color_gradient2(name="NES", low="blue", high="red") +
+  scale_size_continuous(name="-log10(padj)", range = c(0,5)) +
+  facet_grid(db ~ tissue, space = "free", scales = "free") +
+  theme(strip.text.y = element_text(angle=0)) +
+  ylab("") + xlab("")
+ggsaveNF(out("GSEA_brian.pdf"),w=w,h=h, guides = TRUE)
 
 
 
