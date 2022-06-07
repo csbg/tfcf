@@ -431,7 +431,7 @@ inDir <- dirout_load("SCRNA_21_02_ClusterEnrichments_simple")
 
 
 # . Cell numbers ----------------------------------------------------------
-pDT <- annList[tissue != "leukemia"][timepoint != "d28"][,.N, by=c("Clusters", "tissue")]
+pDT <- annList[tissue != "leukemia"][timepoint != "28d"][,.N, by=c("Clusters", "tissue")]
 pDT[, sum := sum(N), by="tissue"]
 pDT[, perc := N/sum*100]
 pDT[, Clusters := cleanCelltypes(Clusters, reverse = TRUE)]
@@ -439,10 +439,10 @@ ggplot(pDT, aes(x=Clusters, y=perc, fill=tissue)) +
     geom_bar(stat="identity", position=position_dodge2(preserve = "single")) + 
     #scale_y_log10() +
     themeNF(rotate=TRUE) +
-    ylab("Number of cells") + xlab("")
+    ylab("Percent of cells") + xlab("")
 ggsaveNF(outBase("CellCounts.pdf"), w=1.5,h=1, guides = TRUE)
 
-pDT <- annList[tissue != "leukemia"][timepoint != "d28"][,.N, by=c("gene", "Clusters", "tissue")][!is.na(gene)]
+pDT <- annList[tissue != "leukemia"][timepoint != "28d"][,.N, by=c("gene", "Clusters", "tissue")][!is.na(gene)]
 # ggplot(pDT,aes(x=N, group=CRISPR_Cellranger)) + 
 #   stat_ecdf() +
 #   facet_grid(tissue ~ .)
@@ -452,6 +452,19 @@ ggplot(pDT,aes(x=Clusters, y=N, color=tissue)) +
   geom_boxplot(coef=10^10, position=position_dodge2(preserve = "single")) + 
   ylab("Number of cells") + xlab("")
 ggsaveNF(outBase("CellCounts_InVivoSparse.pdf"), w=1.5,h=1, guides = TRUE)
+
+
+
+# Cell numbers per guide --------------------------------------------------
+pDT <- annList[tissue != "leukemia"][timepoint != "28d"][,.N, by=c("gene", "tissue")][!is.na(gene)]
+pDT <- pDT[gene %in% dla.healthy$supp]
+pDT$gene <- factor(pDT$gene, levels=dla.healthy$supp)
+ggplot(pDT, aes(x=gene,y=N, fill=tissue)) + 
+  themeNF(rotate = TRUE) +
+  geom_bar(stat="identity", position="dodge") +
+  scale_y_log10() +
+  xlab("CF") + ylab("Number of cells (log10)")
+ggsaveNF(outBase("CellCounts_CFs.pdf"), w=2,h=1, guides = TRUE)
 
 
 # . NTC distributions to assess clonality effects -------------------------------------------------
@@ -751,38 +764,43 @@ ggsaveNF(out("BulkSignatures_Supp.pdf"), w=2.5,h=1)
 
 
 # . Plot enrichments with good order for day 7
-dla <- fread("metadata/FIGS_Order_Fig2_CFs.tsv")
-pDT <- fish.enrich[day == "day7"][gene %in% dla$Factor][Clusters %in% c("GMP", "MkP", "Eo/Ba", "LSK")]
-pDT$gene <- factor(pDT$gene, levels = dla$Factor)
-#pDT$Complex <- dla[match(pDT$gene, Factor)]$Complex
-pDT[, Clusters := cleanCelltypes(Clusters, clean=FALSE, twoLines = FALSE, order = TRUE, reverse = TRUE)]
-ggplot(pDT, aes(x=gene, y=Clusters, size=sig.perc, color=log2OR_cap)) + 
-  themeNF(rotate=TRUE) +
-  scale_color_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
-  scale_size_continuous(name="% sign.", range = c(0,4)) +
-  geom_point() +
-  geom_point(shape=1, color="lightgrey") +
-  xlab("Gene") + ylab("Cell type") +
-  #facet_grid(Clusters ~ . , space="free", scales = "free") +
-  theme(strip.text.y = element_text(angle=0))
-ggsaveNF(out("ClusterEnrichments_manual_cleaned_day7.pdf"), w=1.6,h=0.6)
+suppx <- "main"
+for(suppx in names(dla.healthy)){
+  dla <- dla.healthy[[suppx]]
+  pDT <- fish.enrich[day == "day7"][gene %in% dla]#[Clusters %in% c("GMP", "MkP", "Eo/Ba", "HSC", "")]
+  pDT$gene <- factor(pDT$gene, levels = rev(dla))
+  #pDT$Complex <- dla[match(pDT$gene, Factor)]$Complex
+  #pDT[, Clusters := cleanCelltypes(Clusters, clean=FALSE, twoLines = FALSE, order = TRUE, reverse = TRUE)]
+  h=length(unique(dla)) * 0.07 + 0.1
+  ggplot(pDT, aes(y=gene, x=Clusters, size=sig.perc, color=log2OR_cap)) + 
+    themeNF(rotate=TRUE) +
+    scale_color_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
+    scale_size_continuous(name="% sign.", range = c(0,4)) +
+    geom_point() +
+    geom_point(shape=1, color="lightgrey") +
+    xlab("Gene") + ylab("Cell type") +
+    #facet_grid(Clusters ~ . , space="free", scales = "free") +
+    theme(strip.text.y = element_text(angle=0))
+  ggsaveNF(out("ClusterEnrichments_manual_cleaned_day7_",suppx,".pdf"), w=0.7,h=h)
+}
+
 
 # . Plot enrichments with late GMPs from day 9
-dla <- fread("metadata/FIGS_Order_Fig2_CFs.tsv")
-pDT <- fish.enrich[day == "day9"][gene %in% dla$Factor][Clusters %in% c("Late GMP")][log2OR != 0]
-pDT$gene <- factor(pDT$gene, levels = pDT[order(log2OR)]$gene)
-#pDT$Complex <- dla[match(pDT$gene, Factor)]$Complex
-pDT[, Clusters := cleanCelltypes(Clusters, clean=FALSE, twoLines = FALSE, order = TRUE, reverse = TRUE)]
-ggplot(pDT, aes(y=gene, x=log2OR_cap, size=sig.perc, color=log2OR_cap)) + 
-  themeNF(rotate=TRUE) +
-  scale_color_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
-  scale_size_continuous(name="% sign.", range = c(0,4)) +
-  geom_point() +
-  geom_point(shape=1, color="lightgrey") +
-  xlab("log2 OR") + ylab("Gene") +
-  #facet_grid(Clusters ~ . , space="free", scales = "free") +
-  theme(strip.text.y = element_text(angle=0))
-ggsaveNF(out("ClusterEnrichments_manual_lateGMPs_day9.pdf"), w=1,h=1)
+# dla <- fread("metadata/FIGS_Order_Fig2_CFs.tsv")
+# pDT <- fish.enrich[day == "day9"][gene %in% dla$Factor][Clusters %in% c("Late GMP")][log2OR != 0]
+# pDT$gene <- factor(pDT$gene, levels = pDT[order(log2OR)]$gene)
+# #pDT$Complex <- dla[match(pDT$gene, Factor)]$Complex
+# pDT[, Clusters := cleanCelltypes(Clusters, clean=FALSE, twoLines = FALSE, order = TRUE, reverse = TRUE)]
+# ggplot(pDT, aes(y=gene, x=log2OR_cap, size=sig.perc, color=log2OR_cap)) + 
+#   themeNF(rotate=TRUE) +
+#   scale_color_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
+#   scale_size_continuous(name="% sign.", range = c(0,4)) +
+#   geom_point() +
+#   geom_point(shape=1, color="lightgrey") +
+#   xlab("log2 OR") + ylab("Gene") +
+#   #facet_grid(Clusters ~ . , space="free", scales = "free") +
+#   theme(strip.text.y = element_text(angle=0))
+# ggsaveNF(out("ClusterEnrichments_manual_lateGMPs_day9.pdf"), w=1,h=1)
 
 
 # LEUKEMIA---------------------------------------------------------

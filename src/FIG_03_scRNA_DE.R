@@ -91,6 +91,25 @@ dla.factors <- list(
 
 
 
+# . Supplementary tables ----------------------------------------------------
+
+# DE Genes
+pDT <- deDT[tissue == "in.vivo_14d_everything_s"][q_value < 0.05][abs(estimate) > 1][order(guide, q_value, -estimate)][,c("guide", "gene_id", "estimate", "q_value"),with=F]
+pDT[, q_value := format(q_value, scientific=TRUE, digits=3)]
+for(cx in 1:ncol(pDT)){if(is.numeric(pDT[[cx]])) pDT[[cx]] <- round(pDT[[cx]],3)}
+colnames(pDT) <- c("CF KO", "gene", "log2 fold change", "adjusted p-value")
+WriteXLS(x=pDT, ExcelFileName=out("Supplementary_Table_DE.xls"), AdjWidth=TRUE, BoldHeaderRow=TRUE, FreezeRow=1, SheetNames="Table")
+write.tsv(pDT, out("Supplementary_Table_DE.tsv"))
+
+# GSEA
+pDT <- gseaDT[tissue == "in.vivo_14d_everything"][padj < 0.05][order(grp, padj, -NES)][,c("grp", "pathway", "db", "NES", "padj"),with=F]
+pDT[, padj := format(padj, scientific=TRUE, digits=3)]
+for(cx in 1:ncol(pDT)){if(is.numeric(pDT[[cx]])) pDT[[cx]] <- round(pDT[[cx]],3)}
+colnames(pDT) <- c("CF KO", "gene set", "database", "log2 fold change", "adjusted p-value")
+WriteXLS(x=pDT, ExcelFileName=out("Supplementary_Table_GSEA.xls"), AdjWidth=TRUE, BoldHeaderRow=TRUE, FreezeRow=1, SheetNames="Table")
+write.tsv(pDT, out("Supplementary_Table_GSEA.tsv"))
+
+
 
 # Plot specific genes -----------------------------------------------------
 (tx <- deDT[use == TRUE]$tissue[1])
