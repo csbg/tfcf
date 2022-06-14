@@ -455,10 +455,11 @@ ggsaveNF(outBase("CellCounts_InVivoSparse.pdf"), w=1.5,h=1, guides = TRUE)
 
 
 
-# Cell numbers per guide --------------------------------------------------
+# . Cell numbers per guide --------------------------------------------------
 pDT <- annList[tissue != "leukemia"][timepoint != "28d"][,.N, by=c("gene", "tissue")][!is.na(gene)]
 pDT <- pDT[gene %in% dla.healthy$supp]
 pDT$gene <- factor(pDT$gene, levels=dla.healthy$supp)
+pDT$gene <- factor(pDT$gene, levels=rev(pDT[,sum(N), by="gene"][order(V1)]$gene))
 ggplot(pDT, aes(x=gene,y=N, fill=tissue)) + 
   themeNF(rotate = TRUE) +
   geom_bar(stat="identity", position="dodge") +

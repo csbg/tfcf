@@ -202,9 +202,11 @@ for(tissuex in unique(deDT$tissue)){
 
 
 # Correlation Heatmaps ----------------------------------------------------
+gg.exclude <- c("Smarcb1", "Spi1")
 pDT <- cDT[tissue_x == tissue_y & time_x == time_y]
 pDT <- pDT[time_x %in% c("7d", "14d")]
 pDT <- pDT[gene_x != gene_y]
+pDT <- pDT[!gene_x %in% gg.exclude & !gene_y %in% gg.exclude]
 pDT <- hierarch.ordering(pDT, "gene_x", "gene_y", "value", TRUE)
 pDT$gene_y <- factor(pDT$gene_y, levels = levels(pDT$gene_x))
 p <- ggplot(pDT, aes(x=gene_x, y=gene_y, fill=value)) + 
@@ -215,14 +217,14 @@ p <- ggplot(pDT, aes(x=gene_x, y=gene_y, fill=value)) +
   xlab("") + ylab("")
 ggsaveNF(out("ExpressionCorrelation.pdf"), w=4,h=2, plot=p)
 
-pDT <- pDT[gene_x %in% dla.factors$`CRISPR list-Main` & gene_y %in% dla.factors$`CRISPR list-Main`]
+pDT <- pDT[gene_x %in% dla.factors$main & gene_y %in% dla.factors$main]
 p <- ggplot(pDT, aes(x=gene_x, y=gene_y, fill=value)) + 
   geom_tile() +
   scale_fill_gradient2(low="blue", high="red")+
   facet_grid(. ~ tissue_x) +
   themeNF(rotate=TRUE) +
   xlab("") + ylab("")
-ggsaveNF(out("ExpressionCorrelation_Figure2.pdf"), w=2,h=1, plot=p)
+ggsaveNF(out("ExpressionCorrelation_Figure2.pdf"), w=2,h=1.2, plot=p)
 
 
 # Repressors ------------------------------------------------------------
