@@ -12,7 +12,7 @@ SANN <- SANN[!sample %in% samples.not.use]
 sort(SANN$sample)
 
 # Integrate data with Monocle
-tx <- SANN$tissue[1]
+(tx <- SANN$tissue[1])
 for(tx in unique(SANN$tissue)){
   out <- dirout(paste0(basedir, tx, "/"))
   monocle.file <- out("MonocleObject.RData")

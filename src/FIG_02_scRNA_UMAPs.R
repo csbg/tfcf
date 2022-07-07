@@ -2,6 +2,7 @@ source("src/00_init.R")
 base.dir <- "FIG_02_scRNA_UMAPs/"
 outBase <- dirout(base.dir)
 
+require(ggrepel)
 
 # FUNCTIONS ---------------------------------------------------------------
 ds <- function(path){load(path); return(monocle.obj)}
@@ -33,7 +34,7 @@ dla.healthy <- list(
 
 dla.cancer <- list(
   supp=fread("metadata/FIGS_06_CFs.supp.txt")$Factor,
-  main=fread("metadata/FIGS_06_CFs.main.txt")$Factor
+  main=setdiff(fread("metadata/FIGS_06_CFs.main.txt")$Factor, c("Brd9", "Smarcd1", "Stag2"))
 )
 
 # Annotations
@@ -768,7 +769,7 @@ ggsaveNF(out("BulkSignatures_Supp.pdf"), w=2.5,h=1)
 suppx <- "main"
 for(suppx in names(dla.healthy)){
   dla <- dla.healthy[[suppx]]
-  pDT <- fish.enrich[day == "day7"][gene %in% dla]#[Clusters %in% c("GMP", "MkP", "Eo/Ba", "HSC", "")]
+  pDT <- fish.enrich[gene %in% dla][(Clusters %in% c("GMP", "MkP", "Eo/Ba", "HSC", "EBMP") & day=="day7") | (Clusters == "GMP (late)" & day=="day9")]
   pDT$gene <- factor(pDT$gene, levels = rev(dla))
   #pDT$Complex <- dla[match(pDT$gene, Factor)]$Complex
   #pDT[, Clusters := cleanCelltypes(Clusters, clean=FALSE, twoLines = FALSE, order = TRUE, reverse = TRUE)]
@@ -782,7 +783,7 @@ for(suppx in names(dla.healthy)){
     xlab("Gene") + ylab("Cell type") +
     #facet_grid(Clusters ~ . , space="free", scales = "free") +
     theme(strip.text.y = element_text(angle=0))
-  ggsaveNF(out("ClusterEnrichments_manual_cleaned_day7_",suppx,".pdf"), w=0.7,h=h)
+  ggsaveNF(out("ClusterEnrichments_manual_combined7and9_",suppx,".pdf"), w=0.7,h=h)
 }
 
 
@@ -928,17 +929,17 @@ ggsaveNF(out("CellCycle_Numbers.pdf"), w=3,h=1.2)
 # . manual enrichments ----------------------------------------------------
 pDT <- copy(fish.enrich)
 #pDT$Complex <- dla[match(pDT$gene, Factor)]$Complex
-pDT[, celltype := cleanCelltypes(celltype, clean=TRUE, twoLines = FALSE, order = TRUE, reverse = TRUE)]
+#pDT[, celltype := cleanCelltypes(celltype, clean=TRUE, twoLines = FALSE, order = TRUE, reverse = TRUE)]
 pDT[, log2OR_cap := pmin(2, abs(log2OR)) * sign(log2OR)]
 for(suppx in c("main", "supp")){
   dla <- dla.cancer[[suppx]]
-  pDTx <- if(suppx == "main") pDT[Clusters %in% paste("cl", clusters.plot)] else pDT
+  pDTx <- if(suppx == "main") pDT[Clusters %in% paste("cl", setdiff(clusters.plot, 15))] else pDT
   pDTx <- pDTx[gene %in% dla]
   pDTx$gene <- factor(pDTx$gene, levels = dla)
   pDTx[,Clusters := as.numeric(gsub("cl ", "", Clusters))]
   w=length(unique(dla)) * 0.04 + 1
   h=length(unique(pDTx$Clusters)) * 0.06 + 0.3
-  ggplot(pDTx, aes(x=gene, y=factor(Clusters), size=sig.perc, color=log2OR_cap)) + 
+  ggplot(pDTx, aes(x=gene, y=factor(Clusters), size=sig.perc*100, color=log2OR_cap)) + 
     themeNF(rotate=TRUE) +
     scale_color_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
     scale_size_continuous(name="% sign.", range = c(0,4)) +
@@ -1012,23 +1013,23 @@ for(suppx in c("supp", "main")){
 
 
 
-# Cancer vs Healthy -------------------------------------------------------
-out <- dirout(paste0(base.dir, "/", "CvH"))
-
-pDT <- list(
-  leukemia = fread(outBase("leukemia/Cluster_enrichments_basic_all.tsv")),
-  normal = fread(outBase("ex.vivo/Cluster_enrichments_basic_all.tsv"))
-)
-pDT <- rbindlist(pDT, idcol = "tissue")
-pDT[, Clusters := cleanCelltypes(Clusters, reverse = FALSE, clean=FALSE)]
-
-ggplot(pDT, aes(x=Clusters, y=tissue, size=sig.perc, color=log2OR_cap)) + 
-  themeNF(rotate = TRUE) +
-  scale_color_gradient2(name = "log2(OR)", low="blue", midpoint = 0, high="red") +
-  scale_size_continuous(name = "% sign", range=c(0,5)) +
-  geom_point() +
-  geom_point(shape=1, color="lightgrey") +
-  facet_grid(gene ~ .) +
-  theme(strip.text.y = element_text(angle=0)) +
-  xlab("Cell types") + ylab("")
-ggsaveNF(out("Cluster_enrichments.pdf"), w=1.5,h=4.5, guides = TRUE)
+# # Cancer vs Healthy -------------------------------------------------------
+# out <- dirout(paste0(base.dir, "/", "CvH"))
+# 
+# pDT <- list(
+#   leukemia = fread(outBase("leukemia/Cluster_enrichments_basic_all.tsv")),
+#   normal = fread(outBase("ex.vivo/Cluster_enrichments_basic_all.tsv"))
+# )
+# pDT <- rbindlist(pDT, idcol = "tissue")
+# pDT[, Clusters := cleanCelltypes(Clusters, reverse = FALSE, clean=FALSE)]
+# 
+# ggplot(pDT, aes(x=Clusters, y=tissue, size=sig.perc, color=log2OR_cap)) + 
+#   themeNF(rotate = TRUE) +
+#   scale_color_gradient2(name = "log2(OR)", low="blue", midpoint = 0, high="red") +
+#   scale_size_continuous(name = "% sign", range=c(0,5)) +
+#   geom_point() +
+#   geom_point(shape=1, color="lightgrey") +
+#   facet_grid(gene ~ .) +
+#   theme(strip.text.y = element_text(angle=0)) +
+#   xlab("Cell types") + ylab("")
+# ggsaveNF(out("Cluster_enrichments.pdf"), w=1.5,h=4.5, guides = TRUE)

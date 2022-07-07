@@ -43,4 +43,5 @@ Perturb-seq (10X)		LSK_OP4_NM_7d_1	YES	exVivo1	3prime	noMarker	7d		ba65d5aaaabb9
 Perturb-seq (10X)		LSK_OP4_NM_9d_1	YES	exVivo1	3prime	noMarker	9d		2f12e20d6a9fdc1d716befd833c343d6	LSK_OP4_NM_9d_1/outs/metrics_summary.csv	
 Perturb-seq (10X)		inVivo_OP1_ckit_14d_1	YES	inVivo	3prime	Lin+,ckit+	14d		d2f7fa7466fb43648b297d00b4be68e8	inVivo_OP1_ckit_14d_1/outs/metrics_summary.csv	
 Perturb-seq (10X)		inVivo_OP4_lin-_14d_1	YES	inVivo	3prime	Lin-	14d		fe7ea3e9fbbcaa16e9be376337556e5f	inVivo_OP4_lin-_14d_1/outs/metrics_summary.csv	
-Perturb-seq (10X)		inVivo_OP4_ckit_14d_1	YES	inVivo	3prime	Lin+,ckit+	14d		c7a2578907e799c5161e329ee0e24411	inVivo_OP4_ckit_14d_1/outs/metrics_summary.csv	
+Perturb-seq (10X)		inVivo_OP4_ckit_14d_1	YES	inVivo	3prime	Lin+,ckit+	14d		c7a2578907e799c5161e329ee0e24411	inVivo_OP4_ckit_14d_1/outs/metrics_summary.csv
+Perturb-seq (10X)		DM_OP5_NM_6d_1	YES	leukemia	3prime	noMarker	6d		9122edef6537ffb47d356b76779d6612	DM_OP5_NM_6d_1/outs/metrics_summary.csv

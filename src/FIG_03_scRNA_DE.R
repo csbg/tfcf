@@ -46,6 +46,9 @@ cDT <- pDT
 # atacDT[, variable := gsub("^(.)", "\\U\\1", variable, perl=TRUE)]
 
 
+# ChIP --------------------------------------------------------------------
+chip.targets <- fread("metadata/FIGS_06_ChIPtargetsJulen.txt")
+
 # Link UMAP and DE --------------------------------------------------------
 umap.log2FC.cutoff <- 3
 pUMAP.de <- merge(umapDT, setNames(data.table::melt(data.table(fcMT, keep.rownames = TRUE), id.vars = "rn"), c("gene_id", "term", "estimate")), by.x="Gene", by.y="gene_id")
@@ -201,6 +204,56 @@ for(tissuex in unique(deDT$tissue)){
 
 
 
+# ChIP Analysis -----------------------------------------------------------
+pDT <- merge(deDT[tissue == "leukemia_6d_everything_s"], chip.targets, by.x=c("gene_id", "guide"), by.y=c("Gene","CF"))
+pDT[,direction := ifelse(estimate > 0, "up", "down")]
+
+for(typex in c("sig", "all")){
+  pDTx <- if(typex == "all") copy(pDT) else pDT[q_value < 0.05]
+
+  ggplot(pDTx, aes(x=Population, y=estimate)) + geom_violin() + facet_grid(. ~ guide) + themeNF(rotate = TRUE)
+  ggsaveNF(out("ChIP_",typex,"_estimate_violin.pdf"), w=3,h=1, guides = TRUE)
+  
+  ggplot(pDTx, aes(color=Population, x=estimate)) + geom_density() + facet_grid(. ~ guide) + themeNF(rotate = TRUE)
+  ggsaveNF(out("ChIP_",typex,"_estimate_density.pdf"), w=3,h=1, guides = TRUE)
+  
+  ggplot(pDTx, aes(color=Population, x=estimate)) + stat_ecdf() + facet_grid(. ~ guide) + themeNF(rotate = TRUE)
+  ggsaveNF(out("ChIP_",typex,"_estimate_ecdf.pdf"), w=3,h=1, guides = TRUE)
+  
+  ggplot(pDTx, aes(fill=direction, x=Population)) + geom_bar(position="dodge") + facet_grid(. ~ guide) + themeNF(rotate = TRUE)
+  ggsaveNF(out("ChIP_",typex,"_count_raw.pdf"), w=3,h=1, guides = TRUE)
+  
+  pDTn <- pDTx[, .N, by=c("direction", "Population", "guide")]
+  pDTn[, sum :=sum(N), by=c("Population", "guide")]
+  pDTn[, percent := N/sum * 100]
+  ggplot(pDTn, aes(fill=direction, x=Population, y=percent)) + geom_bar(position="dodge", stat="identity") + facet_grid(. ~ guide) + themeNF(rotate = TRUE)
+  ggsaveNF(out("ChIP_",typex,"_count_percent.pdf"), w=3,h=1, guides = TRUE)
+}
+
+pDTx <- copy(pDT)
+pDTx[, signifcant := ifelse(q_value < 0.05, "yes", "no")]
+pDTn <- pDTx[, .N, by=c("direction", "Population", "guide", "signifcant")]
+pDTn[, sum :=sum(N), by=c("Population", "guide")]
+pDTn[, percent := N/sum * 100]
+ggplot(pDTn, aes(fill=direction, x=Population, y=percent)) +
+  geom_bar(position="dodge", stat="identity") + 
+  facet_grid(signifcant ~ guide) + themeNF(rotate = TRUE) + 
+  ylab("Percent of genes (split by significant diff expr)")
+ggsaveNF(out("ChIP_","combined","_count_percent.pdf"), w=3,h=1, guides = TRUE)
+
+pDTx <- deDT[tissue == "leukemia_6d_everything_s"][guide %in% chip.targets$CF]
+pDTx[,direction := ifelse(estimate > 0, "up", "down")]
+pDTx[, signifcant := ifelse(q_value < 0.05, "yes", "no")]
+pDTn <- pDTx[, .N, by=c("direction", "guide", "signifcant")]
+pDTn[, sum :=sum(N), by=c("guide")]
+pDTn[, percent := N/sum * 100]
+ggplot(pDTn, aes(x=guide, y=percent, fill=direction)) + 
+  geom_bar(position="dodge", stat="identity") + 
+  facet_grid(signifcant ~ .) + themeNF(rotate = TRUE) + 
+  ylab("Percent of genes (split by significant diff expr)") +
+  ggtitle("All genes - not just ChIP targets")
+ggsaveNF(out("ChIP_control_nonTargets.pdf"), w=1,h=1, guides = TRUE)
+
 # Correlation Heatmaps ----------------------------------------------------
 gg.exclude <- c("Smarcb1", "Spi1")
 pDT <- cDT[tissue_x == tissue_y & time_x == time_y]
@@ -209,7 +262,8 @@ pDT <- pDT[gene_x != gene_y]
 pDT <- pDT[!gene_x %in% gg.exclude & !gene_y %in% gg.exclude]
 pDT <- hierarch.ordering(pDT, "gene_x", "gene_y", "value", TRUE)
 pDT$gene_y <- factor(pDT$gene_y, levels = levels(pDT$gene_x))
-p <- ggplot(pDT, aes(x=gene_x, y=gene_y, fill=value)) + 
+p <- ggplot(pDT[gene_x %in% dla.factors$supp & gene_y %in% dla.factors$supp],
+            aes(x=gene_x, y=gene_y, fill=value)) + 
   geom_tile() +
   scale_fill_gradient2(low="blue", high="red")+
   facet_grid(. ~ tissue_x) +
@@ -217,8 +271,8 @@ p <- ggplot(pDT, aes(x=gene_x, y=gene_y, fill=value)) +
   xlab("") + ylab("")
 ggsaveNF(out("ExpressionCorrelation.pdf"), w=4,h=2, plot=p)
 
-pDT <- pDT[gene_x %in% dla.factors$main & gene_y %in% dla.factors$main]
-p <- ggplot(pDT, aes(x=gene_x, y=gene_y, fill=value)) + 
+p <- ggplot(pDT[gene_x %in% dla.factors$main & gene_y %in% dla.factors$main],
+            aes(x=gene_x, y=gene_y, fill=value)) + 
   geom_tile() +
   scale_fill_gradient2(low="blue", high="red")+
   facet_grid(. ~ tissue_x) +
@@ -269,7 +323,7 @@ ggsaveNF(out("Repressors_CommonGenes.pdf"),w=w,h=h, guides = TRUE)
 # . in vivo 14d -----------------------------------------------------------
 dla <- fread("metadata/FIGS_02_GSEA.txt")
 pDT <- gseaDT[tissue == "in.vivo_14d_everything"]
-pDT.sel <- pDT[grp %in% dla.factors$main]
+pDT.sel <- pDT[grp %in% dla.factors$supp]
 pval.cutoff <- 1e-4
 i <- 1
 xDT <- data.table()
@@ -293,8 +347,8 @@ for(i in 1:nrow(dla)){
 #xDT <- pDT[pathway %in% do.call(c,gsea.ll)]
 #xDT <- hierarch.ordering(xDT, "grp", "pathway", value.var = "NES")
 xDT <- hierarch.ordering(xDT, "pathway", "grp", value.var = "NES", aggregate = TRUE)
-xDT <- xDT[grp %in% dla.factors$main]
-xDT$grp <- factor(xDT$grp, levels=dla.factors$main)
+xDT <- xDT[grp %in% dla.factors$supp]
+xDT$grp <- factor(xDT$grp, levels=dla.factors$supp)
 h=length(unique(xDT$pathway)) * 0.07 + 0.5
 w=length(unique(xDT$grp)) * 0.07 + 2
 xDT$db <- factor(gsub("\\_", "\n", xDT$db), levels = unique(gsub("\\_", "\n", dla$db)))
@@ -321,8 +375,8 @@ TNF = unique(pDT.sel[grepl("TNF", pathway, ignore.case = TRUE)][padj < pval.cuto
 )
 xDT <- pDT[pathway %in% do.call(c,gsea.ll)]
 xDT <- hierarch.ordering(xDT, "pathway", "grp", value.var = "NES", aggregate = TRUE)
-xDT <- xDT[grp %in% dla.factors$main]
-xDT$grp <- factor(xDT$grp, levels=dla.factors$main)
+xDT <- xDT[grp %in% dla.factors$supp]
+xDT$grp <- factor(xDT$grp, levels=dla.factors$supp)
 h=length(unique(xDT$pathway)) * 0.07 + 0.5
 w=length(unique(xDT$grp)) * 0.07 * 4 + 2
 xDT$db <- gsub("\\_", "\n", xDT$db)#, levels = unique(xDT$db))
@@ -560,7 +614,7 @@ ggsaveNF(out("GSEA_brian.pdf"),w=w,h=h, guides = TRUE)
 #     xlab("MDS dimension 1") +
 #     ylab("MDS dimension 2")
 #   ggsaveNF(out("CorrelationHM_MDS_",tx,".pdf"), w=2, h=2)
-}
+#}
 
 
 # # Regulatory Map UMAP -----------------------------------------------------

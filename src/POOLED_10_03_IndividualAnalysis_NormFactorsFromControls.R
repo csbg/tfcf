@@ -56,7 +56,7 @@ write.tsv(agDT, out("ComparisonToWT.tsv"))
 # . Get raw scores (log2FCs) ------------------------------------------
 res <- data.table()
 datex <- "10022021_Feb2021"
-libx <- "Br"
+libx <- "As"
 for(libx in unique(ann$Library)){
   
   xAnn <- ann[Library == libx]
@@ -72,7 +72,7 @@ for(libx in unique(ann$Library)){
   xMT <- voom(xMT, plot=FALSE)$E
   
   # For each genotype (WT and Cas9), compare log2FC for each pair of populations
-  gtx <- "WT"
+  gtx <- "Cas9"
   for(gtx in unique(xAnn$Genotype)){
     gAnn <- xAnn[Genotype == gtx]
     #stopifnot(nrow(gAnn) == 2)

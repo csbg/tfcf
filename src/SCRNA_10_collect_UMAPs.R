@@ -43,7 +43,7 @@ dDT.ct <- rbindlist(dDT.ct)
 saveRDS(dDT.ct, out("ProjMonocle_Clusters.RDS"))
 
 
-# celltypes from singleR after manual curation -------------------------------------------------------
+# celltypes from singleR after further curation -------------------------------------------------------
 ff <- list.files(dirout_load("SCRNA_06_02_MergeMarkers")(""), pattern="CellTypes_*", full.names = TRUE)
 ff <- ff[grepl(".RDS$", ff)]
 singleR.cell.types <- lapply(ff, readRDS)
