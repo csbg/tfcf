@@ -817,7 +817,8 @@ abs <- fread(inDir.funcs[[inDir.current]]("Antibodies.tsv"))
 abs <- merge(abs[,-c("UMAP1", "UMAP2"),with=F], setNames(umap.proj[["in.vivo.X"]][,c("rn", "UMAP_1", "UMAP_2")], c("rn", "UMAP1", "UMAP2")), by="rn")
 abs$Clusters <- ann[match(abs$rn, rn)]$Clusters
 abs$Cluster.number <- ann[match(abs$rn, rn)]$Cluster.number
-clusters.plot <- c(8,16,12,5,11,15,6,7,18)
+#clusters.plot <- c(8,16,12,5,11,15,6,7,18)
+clusters.plot <- c(6,22,19,13,17,23)
 
 # FIX MIXSCAPE
 fish.enrich <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_numeric_leukemia_noMixscape_6d.tsv"))
@@ -987,8 +988,11 @@ for(suppx in c("supp", "main")){
 
 
 # . LSC marker plot ---------------------------------------------------------
-gg <- c("Bcat1", "Hif1a", "Myc", "Gata1", "Prss34", "Hba-a1", "Irf8", "S100a9", "Ltf")
+#gg <- c("Bcat1", "Hif1a", "Myc", "Gata1", "Prss34", "Hba-a1", "Irf8", "S100a9", "Ltf")
+gg <- c("Itgam","Ly6c1","Ltf","S100a9","Cd55","Fcer1a","Prss34","Gata1","Hba-a1","Itga2b","Pf4")
+
 cds <- mobjs[["leukemia"]]
+stopifnot(all(gg %in% row.names(cds)))
 cds$Cluster.number <- monocle3::clusters(cds)
 pDT <- DotPlotData(cds = cds, markers = gg, cols = "Cluster.number")
 #pDT <- pDT[Gene %in% pDT[,max(percentage), by="Gene"][V1 > 75]$Gene]
@@ -1001,9 +1005,9 @@ for(suppx in c("supp", "main")){
     h=length(unique(pDTx$Cluster.number)) * 0.07 + 0.2
     ggplot(pDTx, aes(y=factor(as.numeric(Cluster.number)), x=Gene, color=scale, size=percentage)) + 
       geom_point() +
-      geom_point(color="black", shape=1) + 
+      #geom_point(color="black", shape=1) + 
       scale_size_continuous(range=c(0,5), limits = c(0,100)) +
-      scale_color_gradient2(high="#e31a1c", low="#1f78b4") +
+      scale_color_gradientn(colours = c("lightgrey", "grey", "#1f78b4", "black")) +
       facet_grid(Clusters ~ ., space="free", scales = "free") +
       themeNF(rotate = TRUE) +
       ylab("Cluster") + xlab("Gene")
