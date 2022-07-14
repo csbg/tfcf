@@ -33,8 +33,8 @@ dla.healthy <- list(
 )
 
 dla.cancer <- list(
-  supp=fread("metadata/FIGS_06_CFs.supp.txt")$Factor,
-  main=setdiff(fread("metadata/FIGS_06_CFs.main.txt")$Factor, c("Brd9", "Smarcd1", "Stag2"))
+  supp=fread("metadata/FIGS_02_CFs.supp.txt")$Factor,
+  main=fread("metadata/FIGS_02_CFs.main.txt")$Factor
 )
 
 # Annotations
@@ -658,7 +658,7 @@ for(typex in names(dla.healthy)){
   # Plot enrichments with DLA order
   pDT <- fish.enrich.broad[gene %in% dla]
   pDT$gene <- factor(pDT$gene, levels = rev(dla))
-  pDT[, Clusters := cleanCelltypesBroad(Clusters, clean=FALSE)]
+  pDT[, Clusters := cleanCelltypesBroad(Clusters, clean=FALSE, reverse=FALSE)]
   h=length(unique(dla)) * 0.07 + 0.1
   ggplot(pDT, aes(y=gene, x=Clusters, size=sig.perc, color=log2OR_cap)) + 
     themeNF(rotate=F) +
@@ -667,7 +667,7 @@ for(typex in names(dla.healthy)){
     geom_point() +
     geom_point(shape=1, color="lightgrey") +
     xlab("Gene") + ylab("Cell type")
-  ggsaveNF(out("ClusterEnrichments_manual_cleaned_",typex,".pdf"), h=h,w=0.8)
+  ggsaveNF(out("ClusterEnrichments_manual_cleaned_",typex,".pdf"), h=h,w=0.65)
   
   # Plot mye vs GMP enrichments with DLA order
   pDT <- fish.EryVsMye[Clusters == "GMP"][gene %in% dla]#[log2OR > 0 | log2OR < -2]
@@ -818,7 +818,13 @@ abs <- merge(abs[,-c("UMAP1", "UMAP2"),with=F], setNames(umap.proj[["in.vivo.X"]
 abs$Clusters <- ann[match(abs$rn, rn)]$Clusters
 abs$Cluster.number <- ann[match(abs$rn, rn)]$Cluster.number
 #clusters.plot <- c(8,16,12,5,11,15,6,7,18)
-clusters.plot <- c(6,22,19,13,17,23)
+clusters.plot.cts <- list("Ery Prog."=17, "Late GMP"=c(6,22,19),"Eo/Ba"=13,"MkP"=23)
+clusters.plot <- unlist(clusters.plot.cts)
+ann[, Clusters := "other"]
+for(xnam in names(clusters.plot.cts)){
+  ann[Cluster.number %in% clusters.plot.cts[[xnam]], Clusters := xnam]
+}
+
 
 # FIX MIXSCAPE
 fish.enrich <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_numeric_leukemia_noMixscape_6d.tsv"))
@@ -838,8 +844,8 @@ for(typex in c("original", "in.vivo.X")){
   pDT.labels <- pDT[, .(hex.x = median(hex.x), hex.y=median(hex.y)), by=c("Cluster.number")]
   cols <- COLORS.CELLTYPES.scRNA.ainhoa
   cols["other"] <- "grey"
-  pDT[, Clusters := cleanCelltypes(Clusters)]
-  pDT[!Cluster.number %in% clusters.plot, Clusters := "other"]
+  #pDT[, Clusters := cleanCelltypes(Clusters)]
+  #pDT[!Cluster.number %in% clusters.plot, Clusters := "other"]
   p <- ggplot(pDT, aes(x=hex.x, y=hex.y)) +
     themeNF() + xu + yu +
     geom_point(aes(color=Clusters), size=0.5) + 
