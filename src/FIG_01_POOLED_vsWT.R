@@ -325,6 +325,7 @@ ggsaveNF(out("Aggregated_Edges.pdf"), w=3,h=6, guide=TRUE)
 # Selected comparisons (David) --------------------------------------------
 dla.list <- list(
   main = fread("metadata/FIGS_Order_Fig1E.tsv"),
+  main2 = fread("metadata/FIGS_Order_Fig1E_v2.tsv"),
   supp = fread("metadata/FIGS_Order_Fig1E_supp.tsv"),
   all = data.table(Factor=sort(unique(RESULTS.wt.agg.gene[hit == TRUE]$Gene)), Complex="NA")
 )

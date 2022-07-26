@@ -33,8 +33,8 @@ dla.healthy <- list(
 )
 
 dla.cancer <- list(
-  supp=fread("metadata/FIGS_02_CFs.supp.txt")$Factor,
-  main=fread("metadata/FIGS_02_CFs.main.txt")$Factor
+  main=fread("metadata/FIGS_06_CFs.main.txt")$Factor,
+  supp=fread("metadata/FIGS_06_CFs.supp.txt")$Factor
 )
 
 # Annotations
@@ -551,6 +551,8 @@ ann <- annList[tissue == inDir.current]
 fish.bcells <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments","_basic", "_in.vivo", "_noMixscape", "_14d",".tsv"))
 fish.enrich.broad <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_broad_in.vivo_noMixscape_14d",".tsv"))
 fish.EryVsMye <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments","_eryVsMye", "_in.vivo", "_noMixscape", "_14d",".tsv"))
+fish.d28 <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_earlyBranches_in.vivo_noMixscape_28d.tsv"))
+
 
 # . Plot distribution of one gene -------------------------------------------
 pDT <- ann[markers == "lin-"][timepoint == "14d"]
@@ -682,6 +684,21 @@ for(typex in names(dla.healthy)){
     geom_vline(xintercept = 0)
   ggsaveNF(out("ClusterEnrichments_manual_MEPvsGMP_",typex,".pdf"), w=0.6,h=h)
 }
+
+# Plot mye vs GMP EARLY enrichments in d28
+gg <- c("Brd9", "Smarcd1", "Smarcd2")
+pDT <- fish.d28[Clusters == "GMP"][gene %in% gg]
+#pDT$gene <- factor(pDT$gene, levels = pDT[order(log2OR)]$gene)
+pDT$gene <- factor(pDT$gene, levels = rev(gg))
+ggplot(pDT, aes(x=log2OR, y=gene, size=sig.perc, color=log2OR_cap)) + 
+  themeNF(rotate=F) +
+  scale_color_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
+  scale_size_continuous(name="% sign.", range = c(2,5), limits = c(0,1)) +
+  geom_point() +
+  geom_point(shape=1,color="black") +
+  ylab("") + xlab("Myeloid enrichment vs Erythroid (log2OR)") +
+  geom_vline(xintercept = 0)
+ggsaveNF(out("ClusterEnrichments_manual_d28.pdf"), w=2,h=0.7)
 
 
 # . Plot displasia guides ---------------------------------------------------------
