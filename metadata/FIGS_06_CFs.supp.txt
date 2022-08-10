@@ -23,6 +23,7 @@ Smarcd1
 Smarce1
 Gltscr1
 Phf10
+Pbrm1
 Bcl11a
 Chaf1a
 Chd4
@@ -43,9 +44,10 @@ Rcor1
 Smc3
 Stag2
 Smc2
-Stag4
+Smc4
 Ash1l
 Hmgxb4
 Chmp2a
-Pu.1
+Spi1
 Gata2
+Phf5a

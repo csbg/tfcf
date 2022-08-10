@@ -358,12 +358,14 @@ inDir <- dirout_load("SCRNA_21_02_ClusterEnrichments_simple")
   out <- dirout(paste0(base.dir, "/", "cluster.enrichments/"))
   
   # Collect enrichment scores
-  typex <- "basic_in.vivo_noMixscape"
+  typex <- "basic_leukemia_noMixscape"
   for(typex in gsub("Guides_Fisher_Mixscape_(.+).pdf", "\\1", list.files(inDir(""), pattern="Guides_Fisher_Mixscape_.*.pdf"))){
     fish.file <- inDir("Guides_Fisher_Mixscape_",typex,".tsv")
     if(!file.exists(fish.file)) next
     
     fish.full <- fread(fish.file)
+    fish.full[mixscape_class == "Pu.1", mixscape_class := "Spi1"]
+    grep("S", unique(fish.full$mixscape_class), value = TRUE)
     #fish.full <- merge(fish.full, unique(SANN[,c("sample_broad", "timepoint"),with=F]), by.x="sample", by.y="sample_broad")
     timex <- "14d"
     for(timex in c(unique(fish.full$sample))){
