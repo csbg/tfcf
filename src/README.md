@@ -1,6 +1,8 @@
 # Systematic functional screening of chromatin factors identifies strong lineage and disease dependencies in normal and malignant haematopoiesis.
 This folder contains the R code to analyze FACS-based and Perturb-seq CRISPR screens. R scripts in this folder are organized by the type of analysis.
 
+To run this code you need the Singularity container, the data processed by cell ranger, and then use renv to install the packages in the file renv.lock.
+
 ## Contents
 - Scripts to obtain external data, start with EXT
 - Scripts to analyze FACS-based data start with POOLED

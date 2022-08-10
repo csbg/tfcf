@@ -2,8 +2,8 @@
 This repository contains the code to analyze the data from the manuscript.
 
 ## Contents
-- src: Code for the analyses of FACS-based and Perturb-seq CRISPR screens. R code that runs in a Singularity container and uses the renv package for reproducibility. This folder contains a separate README file.
+- src: Code for the analyses of FACS-based and Perturb-seq CRISPR screens. This folder contains a separate README file describing how to run the code.
 - metadata: Tables and annotations required for the analysis.
 - lockfiles: archived renv lockfiles
 - misc: archived scripts not required for the analysis
-- ATAC_ChIP: Code to analyze epigenomics datasets. This folder contains a separate README file.
+- ATAC_ChIP: Code to analyze epigenomics datasets. This folder contains a separate README file that describes how to run the code.

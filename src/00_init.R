@@ -206,6 +206,18 @@ PATHS$RESOURCES <- list(
   HM.MAP = dirout_load("PPI_00_getData/")("BioMart_Human_Mouse_2021_07_27.txt"),
   Enrichr.mouse = dirout_load("EXT_02_EnrichR_Genesets")("Genesets_Mouse.RData")
 )
+# BioMart:
+# Run on July 27, 2021. BioMART Ensembl
+# Dataset
+# - Mouse genes (GRCm39)
+# Filters
+# - [None selected]
+# Attributes
+# - Gene stable ID
+# - Human gene stable ID
+# - Human homology type
+# - Gene name
+# - Human gene name
 
 PATHS$CHIP <- list()
 PATHS$CHIP$Targets <- dirout_load("CHIP_20_01_Peaks_julen")("ChIP.Targets.RData")
