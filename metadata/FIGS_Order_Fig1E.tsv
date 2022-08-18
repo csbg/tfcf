@@ -1,0 +1,69 @@
+Complex	Factor	Heatmap
+SET1	Setd1a	1
+SET1	Setd1b	1
+SET1	Cxxc1	1
+SET1	Wdr82	1
+COMPASS - MLL4	Kdm6a	1
+COMPASS - MLL4	Kmt2d	1
+COMPASS - MLL4	Ncoa6	1
+COMPASS - MLL1	Kmt2a	1
+COMPASS - MLL1	Kmt2b	1
+COMPASS - MLL1	Men1	1
+NSL	Kat8	1
+ARG-MET	Prmt5	1
+ARG-MET	Prmt1	1
+ARG-MET	Carm1	1
+BAF	Bcl11a	1
+BAF	Actl6a	1
+BAF	Smarca4	1
+cBAF	Arid1a	1
+cBAF	Arid1b	1
+cBAF	Dpf2	1
+cBAF	Smarcd2	1
+ncBAF	Smarcd1	1
+ncBAF	Brd9	1
+PBAF	Arid2	1
+PBAF	Pbrm1	1
+ISWI	Baz1b	1
+ISWI	Smarca5	1
+NuRD	Chd4	1
+NuRD	Rbbp4	1
+NuRD	Hdac1	1
+SCRAP	Actr6	1
+SCRAP	Yeats4	1
+CAF1	Chaf1a	1
+CAF1	Chaf1b	1
+coREST	Rcor1	2
+coREST	Rcor2	2
+coREST	Kdm1a	2
+NCOR	Hdac3	2
+Hdac4	Hdac4	2
+SMRT	Hdac7	2
+SIN3A	Sap30	2
+KDMs	Kdm3a	2
+KDMs	Kdm6b	2
+KDMs	Kdm7a	2
+PRC1	Cbx6	2
+PRC1	Cbx7	2
+PRC1	Phc3	2
+PRC2	Ezh2	2
+PRC2	Mtf2	2
+HETEROCHR	Ehmt1	2
+HETEROCHR	Setdb1	2
+HETEROCHR	Cbx3	2
+DNAme	Dnmt1	2
+DNAme	Uhrf1	2
+FACT	Supt16	2
+FACT	Ssrp1	2
+RNA elongation	Phf5a	2
+RNA elongation	Ash1l	2
+RNA elongation	Dot1l	2
+COHESIN	Smc3	2
+COHESIN	Stag2	2
+CONDENSIN	Ncapd3	2
+CONDENSIN	Smc2	2
+Other	Zmynd8	2
+Other	Setbp1	2
+Other	Setd8	2
+TF	Spi1	2
+TF	Cebpa	2

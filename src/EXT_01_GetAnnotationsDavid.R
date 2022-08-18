@@ -49,3 +49,9 @@ for(i in 1:nrow(complexes)){
 res <- unique(res)
 write.tsv(res, out("ManualComplexes.tsv"))
 
+
+
+
+# READ DATA ---------------------------------------------------------------
+#ann2 <- fread("metadata/TFCF_Annotations_v2.tsv")
+#write.tsv(res, out("ManualComplexes.tsv"))

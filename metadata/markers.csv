@@ -1,46 +1,56 @@
-List,Name,ID,FeatureType
-Active Feature List,Fcer1a,ENSMUSG00000005339,Gene Expression
-Active Feature List,Mpo,ENSMUSG00000009350,Gene Expression
-Active Feature List,Elane,ENSMUSG00000020125,Gene Expression
-Active Feature List,Csf1r,ENSMUSG00000024621,Gene Expression
-Active Feature List,Irf8,ENSMUSG00000041515,Gene Expression
-Active Feature List,Cebpa,ENSMUSG00000034957,Gene Expression
-Active Feature List,Cebpe,ENSMUSG00000052435,Gene Expression
-Active Feature List,Spi1,ENSMUSG00000002111,Gene Expression
-Active Feature List,Gata1,ENSMUSG00000031162,Gene Expression
-Active Feature List,Gata2,ENSMUSG00000015053,Gene Expression
-Active Feature List,Procr,ENSMUSG00000027611,Gene Expression
-Active Feature List,Hoxa9,ENSMUSG00000038227,Gene Expression
-Active Feature List,Pf4,ENSMUSG00000029373,Gene Expression
-Active Feature List,Meis1,ENSMUSG00000020160,Gene Expression
-Active Feature List,Gypa,ENSMUSG00000051839,Gene Expression
-Active Feature List,Car2,ENSMUSG00000027562,Gene Expression
-Active Feature List,Hbb-bs,ENSMUSG00000052305,Gene Expression
-Active Feature List,Klf1,ENSMUSG00000054191,Gene Expression
-Active Feature List,Hoxa7,ENSMUSG00000038236,Gene Expression
-Active Feature List,Hbb-bt,ENSMUSG00000073940,Gene Expression
-Active Feature List,Ctsg,ENSMUSG00000040314,Gene Expression
-Active Feature List,Gzmb,ENSMUSG00000015437,Gene Expression
-Active Feature List,Prss34,ENSMUSG00000056399,Gene Expression
-Active Feature List,Lyz2,ENSMUSG00000069516,Gene Expression
-Active Feature List,Anxa1,ENSMUSG00000024659,Gene Expression
-Active Feature List,Cd14,ENSMUSG00000051439,Gene Expression
-Active Feature List,Cd9,ENSMUSG00000030342,Gene Expression
-Active Feature List,Sox6,ENSMUSG00000051910,Gene Expression
-Active Feature List,Mybl2,ENSMUSG00000017861,Gene Expression
-Active Feature List,Tal1,ENSMUSG00000028717,Gene Expression
-Active Feature List,Erg,ENSMUSG00000040732,Gene Expression
-Active Feature List,Mecom,ENSMUSG00000027684,Gene Expression
-Active Feature List,Ly6a,ENSMUSG00000075602,Gene Expression
-Active Feature List,Zfpm1,ENSMUSG00000049577,Gene Expression
-Active Feature List,Itga2b,ENSMUSG00000034664,Gene Expression
-Active Feature List,Hlf,ENSMUSG00000003949,Gene Expression
-Active Feature List,Gfi1,ENSMUSG00000029275,Gene Expression
-Active Feature List,S100a9,ENSMUSG00000056071,Gene Expression
-Active Feature List,Esam,ENSMUSG00000001946,Gene Expression
-Active Feature List,Hba-a1,ENSMUSG00000069919,Gene Expression
-Active Feature List,Cd55,ENSMUSG00000026399,Gene Expression
-Active Feature List,Fcgr3,ENSMUSG00000059498,Gene Expression
-Active Feature List,Cd34,ENSMUSG00000016494,Gene Expression
-Active Feature List,Ltf,ENSMUSG00000032496,Gene Expression
-Active Feature List,Cpa3,ENSMUSG00000001865,Gene Expression
+Anxa1
+Bcat1
+Car2
+Cd14
+Cd34
+Cd55
+Cd9
+Cebpa
+Cebpe
+Cpa3
+Csf1r
+Ctsg
+Ebf1
+Elane
+Erg
+Esam
+Fcer1a
+Fcgr3
+Gata1
+Gata2
+Gfi1
+Gypa
+Gzmb
+Hba-a1
+Hbb-bs
+Hbb-bt
+Hif1a
+Hlf
+Hoxa7
+Hoxa9
+Irf8
+Itga2b
+Klf1
+Ltf
+Ly6a
+Lyz2
+Mecom
+Meis1
+Mpo
+Mybl2
+Myc
+Pax5
+Pf4
+Procr
+Prss34
+S100a8
+S100a9
+Sox6
+Spi1
+Tal1
+Zfpm1
+Hmga2
+Fgfr2
+Fgfr3
+Dnmt3a
+Bcl2

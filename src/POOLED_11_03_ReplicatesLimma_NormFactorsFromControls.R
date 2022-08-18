@@ -80,7 +80,7 @@ for(ai in 1:nrow(ann_replicates)){
     lMT <- m[,lAnn$sample]
     table(apply(!is.na(lMT), 1, sum))
     table(apply(!is.na(lMT), 2, sum))
-    table(apply(!is.na(m[grepl("NonTargetingControl", row.names(m)),lAnn$sample]), 1, sum))
+    table(apply(!is.na(m[grepl("NTC", row.names(m)),lAnn$sample]), 1, sum))
     lMT <- lMT[apply(!is.na(lMT), 1, sum) > ncol(lMT) * 0.8,]
     #lMT[grep("Brd9", row.names(lMT)),]
     
@@ -105,7 +105,7 @@ for(ai in 1:nrow(ann_replicates)){
     
 
     # Normalize data ----------------------------------------------------------
-    normfacs.controls <- calcNormFactors(DGEList(lMT[grepl("NonTargetingControl", row.names(lMT)),]))
+    normfacs.controls <- calcNormFactors(DGEList(lMT[grepl("^NTC", row.names(lMT)),]))
     lMT <- calcNormFactors(DGEList(lMT))
     stopifnot(all(colnames(lMT) == colnames(normfacs.controls)))
     stopifnot(all(row.names(lMT$samples) == row.names(normfacs.controls$samples)))
@@ -221,7 +221,7 @@ write.tsv(res, out("Results.tsv"))
 
 table(res$coef, res$analysis)
 
-res[gene == "NonTargetingControlGuideForMouse", analysis := gsub("_x", "_controls", analysis)]
+res[grepl("^NTC", gene), analysis := gsub("_x", "_controls", analysis)]
 
 # Diagnostic plots -------------------------------------------------------
 # p-value histogram

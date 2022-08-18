@@ -1,0 +1,31 @@
+pathway	db
+Term	Database
+ECM−receptor interaction	KEGG_2019_Mouse
+Rap1 signaling pathway	KEGG_2019_Mouse
+Platelet activation	KEGG_2019_Mouse
+Cell adhesion molecules (CAMs)	KEGG_2019_Mouse
+NOD−like receptor signaling pathway	KEGG_2019_Mouse
+Toll−like receptor signaling pathway	KEGG_2019_Mouse
+B cell receptor signaling pathway	KEGG_2019_Mouse
+Spliceosome	KEGG_2019_Mouse
+Ribosome biogenesis in eukaryotes	KEGG_2019_Mouse
+RNA transport	KEGG_2019_Mouse
+Non−odorant GPCRs WP1396	WikiPathways_2019_Mouse
+Chemokine signaling pathway WP2292	WikiPathways_2019_Mouse
+Complement and Coagulation Cascades WP449	WikiPathways_2019_Mouse
+Kit Receptor Signaling Pathway WP407	WikiPathways_2019_Mouse
+Prostaglandin Synthesis and Regulation WP374	WikiPathways_2019_Mouse
+Electron Transport Chain WP295	WikiPathways_2019_Mouse
+Oxidative phosphorylation WP1248	WikiPathways_2019_Mouse
+Translation Factors WP307	WikiPathways_2019_Mouse
+ETS1 mouse	TRRUST_Transcription_Factors_2019
+SPI1 mouse	TRRUST_Transcription_Factors_2019
+PAX5 mouse	TRRUST_Transcription_Factors_2019
+EBF1 mouse	TRRUST_Transcription_Factors_2019
+TCF3 mouse	TRRUST_Transcription_Factors_2019
+RELA mouse	TRRUST_Transcription_Factors_2019
+NFKB1 mouse	TRRUST_Transcription_Factors_2019
+FOS human	TRRUST_Transcription_Factors_2019
+JUND human	TRRUST_Transcription_Factors_2019
+JUN human	TRRUST_Transcription_Factors_2019
+NR2C2 (human)	TRANSFAC_and_JASPAR_PWMs

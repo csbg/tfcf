@@ -7,14 +7,6 @@ require(ggrepel)
 require(latex2exp)
 
 # Load data ---------------------------------------------------------------
-# m <- as.matrix(read.csv(PATHS$POOLED$DATA$matrix))
-# str(m)
-# ann <- fread(PATHS$POOLED$DATA$annotation)
-# ann[grepl("^LSK", System) & Population == "LSK", Population := System]
-# table(ann$Population, ann$System)
-# stopifnot(all(ann$sample == colnames(m)))
-# ann[, id := paste(Genotype, Population, Library, sep="_")]
-# ann[, group := paste(Genotype, Library, sep="_")]
 m2 <- as.matrix(read.csv(PATHS$POOLED$DATA$matrix.aggregated))
 ann <- fread(PATHS$POOLED$DATA$annotation.aggregated)
 
@@ -44,7 +36,7 @@ for(cx in names(COMPARISONS)){
     res.ratios <- rbind(res.ratios, x)
   }
 }
-res.ratios[, control := grepl("NonTargetingControlGuideForMouse", Guide)]
+res.ratios[, control := grepl("^NTC", Guide)]
 res.ratios <- res.ratios[!is.na(Ratio)]
 res.ratios[,Ratio.log2 := Ratio]
 res.ratios[Ratio == 0,Ratio.log2 := min(res.ratios[Ratio !=0]$Ratio)]

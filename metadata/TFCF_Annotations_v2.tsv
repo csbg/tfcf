@@ -1,0 +1,1213 @@
+GENE	Category	BROAD COMPLEX	SPECIFIC COMPLEX	Other Complexes	Reader of	Writes (W), Erases (E), Other Activity (O)	Known Inteactions	Alias	Library	Celltype Expresion	Extra Info
+Carm1	CF	ARG-MET				W: Arginine Meth-Transf 	p300, NCOA1/2/3, MEF2C		B	Ery	https://www.genecards.org/cgi-bin/carddisp.pl?gene=CARM1
+Prmt1	CF	ARG-MET		METHYLOSOME	5hmC reader				B		
+Prmt2	CF	ARG-MET							B		
+Prmt5	CF	ARG-MET							B		
+Prmt6	CF	ARG-MET							B		
+Prmt7	CF	ARG-MET							B		
+Ddx21	CF	B-WHICH							P1		
+Dek	CF	B-WHICH							P1		
+Ercc6	CF	B-WHICH							P1		
+Myo1c	CF	B-WHICH							P1		
+Sf3b1	CF	B-WHICH							P1		
+Sf3b3	CF	B-WHICH							P1		
+Actl6a	CF	BAF							A		
+Arid1a	CF	BAF							A		
+Arid1b	CF	BAF							A		
+Arid2	CF	BAF	pBAF						A		
+Bcl11a	CF	BAF							A		
+Bcl11b	CF	BAF							A		
+Bcl7a	CF	BAF				ATPase			A		
+Bcl7b	CF	BAF				ATPase			A		
+Brd7	CF	BAF	pBAF				p53, BRCA1, POU2F1		A		Acts both as coactivator and as corepressor. May play a role in chromatin remodeling. Activator of the Wnt signaling pathway in a DVL1-dependent manner by negatively regulating the GSK3B phosphotransferase activity. Induces dephosphorylation of GSK3B at 'Tyr-216'. Down-regulates TRIM24-mediated activation of transcriptional activation by AR (By similarity). Transcriptional corepressor that down-regulates the expression of target genes. Binds to target promoters, leading to increased histone H3 acetylation at 'Lys-9' (H3K9ac). Binds to the ESR1 promoter. Recruits BRCA1 and POU2F1 to the ESR1 promoter. Coactivator for TP53-mediated activation of transcription of a set of target genes. Required for TP53-mediated cell-cycle arrest in response to oncogene activation. Promotes acetylation of TP53 at 'Lys-382', and thereby promotes efficient recruitment of TP53 to target promoters. Inhibits cell cycle progression from G1 to S phase.
+Brd9	CF	BAF	ncBAF						A		Plays a role in chromatin remodeling and regulation of transcription (PubMed:22464331, PubMed:26365797). Acts as a chromatin reader that recognizes and binds acylated histones: binds histones that are acetylated and/or butyrylated (PubMed:26365797). Component of SWI/SNF chromatin remodeling subcomplex GBAF that carries out key enzymatic activities, changing chromatin structure by altering DNA-histone contacts within a nucleosome in an ATP-dependent manner (PubMed:29374058).
+Dpf2	CF	BAF							A		
+Dpf3	CF	BAF							A		
+Gltscr1	CF	BAF	ncBAF						A		
+Gltscr1l	CF	BAF	ncBAF						A		
+Pbrm1	CF	BAF	pBAF						A		
+Phf10	CF	BAF	pBAF						A		
+Smarca2	CF	BAF							A		
+Smarca4	CF	BAF							A		
+Smarcb1	CF	BAF	cBAF						A		
+Smarcc1	CF	BAF							A		
+Smarcc2	CF	BAF							A		
+Smarcd1	CF	BAF	ncBAF						A		
+Smarcd2	CF	BAF	cBAF						A		
+Smarce1	CF	BAF							A		
+Ss18	CF	BAF							A		
+Ss18l1	CF	BAF							A		
+Smarcd3	CF	BAF							P1		
+Asf1a	CF	CAF1				HIstone Chaperone	CAF-1, Hira		B		Histone chaperone that facilitates histone deposition and histone exchange and removal during nucleosome assembly and disassembly. Cooperates with chromatin assembly factor 1 (CAF-1) to promote replication-dependent chromatin assembly and with HIRA to promote replication-independent chromatin assembly. Required for the formation of senescence-associated heterochromatin foci (SAHF) and efficient senescence-associated cell cycle exit.
+Asf1b	CF	CAF1				HIstone Chaperone			B		
+Chaf1a	CF	CAF1	CAF1				Asf1a		B		Core component of the CAF-1 complex, a complex thought to mediate chromatin assembly in DNA replication and DNA repair. Assembles histone octamers onto replicating DNA in vitro. CAF-1 performs the first step of the nucleosome assembly process, bringing newly synthesized histones H3 and H4 to replicating DNA; histones H2A/H2B can bind to this chromatin precursor subsequent to DNA replication to complete the histone octamer. CHAF1A binds to histones H3 and H4. It may play a role in heterochromatin maintenance in proliferating cells by bringing newly synthesized cbx proteins to heterochromatic DNA replication foci
+Chaf1b	CF	CAF1	CAF1				Asf1a		B		Chromatin assembly factor I (CAF-I) is required for the assembly of histone octamers onto newly-replicated DNA. CAF-I is composed of three protein subunits, p50, p60, and p150. The protein encoded by this gene corresponds to the p60 subunit and is required for chromatin assembly after replication. The encoded protein is differentially phosphorylated in a cell cycle-dependent manner. In addition, it is normally found in the nucleus except during mitosis, when it is released into the cytoplasm. This protein is a member of the WD-repeat HIR1 family and may also be involved in DNA repair
+Hira	CF	CAF1					Asf1a, H3.3		R.2		This gene encodes a histone chaperone that preferentially places the variant histone H3.3 in nucleosomes. Orthologs of this gene in yeast, flies, and plants are necessary for the formation of transcriptionally silent heterochomatin. This gene plays an important role in the formation of the senescence-associated heterochromatin foci. Required for the periodic repression of histone gene transcription during the cell cycle (By similarity). Cooperates with ASF1A to promote replication-independent chromatin assembly. Required for the formation of senescence-associated heterochromatin foci (SAHF) and efficient senescence-associated cell cycle exit
+Smc3	CF	COHESIN							B		
+Stag2	CF	COHESIN							B		
+Mau2	CF	COHESIN							R.1		
+Nipbl	CF	COHESIN							R.1		Plays an important role in the loading of the cohesin complex on to DNA. Forms a heterodimeric complex (also known as cohesin loading complex) with MAU2/SCC4 which mediates the loading of the cohesin complex onto chromatin
+Pds5a	CF	COHESIN							R.1		
+Pds5b	CF	COHESIN							R.1		Regulator of sister chromatid cohesion in mitosis which may stabilize cohesin complex association with chromatin.
+Rad21	CF	COHESIN							R.1		
+Smc1a	CF	COHESIN							R.1		
+Wapal	CF	COHESIN							R.1		
+Ash2l	CF	COMPASS				Stimulates Methyl-transf			A		Component of the Set1/Ash2 histone methyltransferase (HMT) complex, a complex that specifically methylates 'Lys-4' of histone H3, but not if the neighboring 'Lys-9' residue is already methylated. As part of the MLL1/MLL complex it is involved in methylation and dimethylation at 'Lys-4' of histone H3. May function as a transcriptional regulator. May play a role in hematopoiesis. In association with RBBP5 and WDR5, stimulates the histone methyltransferase activities of KMT2A, KMT2B, KMT2C, KMT2D, SETD1A and SETD1B
+Cxxc1	CF	COMPASS	SET1-COMPASS		CpG unmethylated				A		
+Dpy30	CF	COMPASS							A		
+Hcfc1	CF	COMPASS		SIN3A, NSL					A		
+Kdm6a	CF	COMPASS	MLL3/4-COMPASS						A		
+Kmt2a	CF	COMPASS	MLL-COMPASS			W: H3K4me3			A		
+Kmt2b	CF	COMPASS	MLL-COMPASS			W: H3K4me3			A		
+Kmt2c	CF	COMPASS	MLL3/4-COMPASS			W: H3K4me1			A		
+Kmt2d	CF	COMPASS	MLL3/4-COMPASS			W: H3K4me1			A		
+Kmt2e	CF	COMPASS							A		
+Men1	CF	COMPASS	MLL-COMPASS						A		
+Ncoa6	CF	COMPASS	MLL3/4-COMPASS						A		
+Pagr1a	CF	COMPASS	MLL3/4-COMPASS						A		
+Paxip1	CF	COMPASS	MLL3/4-COMPASS						A		
+Rbbp5	CF	COMPASS							A		
+Setd1a	CF	COMPASS	SET1-COMPASS						A		
+Setd1b	CF	COMPASS	SET1-COMPASS						A		
+Wdr5	CF	COMPASS							A		
+Wdr82	CF	COMPASS	SET1-COMPASS						A		
+Ncapd2	CF	CONDENSIN							B		
+Ncapd3	CF	CONDENSIN							B		
+Smc2	CF	CONDENSIN							B		
+Smc4	CF	CONDENSIN							B		
+Ncapg	CF	CONDENSIN							R.2		This gene encodes a subunit of the condensin complex, which is responsible for the condensation and stabilization of chromosomes during mitosis and meiosis. Phosphorylation of the encoded protein activates the condensin complex.
+Ncaph	CF	CONDENSIN							R.2		Regulatory subunit of the condensin complex, a complex required for conversion of interphase chromatin into mitotic-like condense chromosomes. The condensin complex probably introduces positive supercoils into relaxed DNA in the presence of type I topoisomerases and converts nicked DNA into positive knotted forms in the presence of type II topoisomerases
+Ncaph2	CF	CONDENSIN							R.2		Regulatory subunit of the condensin-2 complex, a complex that seems to provide chromosomes with an additional level of organization and rigidity and in establishing mitotic chromosome architecture (PubMed:14532007). May promote the resolution of double-strand DNA catenanes (intertwines) between sister chromatids
+Smchd1	CF	CONDENSIN				ATPase activity			R.2		Non-canonical member of the structural maintenance of chromosomes (SMC) protein family that plays a key role in epigenetic silencing by regulating chromatin architecture (By similarity). Promotes heterochromatin formation in both autosomes and chromosome X, probably by mediating the merge of chromatin compartments (By similarity). Plays a key role in chromosome X inactivation in females by promoting the spreading of heterochromatin (PubMed:23542155). Recruited to inactivated chromosome X by Xist RNA and acts by mediating the merge of chromatin compartments: promotes random chromatin interactions that span the boundaries of existing structures, leading to create a compartment-less architecture typical of inactivated chromosome X (By similarity). Required to facilitate Xist RNA spreading (By similarity). Also required for silencing of a subset of clustered autosomal loci in somatic cells, such as the DUX4 locus (PubMed:23143600). Has ATPase activity; may participate in structural manipulation of chromatin in an ATP-dependent manner as part of its role in gene expression regulation (PubMed:29748383). Also plays a role in DNA repair: localizes to sites of DNA double-strand breaks in response to DNA damage to promote the repair of DNA double-strand breaks (PubMed:25294876, PubMed:24790221). Acts by promoting non-homologous end joining (NHEJ) and inhibiting homologous recombination (HR) repair
+Kdm1a	CF	coREST	coREST			E: H3K4me1, H3K4me2			A		
+Rcor1	CF	coREST	coREST						A		
+Rcor2	CF	coREST	coREST						A	Prog	
+Rcor3	CF	coREST	coREST						A	Ery	
+Rest	CF	coREST		SIN3A, coREST					A		
+Phf21a	CF	coREST		BHC					B		
+Ctbp1	CF	coREST							P1		This gene encodes a protein that binds to the C-terminus of adenovirus E1A proteins. This phosphoprotein is a transcriptional repressor and may play a role during cellular proliferation. This protein and the product of a second closely related gene, CTBP2, can dimerize. Both proteins can also interact with a polycomb group protein complex which participates in regulation of gene expression during development.
+Ctbp2	CF	coREST							P1		
+Sfmbt1	CF	coREST							P1		
+Kdm1b	CF	coREST				H3K4me1/2			R.1	Lymp-low	
+Rb1	CF	CREST-BRG1							P1		
+Sp1	CF	CREST-BRG1							P1		
+Dnmt1	CF	DNAme	DNA			W: methyl-CpG 			B		
+Dnmt3a	CF	DNAme				W: methyl-CpG 			B		
+Dnmt3b	CF	DNAme				W: methyl-CpG 			B		
+Chmp2a	CF	ESCRT	ESCRT-III						B		
+Chmp1a	CF	ESCRT	ESCRT-III						R.1		Targets the Polycomb group (PcG) protein BMI1/PCGF4 to regions of condensed chromatin. May play a role in stable cell cycle progression and in PcG gene silencing
+Chmp2b	CF	ESCRT	ESCRT-III						R.2		
+Chmp1b	CF	ESCRT							R.3		
+Chmp3	CF	ESCRT							R.3		
+Chmp4b	CF	ESCRT							R.3		
+Chmp5	CF	ESCRT							R.3		
+Chmp6	CF	ESCRT							R.3		
+Chmp7	CF	ESCRT							R.3		
+Ssrp1	CF	FACT							P1		
+Supt16	CF	FACT							P1		
+Suv420h1	CF	H3K20methyl				W: H4K20me2, H4K20me3			B		
+Ing5	CF	HBO1		MOZ					R.2	Ery	This gene encodes a tumor suppressor protein that inhibits cell growth and induces apoptosis. This protein contains a PHD-type zinc finger. It interacts with tumor suppressor p53 and p300, a component of the histone acetyl transferase complex, suggesting a role in transcriptional regulation.
+Jade1	CF	HBO1							P1		Scaffold subunit of some HBO1 complexes, which have a histone H4 acetyltransferase activity (PubMed:16387653, PubMed:19187766, PubMed:20129055, PubMed:24065767). Plays a key role in HBO1 complex by directing KAT7/HBO1 specificity towards histone H4 acetylation (H4K5ac, H4K8ac and H4K12ac), regulating DNA replication initiation, regulating DNA replication initiation (PubMed:20129055, PubMed:24065767). May also promote acetylation of nucleosomal histone H4 by KAT5 (PubMed:15502158). Promotes apoptosis (PubMed:16046545). May act as a renal tumor suppressor (PubMed:16046545). Negatively regulates canonical Wnt signaling; at least in part, cooperates with NPHP4 in this function
+Jade2	CF	HBO1					KDM1a (induces degradation)		P1		Scaffold subunit of some HBO1 complexes, which have a histone H4 acetyltransferase activity (PubMed:16387653). Acts as a E3 ubiquitin-protein ligase mediating the ubiquitination and subsequent proteasomal degradation of target protein histone demethylase KDM1A (PubMed:25018020). Also acts as a ubiquitin ligase E3 toward itself. Positive regulator of neurogenesis (By similarity).
+Jade3	CF	HBO1							P1		This gene encodes a member of a family of large proteins containing PHD (plant homeo domain)-type zinc fingers. The encoded protein may be associated in a nuclear complex that functions in histone H4 acetylation. Alternative splicing results in multiple transcript variants encoding the same protein.
+Kat7	CF	HBO1					CTD in DNA replication		R.2		Component of the HBO1 complex which has a histone H4-specific acetyltransferase activity, a reduced activity toward histone H3 and is responsible for the bulk of histone H4 acetylation in vivo. Involved in H3K14 (histone H3 lysine 14) acetylation and cell proliferation (By similarity). Through chromatin acetylation it may regulate DNA replication and act as a coactivator of TP53-dependent transcription. Acts as a coactivator of the licensing factor CDT1 (PubMed:18832067). Specifically represses AR-mediated transcription.
+Cbx3	CF	HETEROCHR	Heterochromatin & HP1		H3K9me3		LBR, NIPBL, SUV39H1/2		B	Ery	Seems to be involved in transcriptional silencing in heterochromatin-like complexes. Recognizes and binds histone H3 tails methylated at 'Lys-9', leading to epigenetic repression. May contribute to the association of the heterochromatin with the inner nuclear membrane through its interaction with lamin B receptor (LBR). Involved in the formation of functional kinetochore through interaction with MIS12 complex proteins. Contributes to the conversion of local chromatin to a heterochromatin-like repressive state through H3 'Lys-9' trimethylation, mediates the recruitment of the methyltransferases SUV39H1 and/or SUV39H2 by the PER complex to the E-box elements of the circadian target genes such as PER2 itself or PER1. Mediates the recruitment of NIPBL to sites of DNA damage at double-strand breaks
+Cbx5	CF	HETEROCHR	Heterochromatin & HP1				LBR		B	Ery&prog	Component of heterochromatin that recognizes and binds histone H3 tails methylated at 'Lys-9' (H3K9me), leading to epigenetic repression. In contrast, it is excluded from chromatin when 'Tyr-41' of histone H3 is phosphorylated (H3Y41ph). Can interact with lamin-B receptor (LBR). This interaction can contribute to the association of the heterochromatin with the inner nuclear membrane. Involved in the formation of functional kinetochore through interaction with MIS12 complex proteins
+Ehmt1	CF	HETEROCHR				W: H3K9me1 & H3K9me2 			B		
+Ehmt2	CF	HETEROCHR				W: H3K9me1 & H3K9me2 			B		
+Mbd5	CF	HETEROCHR			Heterochromatin				B		
+Setdb1	CF	HETEROCHR	HUSH 	KAP1, HP1					B		
+Setdb2	CF	HETEROCHR	HP1						B		
+Suv39h1	CF	HETEROCHR	HP1	eNoSC, PER			Cbx5, Atf7ip		B		
+Suv39h2	CF	HETEROCHR	HP1	PER 					B		
+Trim28	CF	HETEROCHR	KAP1						B		
+Morc2a	CF	HETEROCHR	HUSH						P1		
+Pphln1	CF	HETEROCHR	HUSH						P1		
+Fam208a	CF	HETEROCHR	HUSH						P2		
+Cbx1	CF	HETEROCHR	HP1		H3K9me3				R.1		This gene encodes a highly conserved nonhistone protein, which is a member of the heterochromatin protein family . The protein is enriched in the heterochromatin and associated with centromeres. The protein has a single N-terminal chromodomain which can bind to histone proteins via methylated lysine residues, and a C-terminal chromo shadow-domain (CSD) which is responsible for the homodimerization and interaction with a number of chromatin-associated nonhistone proteins. The protein may play an important role in the epigenetic control of chromatin structure and gene expression.
+Mphosph8	CF	HETEROCHR							R.2		Heterochromatin component that specifically recognizes and binds methylated 'Lys-9' of histone H3 (H3K9me) and promotes recruitment of proteins that mediate epigenetic repression (PubMed:20871592, PubMed:26022416). Mediates recruitment of the HUSH complex to H3K9me3 sites: the HUSH complex is recruited to genomic loci rich in H3K9me3 and is probably required to maintain transcriptional silencing by promoting recruitment of SETDB1, a histone methyltransferase that mediates further deposition of H3K9me3 (PubMed:26022416). Binds H3K9me and promotes DNA methylation by recruiting DNMT3A to target CpG sites; these can be situated within the coding region of the gene (PubMed:20871592). Mediates down-regulation of CDH1 expression
+Actr5	CF	INO80							P1		
+Actr8	CF	INO80							P1		
+Ino80	CF	INO80							P1		
+Ino80b	CF	INO80							P1		
+Ino80c	CF	INO80							P1		
+Ino80d	CF	INO80							P1		
+Ino80e	CF	INO80							P1		
+Mcrs1	CF	INO80		NSL					P1		
+Ruvbl1	CF	INO80							P1		
+Ruvbl2	CF	INO80							P1		
+Tfpt	CF	INO80							P1		
+Uchl5	CF	INO80							P1		
+Yy1	CF	INO80							P1		
+Bptf	CF	ISWI	NURF						A		
+Smarca5	CF	ISWI	CHRAC						A		
+Smarcad1	CF	ISWI	NURF						A		
+Baz1a	CF	ISWI	ACF, CHRAC				Smarca5, Pole		B		"Component of the ACF complex, an ATP-dependent chromatin remodeling complex, that regulates spacing of nucleosomes using ATP to generate evenly spaced nucleosomes along the chromatin. The ATPase activity of the complex is regulated by the length of flanking DNA. Also involved in facilitating the DNA replication process. BAZ1A is the accessory, non-catalytic subunit of the complex which can enhance and direct the process provided by the ATPase subunit, SMARCA5, probably through targeting pericentromeric heterochromatin in late S phase. Moves end-positioned nucleosomes to a predominantly central position. May have a role in nuclear receptor-mediated transcription repression.
+ Component of the histone-fold protein complex CHRAC complex which facilitates nucleosome sliding by the ACF complex and enhances ACF-mediated chromatin assembly. The C-terminal regions of both CHRAC1 and POLE1 are required for these functions."
+Baz1b	CF	ISWI	WICH			Atypical tyrosine-protein kinase			B		
+Chrac1	CF	ISWI	CHRAC						P1		CHRAC1 is a histone-fold protein that interacts with other histone-fold proteins to bind DNA in a sequence-independent manner. These histone-fold protein dimers combine within larger enzymatic complexes for DNA transcription, replication, and packaging
+Rsf1	CF	ISWI							P1		
+Smarca1	CF	ISWI							P2		
+Baz2a	CF	ISWI	NoRC						R.1		Essential component of the NoRC (nucleolar remodeling complex) complex, a complex that mediates silencing of a fraction of rDNA by recruiting histone-modifying enzymes and DNA methyltransferases, leading to heterochromatin formation and transcriptional silencing. In the complex, it plays a central role by being recruited to rDNA and by targeting chromatin modifying enzymes such as HDAC1, leading to repress RNA polymerase I transcription. Recruited to rDNA via its interaction with TTF1 and its ability to recognize and bind histone H4 acetylated on 'Lys-16' (H4K16ac), leading to deacetylation of H4K5ac, H4K8ac, H4K12ac but not H4K16ac.
+Baz2b	CF	ISWI	BRF-5						R.1		May play a role in transcriptional regulation interacting with ISWI
+Pole3	CF	ISWI	CHRAC-1						R.2		Forms a complex with DNA polymerase epsilon subunit CHRAC1 and binds naked DNA, which is then incorporated into chromatin, aided by the nucleosome-remodeling activity of ISWI/SNF2H and ACF1
+Med1	CF	MEDIATOR							R.1		
+Med10	CF	MEDIATOR							R.1		
+Med11	CF	MEDIATOR							R.1		
+Med12	CF	MEDIATOR							R.1		
+Med12l	CF	MEDIATOR							R.1		
+Med13	CF	MEDIATOR							R.1		
+Med13l	CF	MEDIATOR							R.1		
+Med14	CF	MEDIATOR							R.1		
+Med15	CF	MEDIATOR							R.1		
+Med16	CF	MEDIATOR							R.1		
+Med17	CF	MEDIATOR							R.1		
+Med18	CF	MEDIATOR							R.1		
+Med19	CF	MEDIATOR							R.1		
+Med20	CF	MEDIATOR							R.1		
+Med21	CF	MEDIATOR							R.1		
+Med22	CF	MEDIATOR							R.1		
+Med23	CF	MEDIATOR							R.1		
+Med24	CF	MEDIATOR							R.1		
+Med25	CF	MEDIATOR							R.1		
+Med26	CF	MEDIATOR							R.1		
+Med27	CF	MEDIATOR							R.1		
+Med28	CF	MEDIATOR							R.1		
+Med29	CF	MEDIATOR							R.1		
+Med31	CF	MEDIATOR							R.1		
+Med4	CF	MEDIATOR							R.1		
+Med6	CF	MEDIATOR							R.1		
+Med7	CF	MEDIATOR							R.1		
+Med8	CF	MEDIATOR							R.1		
+Med9	CF	MEDIATOR							R.1		
+Stag1	CF	MEDIATOR							R.1		
+Brd1	CF	MOZ							R.1		Component of the MOZ/MORF complex which has a histone H3 acetyltransferase activity.
+Kat6a	CF	MOZ				W: H3K9ac	Runx1, Runx2		R.2		Histone acetyltransferase that acetylates lysine residues in histone H3 and histone H4 (in vitro). Component of the MOZ/MORF complex which has a histone H3 acetyltransferase activity. May act as a transcriptional coactivator for RUNX1 and RUNX2. Acetylates p53/TP53 at 'Lys-120' and 'Lys-382' and controls its transcriptional activity via association with PML
+Kat6b	CF	MOZ					Runx2		R.2		The protein encoded by this gene is a histone acetyltransferase and component of the MOZ/MORF protein complex. In addition to its acetyltransferase activity, the encoded protein has transcriptional activation activity in its N-terminal end and transcriptional repression activity in its C-terminal end. This protein is necessary for RUNX2-dependent transcriptional activation and could be involved in brain development. Mutations have been found in patients with genitopatellar syndrome. A translocation of this gene and the CREBBP gene results in acute myeloid leukemias.
+Msl1	CF	MSL							R.2		Component of histone acetyltransferase complex responsible for the majority of histone H4 acetylation at 'Lys-16' (H4K16ac) which is implicated in the formation of higher-order chromatin structure (PubMed:16227571). Greatly enhances MSL2 E3 ubiquitin ligase activity, promoting monoubiquitination of histone H2B at 'Lys-34' (H2BK34Ub) (PubMed:21726816). This modification in turn stimulates histone H3 methylation at 'Lys-4' (H3K4me) and 'Lys-79' (H3K79me) and leads to gene activation, including that of HOXA9 and MEIS1 (PubMed:21726816). In the MSL complex, acts as a scaffold to tether MSL3 and KAT8 together for enzymatic activity regulation
+Msl2	CF	MSL							R.2		Component of histone acetyltransferase complex responsible for the majority of histone H4 acetylation at lysine 16 which is implicated in the formation of higher-order chromatin structure. Acts as an E3 ubiquitin ligase that promotes monoubiquitination of histone H2B at 'Lys-35' (H2BK34Ub), but not that of H2A. This activity is greatly enhanced by heterodimerization with MSL1. H2B ubiquitination in turn stimulates histone H3 methylation at 'Lys-4' (H3K4me) and 'Lys-79' (H3K79me) and leads to gene activation, including that of HOXA9 and MEIS1.
+Msl3	CF	MSL							R.2		Specifically recognizes H4K20Me1 in a DNA-dependent manner and is proposed to be involved in chromosomal targeting of the MSL complex May be involved in chromatin remodeling and transcriptional regulation. May have a role in X inactivation. Component of the MSL complex which is responsible for the majority of histone H4 acetylation at 'Lys-16' which is implicated in the formation of higher-order chromatin structure. Specifically recognizes histone H4 monomethylated at 'Lys-20' (H4K20Me1) in a DNA-dependent manner and is proposed to be involved in chromosomal targeting of the MSL complex
+Hdac3	CF	NCOR							A		
+Ncor1	CF	NCOR							A		
+Ncor2	CF	NCOR		NCOR/SMRT					A		
+Tbl1x	CF	NCOR							A		
+Tbl1xr1	CF	NCOR							A		
+Setd5	CF	NCOR				H3K9me (W)	PAF & Ncor Complexes		R.2		Displays histone methyltransferase activity and monomethylates 'Lys-9' of histone H3 in vitro. The physiological significance of this activity is unclear. Probable transcriptional regulator that acts via the formation of large multiprotein complexes that modify and/or remodel the chromatin.
+Dhx9	CF	NPC							A		
+Nup133	CF	NPC							A		
+Nup153	CF	NPC							A		
+Nup35	CF	NPC							A		
+Nup43	CF	NPC							A		
+Nup50	CF	NPC							A		
+Nup62	CF	NPC							A		
+Nup85	CF	NPC							A		
+Nupr1	CF	NPC							A		
+Nup107	CF	NPC							R.3		
+Nup155	CF	NPC							R.3		
+Nup160	CF	NPC							R.3		
+Nup188	CF	NPC							R.3		
+Nup201l	CF	NPC							R.3		
+Nup205	CF	NPC							R.3		
+Nup210	CF	NPC							R.3		
+Nup214	CF	NPC							R.3		
+Nup37	CF	NPC							R.3		
+Nup42	CF	NPC							R.3		
+Nup54	CF	NPC							R.3		
+Nup88	CF	NPC							R.3		
+Nup93	CF	NPC							R.3		
+Nup98	CF	NPC							R.3		
+Nupl1	CF	NPC							R.3		
+Nupl2	CF	NPC							R.3		"Nucleoporin: 
+ Required for the export of mRNAs containing poly(A) tails from the nucleus into the cytoplasm."
+Nupr1l	CF	NPC							R.3		
+Kat8	CF	NSL	COMPASS & NSL & MSL	COMPASS, MSL					A		
+Kansl1	CF	NSL		COMPASS			KAT8		P1		This gene encodes a nuclear protein that is a subunit of two protein complexes involved with histone acetylation, the MLL1 complex and the NSL1 complex. The corresponding protein in Drosophila interacts with K(lysine) acetyltransferase 8, which is also a subunit of both the MLL1 and NSL1 complexes
+Kansl2	CF	NSL							P1		As part of the NSL complex it is involved in acetylation of nucleosomal histone H4 on several lysine residues and therefore may be involved in the regulation of transcription.
+Kansl3	CF	NSL							P1		As part of the NSL complex it is involved in acetylation of nucleosomal histone H4 on several lysine residues and therefore may be involved in the regulation of transcription.
+Phf20	CF	NSL							R.1		Contributes to methyllysine-dependent p53/TP53 stabilization and up-regulation after DNA damage (By similarity). Methyllysine-binding protein, component of the MOF histone acetyltransferase protein complex. Not required for maintaining the global histone H4 'Lys-16' acetylation (H4K16ac) levels or locus specific histone acetylation, but instead works downstream in transcriptional regulation of MOF target genes. As part of the NSL complex it may be involved in acetylation of nucleosomal histone H4 on several lysine residues.
+Phf20l1	CF	NSL							R.1		Methyllysine-binding protein, component of the MOF histone acetyltransferase protein complex. Not required for maintaining the global histone H4 'Lys-16' acetylation (H4K16ac) levels or locus specific histone acetylation, but instead works downstream in transcriptional regulation of MOF target genes
+Morf4l2	CF	NuA4		SIN3A					B		Component of the NuA4 histone acetyltransferase (HAT) complex which is involved in transcriptional activation of select genes principally by acetylation of nucleosomal histones H4 and H2A.
+Brd8	CF	NuA4		SWIR-like			NR (AR/DHTR, ESR1/NR3A1, RXRA/NR2B1 and THRB/ERBA2)		R.1		May act as a coactivator during transcriptional activation by hormone-activated nuclear receptors (NR). Isoform 2 stimulates transcriptional activation by AR/DHTR, ESR1/NR3A1, RXRA/NR2B1 and THRB/ERBA2. At least isoform 1 and isoform 2 are components of the NuA4 histone acetyltransferase (HAT) complex which is involved in transcriptional activation of select genes principally by acetylation of nucleosomal histones H4 and H2A. This modification may both alter nucleosome - DNA interactions and promote interaction of the modified histones with other proteins which positively regulate transcription. This complex may be required for the activation of transcriptional programs associated with oncogene and proto-oncogene mediated growth induction, tumor suppressor mediated growth arrest and replicative senescence, apoptosis, and DNA repair. NuA4 may also play a direct role in DNA repair when recruited to sites of DNA damage. Component of a SWR1-like complex that specifically mediates the removal of histone H2A.Z/H2AZ1 from the nucleosome.
+Morf4l1	CF	NuA4							R.1		Component of the NuA4 histone acetyltransferase (HAT) complex which is involved in transcriptional activation of select genes principally by acetylation of nucleosomal histones H4 and H2A.
+Ing3	CF	NuA4	NuA4 and 	SWR1-like					R.2		The protein encoded by this gene is similar to ING1, a tumor suppressor protein that can interact with TP53, inhibit cell growth, and induce apoptosis. This protein contains a PHD-finger, which is a common motif in proteins involved in chromatin remodeling. This gene can activate p53 trans-activated promoters, including promoters of p21/waf1 and bax. Overexpression of this gene has been shown to inhibit cell growth and induce apoptosis.
+Chd3	CF	NuRD							A		
+Chd4	CF	NuRD							A		
+Hdac1	CF	NuRD		coREST, SIN3A					A		
+Hdac2	CF	NuRD		coREST, SIN3A					A		
+Mbd2	CF	NuRD		MeCP1					A		
+Mbd3	CF	NuRD							A		
+Mta1	CF	NuRD							A		
+Mta2	CF	NuRD							A		
+Mta3	CF	NuRD							A		
+Rbbp4	CF	NuRD		NURF, PRC2, CAF-1					A		
+Rbbp7	CF	NuRD		NURF, PRC2, CAF-1					A		
+Gatad2b	CF	NuRD				Repressor			B		
+Cdc73	CF	PAF							R.3		
+Ctr9	CF	PAF							R.3		
+Leo1	CF	PAF							R.3		
+Paf1	CF	PAF							R.3		
+Rtf1	CF	PAF							R.3		
+Phf5a	CF	PAF1							B		
+Cbx8	CF	PRC1							R.2	low	Component of a Polycomb group (PcG) multiprotein PRC1-like complex, a complex class required to maintain the transcriptionally repressive state of many genes, including Hox genes, throughout development. PcG PRC1 complex acts via chromatin remodeling and modification of histones; it mediates monoubiquitination of histone H2A 'Lys-119', rendering chromatin heritably changed in its expressibility.
+Kdm2b	CF	PRC1	PRC1.1 	SCF complex 	Hypomethylated CpGs				R.2		Histone demethylase that demethylates 'Lys-4' and 'Lys-36' of histone H3, thereby playing a central role in histone code (PubMed:16362057, PubMed:17994099, PubMed:26237645). Preferentially demethylates trimethylated H3 'Lys-4' and dimethylated H3 'Lys-36' residue while it has weak or no activity for mono- and tri-methylated H3 'Lys-36' (PubMed:16362057, PubMed:17994099, PubMed:26237645). Preferentially binds the transcribed region of ribosomal RNA and represses the transcription of ribosomal RNA genes which inhibits cell growth and proliferation (PubMed:16362057, PubMed:17994099). May also serve as a substrate-recognition component of the SCF (SKP1-CUL1-F-box protein)-type E3 ubiquitin ligase complex
+Cbx2	CF	PRC1			H3K9me3, H3K27me3				B	Prog	Component of a Polycomb group (PcG) multiprotein PRC1-like complex, a complex class required to maintain the transcriptionally repressive state of many genes, including Hox genes, throughout development (PubMed:21282530). PcG PRC1 complex acts via chromatin remodeling and modification of histones; it mediates monoubiquitination of histone H2A 'Lys-119', rendering chromatin heritably changed in its expressibility (PubMed:21282530). Binds to histone H3 trimethylated at 'Lys-9' (H3K9me3) or at 'Lys-27' (H3K27me3) (By similarity). Plays a role in the lineage differentiation of the germ layers in embryonic development (By similarity). Involved in sexual development, acting as activator of NR5A1 expression
+Cbx4	CF	PRC1	PRC1			W: E3 SUMO-protein ligase			B		"E3 SUMO-protein ligase which facilitates SUMO1 conjugation by UBE2I (PubMed:12679040). Involved in the sumoylation of HNRNPK, a p53/TP53 transcriptional coactivator, hence indirectly regulates p53/TP53 transcriptional activation resulting in p21/CDKN1A expression. Monosumoylates ZNF131 (PubMed:22825850). CBX4_HUMAN,O00257
+ Component of a Polycomb group (PcG) multiprotein PRC1-like complex, a complex class required to maintain the transcriptionally repressive state of many genes, including Hox genes, throughout development (PubMed:12167701, PubMed:19636380, PubMed:21282530). PcG PRC1 complex acts via chromatin remodeling and modification of histones; it mediates monoubiquitination of histone H2A 'Lys-119', rendering chromatin heritably changed in its expressibility (PubMed:12167701, PubMed:19636380, PubMed:21282530). Binds to histone H3 trimethylated at 'Lys-9' (H3K9me3) (By similarity). Plays a role in the lineage differentiation of the germ layers in embryonic development"
+Cbx6	CF	PRC1	PRC1						B		Component of a Polycomb group (PcG) multiprotein PRC1-like complex, a complex class required to maintain the transcriptionally repressive state of many genes, including Hox genes, throughout development (PubMed:21282530). PcG PRC1 complex acts via chromatin remodeling and modification of histones; it mediates monoubiquitination of histone H2A 'Lys-119', rendering chromatin heritably changed in its expressibility. Possibly contributes to the target selectivity of the PRC1 complex by binding specific regions of chromatin (PubMed:18927235). Recruitment to chromatin might occur in an H3K27me3-independent fashion (By similarity). May have a PRC1-independent function in embryonic stem cells
+Cbx7	CF	PRC1	PRC1						B	lymph	Component of a Polycomb group (PcG) multiprotein PRC1-like complex, a complex class required to maintain the transcriptionally repressive state of many genes, including Hox genes, throughout development. PcG PRC1 complex acts via chromatin remodeling and modification of histones; it mediates monoubiquitination of histone H2A 'Lys-119', rendering chromatin heritably changed in its expressibility. Promotes histone H3 trimethylation at 'Lys-9' (H3K9me3). Binds to trimethylated lysine residues in histones, and possibly also other proteins. Regulator of cellular lifespan by maintaining the repression of CDKN2A, but not by inducing telomerase activity.
+Phc3	CF	PRC1							B		
+Phf1	CF	PRC1		PRC2					B		
+Bmi1	CF	PRC1							P1		Component of a Polycomb group (PcG) multiprotein PRC1-like complex, a complex class required to maintain the transcriptionally repressive state of many genes, including Hox genes, throughout development. PcG PRC1 complex acts via chromatin remodeling and modification of histones; it mediates monoubiquitination of histone H2A 'Lys-119', rendering chromatin heritably changed in its expressibility
+Ring1	CF	PRC1					Bmi1, Edr, Cbx4		P1		This gene belongs to the RING finger family, members of which encode proteins characterized by a RING domain, a zinc-binding motif related to the zinc finger domain. The gene product can bind DNA and can act as a transcriptional repressor. It is associated with the multimeric polycomb group protein complex. The gene product interacts with the polycomb group proteins BMI1, EDR1, and CBX4, and colocalizes with these proteins in large nuclear domains. It interacts with the CBX4 protein via its glycine-rich C-terminal domain.
+Rnf2	CF	PRC1							P1		E3 ubiquitin-protein ligase that mediates monoubiquitination of 'Lys-119' of histone H2A (H2AK119Ub), thereby playing a central role in histone code and gene regulation (PubMed:15386022, PubMed:16359901, PubMed:25519132, PubMed:21772249, PubMed:25355358, PubMed:26151332). H2AK119Ub gives a specific tag for epigenetic transcriptional repression and participates in X chromosome inactivation of female mammals. May be involved in the initiation of both imprinted and random X inactivation (By similarity). Essential component of a Polycomb group (PcG) multiprotein PRC1-like complex, a complex class required to maintain the transcriptionally repressive state of many genes, including Hox genes, throughout development
+Scmh1	CF	PRC1	PRC1.4						P1		
+Rybp	CF	PRC1	PRC1.2						P2		
+Yaf2	CF	PRC1	PRC1.3						P2		
+L3mbtl2	CF	PRC1	PRC1.6		H4K20me1/2				R.1		PcG proteins maintain the transcriptionally repressive state of genes, probably via a modification of chromatin, rendering it heritably changed in its expressibility. Its association with a chromatin-remodeling complex suggests that it may contribute to prevent expression of genes that trigger the cell into mitosis. Binds to monomethylated and dimethylated 'Lys-20' on histone H4. Binds histone H3 peptides that are monomethylated or dimethylated on 'Lys-4', 'Lys-9' or 'Lys-27'
+Pcgf2	CF	PRC1							R.1		Polycomb group RING. PRC1. Transcriptional repressor (PubMed:8521824). Binds specifically to the DNA sequence 5'-GACTNGACT-3' (PubMed:8521824). Has tumor suppressor activity (PubMed:8521824). May play a role in control of cell proliferation and/or neural cell development (Probable). Regulates proliferation of early T progenitor cells by maintaining expression of HES1(PubMed:15728456). Also plays a role in antero-posterior specification of the axial skeleton and negative regulation of the self-renewal activity of hematopoietic stem cells
+Pcgf3	CF	PRC1							R.1		Component of a Polycomb group (PcG) multiprotein PRC1-like complex, a complex class required to maintain the transcriptionally repressive state of many genes, including Hox genes, throughout development
+Pcgf5	CF	PRC1							R.1		Within the PRC1-like complex, regulates RNF2 ubiquitin ligase activity (PubMed:26151332). Plays a redundant role with PCGF3 as part of a PRC1-like complex that mediates monoubiquitination of histone H2A 'Lys-119'
+Phc1	CF	PRC1							R.1		PRC1 component.The gene product is a component of a multimeric protein complex that contains EDR2 and the vertebrate Polycomb protein BMH1.
+Phc2	CF	PRC1							R.1		Component of a Polycomb group (PcG) multiprotein PRC1-like complex
+Pcgf6	CF	PRC1							R.2	low	Transcriptional repressor. May modulate the levels of histone H3K4Me3 by activating KDM5D histone demethylase. Component of a Polycomb group (PcG) multiprotein PRC1-like complex
+Auts2	CF	PRC1	 PCR1.3								
+Scml2	CF	PRC1	PRC1.4								
+Ezh1	CF	PRC2				W: H3K27me1, H3K27me2, H3K27me3			A		
+Ezh2	CF	PRC2				W: H3K27me1, H3K27me2, H3K27me3			A		
+Mtf2	CF	PRC2	PRC2.1						B		Polycomb group (PcG) that specifically binds histone H3 trimethylated at 'Lys-36' (H3K36me3) and recruits the PRC2 complex. Acts by binding to H3K36me3, a mark for transcriptional activation, and recruiting the PRC2 complex, leading to enhance PRC2 H3K27me3 methylation activity. Regulates the transcriptional networks during embryonic stem cell self-renewal and differentiation. Promotes recruitment of the PRC2 complex to the inactive X chromosome in differentiating XX ES cells and PRC2 recruitment to target genes in undifferentiated ES cells. Required to repress Hox genes by enhancing H3K27me3 methylation of the PRC2 complex. In some conditions may act as an inhibitor of PRC2 activity: able to activate the CDKN2A gene and promote cellular senescence by suppressing the catalytic activity of the PRC2 complex locally. Binds to the metal-regulating-element
+Suz12	CF	PRC2							P1		
+Jarid2	CF	PRC2	PRC2.2		CpG-rich, H2AK119Ub				R.1	Mye	This gene encodes a Jumonji- and AT-rich interaction domain (ARID)-domain-containing protein. Recruits PRC2. Does not have histone demethylase activity but regulates activity of various histone methyltransferase complexes. In embryonic stem cells, it associates with the PRC2 complex and inhibits trimethylation of 'Lys-27' of histone H3 (H3K27me3) by the PRC2 complex, thereby playing a key role in differentiation of embryonic stem cells and normal development. In cardiac cells, it is required to repress expression of cyclin-D1 (CCND1) by activating methylation of 'Lys-9' of histone H3 (H3K9me) by the GLP1/EHMT1 and G9a/EHMT2 histone methyltransferases. Also acts as a transcriptional repressor of ANF via its interaction with GATA4 and NKX2-5. Participates in the negative regulation of cell proliferation signaling.
+Phf19	CF	PRC2	PRC2.1						R.1		Polycomb group (PcG) that specifically binds histone H3 trimethylated at 'Lys-36' (H3K36me3) and recruits the PRC2 complex.
+Eed	CF	PRC2									
+Epop	CF	PRC2		Elongin						DM-LSC	Scaffold protein that serves as a bridging partner between the PRC2/EZH2 complex and the elongin BC complex: required to fine-tune the transcriptional status of Polycomb group (PcG) target genes in embryonic stem cells (ESCs). Plays a key role in genomic regions that display both active and repressive chromatin properties in pluripotent stem cells by sustaining low level expression at PcG target genes: acts by recruiting the elongin BC complex, thereby restricting excessive activity of the PRC2/EZH2 complex. Interaction with USP7 promotes deubiquitination of H2B at promoter sites. Acts as a regulator of neuronal differentiation.
+Gtf2a1	CF	Pre-Initiation Complex				Initiation of Transcription			R.2		TF initiation factor
+Gtf2h3	CF	Pre-Initiation Complex				Initiation of Transcription			R.2		TF initiation factor
+Gtf2h4	CF	Pre-Initiation Complex				Initiation of Transcription			R.2		TF initiation factor
+Gtf3a	CF	Pre-Initiation Complex				Initiation of Transcription			R.2		TF initiation factor
+Gtf2a1l	CF	Pre-Initiation Complex				Initiation of Transcription			R.3		TF initiation factor
+Gtf2a2	CF	Pre-Initiation Complex				Initiation of Transcription			R.3		TF initiation factor
+Gtf2b	CF	Pre-Initiation Complex				Initiation of Transcription			R.3		TF initiation factor
+Gtf2e1	CF	Pre-Initiation Complex				Initiation of Transcription			R.3		TF initiation factor
+Gtf2e2	CF	Pre-Initiation Complex				Initiation of Transcription			R.3		TF initiation factor
+Gtf2f1	CF	Pre-Initiation Complex				Initiation of Transcription			R.3		TF initiation factor
+Gtf2f2	CF	Pre-Initiation Complex				Initiation of Transcription			R.3		TF initiation factor
+Gtf2h1	CF	Pre-Initiation Complex				Initiation of Transcription			R.3		TF initiation factor
+Gtf2h2	CF	Pre-Initiation Complex				Initiation of Transcription			R.3		TF initiation factor
+Gtf2h5	CF	Pre-Initiation Complex				Initiation of Transcription			R.3		TF initiation factor
+Gtf2i	CF	Pre-Initiation Complex				Initiation of Transcription			R.3		TF initiation factor
+Gtf2ird1	CF	Pre-Initiation Complex				Initiation of Transcription			R.3		TF initiation factor
+Gtf2ird2	CF	Pre-Initiation Complex				Initiation of Transcription			R.3		TF initiation factor
+Gtf3c1	CF	Pre-Initiation Complex				Initiation of Transcription			R.3		TF initiation factor
+Gtf3c2	CF	Pre-Initiation Complex				Initiation of Transcription			R.3		TF initiation factor
+Gtf3c3	CF	Pre-Initiation Complex				Initiation of Transcription			R.3		TF initiation factor
+Gtf3c4	CF	Pre-Initiation Complex				Initiation of Transcription			R.3		TF initiation factor
+Gtf3c5	CF	Pre-Initiation Complex				Initiation of Transcription			R.3		TF initiation factor
+Gtf3c6	CF	Pre-Initiation Complex				Initiation of Transcription			R.3		TF initiation factor
+Cdk8	CF	pTEFb					Brd4,Mediator		R.3		
+Kdm5c	CF	REST							R.1		Histone demethylase that specifically demethylates 'Lys-4' of histone H3. Participates in transcriptional repression of neuronal genes by recruiting histone deacetylases and REST at neuron-restrictive silencer elements
+Rnf20	CF	RNF20/40				W: H2AK120Ub			P1		Component of the RNF20/40 E3 ubiquitin-protein ligase complex that mediates monoubiquitination of 'Lys-120' of histone H2B (H2BK120ub1). H2BK120ub1 gives a specific tag for epigenetic transcriptional activation and is also prerequisite for histone H3 'Lys-4' and 'Lys-79' methylation (H3K4me and H3K79me, respectively). It thereby plays a central role inb histone code and gene regulation. The RNF20/40 complex forms a H2B ubiquitin ligase complex in cooperation with the E2 enzyme UBE2A or UBE2B; reports about the cooperation with UBE2E1/UBCH are contradictory. Required for transcriptional activation of Hox genes
+Rnf40	CF	RNF20/40				W: H2AK120Ub			P1		mponent of the RNF20/40 E3 ubiquitin-protein ligase complex that mediates monoubiquitination of 'Lys-120' of histone H2B (H2BK120ub1). H2BK120ub1 gives a specific tag for epigenetic transcriptional activation and is also prerequisite for histone H3 'Lys-4' and 'Lys-79' methylation (H3K4me and H3K79me, respectively). It thereby plays a central role in histone code and gene regulation.
+Kat2a	CF	SAGA		P-CAF, ATAC		W: H3K9ac / succinyl			B		
+Chd1	CF	SAGA		P-CAF					R.1		ATP-dependent chromatin-remodeling factor which functions as substrate recognition component of the transcription regulatory histone acetylation (HAT) complex SAGA. Regulates polymerase II transcription. Also required for efficient transcription by RNA polymerase I, and more specifically the polymerase I transcription termination step. Regulates negatively DNA replication. Not only involved in transcription-related chromatin-remodeling, but also required to maintain a specific chromatin configuration across the genome. Is also associated with histone deacetylase (HDAC) activity (By similarity). Required for the bridging of SNF2, the FACT complex, the PAF complex as well as the U2 snRNP complex to H3K4me3. Functions to modulate the efficiency of pre-mRNA splicing in part through physical bridging of spliceosomal components to H3K4me3 (PubMed:18042460, PubMed:28866611). Required for maintaining open chromatin and pluripotency in embryonic stem cells
+Kdm2a	CF	SCF							R.1		F-box protein. Component of SCF complex, nucleates CpG islands and demethylate H3K36me2. May also recognize and bind to some phosphorylated proteins and promote their ubiquitination and degradation. Required to maintain the heterochromatic state
+Srcap	CF	SCRAP							P1		
+Yeats4	CF	SCRAP							P1		
+Znhit1	CF	SCRAP							P1		
+Mllt1 (ENL)	CF	SEC							R.1		SEC complex
+Mllt10 (AF10)	CF	SEC							R.1		Dot1L Complex
+Mllt3 (AF9)	CF	SEC							R.1		SEC complex
+Mllt6	CF	SEC						AF17	B		
+Dot1l	CF	SEC				W: H3K79me3			P1		
+Sap30	CF	SIN3A							B		Involved in the functional recruitment of the Sin3-histone deacetylase complex (HDAC) to a specific subset of N-CoR corepressor complexes. Capable of transcription repression by N-CoR. Active in deacetylating core histone octamers (when in a complex) but inactive in deacetylating nucleosomal histones.
+Tet1	CF	SIN3A							P1		
+Tet2	CF	SIN3A							P1		
+Phf12	CF	SIN3A							R.1		Acts as a transcriptional repressor. Involved in recruitment of functional SIN3A complexes to DNA. Represses transcription at least in part through the activity of an associated histone deacetylase (HDAC). May also repress transcription in a SIN3A-independent manner through recruitment of functional AES complexes to DNA
+Sap130	CF	SIN3A							R.1		Acts as a transcriptional repressor. May function in the assembly and/or enzymatic activity of the mSin3A corepressor complex or in mediating interactions between the complex and other regulatory complexes
+Sap18	CF	SIN3A		RNA complexes: EJC, ASAP, PSAP					R.1		Component of the SIN3-repressing complex. Enhances the ability of SIN3-HDAC1-mediated transcriptional repression. When tethered to the promoter, it can direct the formation of a repressive complex to core histone proteins. Auxiliary component of the splicing-dependent multiprotein exon junction complex (EJC) deposited at splice junction on mRNAs. The EJC is a dynamic structure consisting of core proteins and several peripheral nuclear and cytoplasmic associated factors that join the complex only transiently either during EJC assembly or during subsequent mRNA metabolism. Component of the ASAP and PSAP complexes which bind RNA in a sequence-independent manner and are proposed to be recruited to the EJC prior to or during the splicing process and to regulate specific excision of introns in specific transcription subsets. The ASAP complex can inhibit mRNA processing during in vitro splicing reactions. The ASAP complex promotes apoptosis and is disassembled after induction of apoptosis. Involved in the splicing modulation of BCL2L1/Bcl-X (and probably other apoptotic genes); specifically inhibits the formation of proapoptotic isoforms such as Bcl-X(S); the activity is different from the established EJC assembly and function.
+Sap25	CF	SIN3A							R.1		Involved in the transcriptional repression mediated by the mSIN3A but not the N-CoR corepressor complex.
+Sap30bp	CF	SIN3A					Sap30		R.1	Ery	Induces cell death. May act as a transcriptional corepressor of a gene related to cell survival. May be involved in the regulation of beta-2-microglobulin genes
+Sap30l	CF	SIN3A			dsDNA & PIP3/4/5	Recruits Sin3A HDAC (Repressor)			R.1		Functions as transcription repressor, probably via its interaction with histone deacetylase complexes (PubMed:16820529, PubMed:18070604). Involved in the functional recruitment of the class 1 Sin3-histone deacetylase complex (HDAC) to the nucleolus (PubMed:16820529). Binds DNA, apparently without sequence-specificity, and bends bound double-stranded DNA (PubMed:19015240). Binds phosphoinositol phosphates (phosphoinositol 3-phosphate, phosphoinositol 4-phosphate and phosphoinositol 5-phosphate) via the same basic sequence motif that mediates DNA binding and nuclear import
+Sin3a	CF	SIN3A				Repressor	REST complex, PER complex, MAD/MAX		R.1		Acts as a transcriptional repressor. Corepressor for REST. Interacts with MXI1 to repress MYC responsive genes and antagonize MYC oncogenic activities. Also interacts with MXD1-MAX heterodimers to repress transcription by tethering SIN3A to DNA. Acts cooperatively with OGT to repress transcription in parallel with histone deacetylation. Involved in the control of the circadian rhythms. Required for the transcriptional repression of circadian target genes, such as PER1, mediated by the large PER complex through histone deacetylation. Cooperates with FOXK1 to regulate cell cycle progression probably by repressing cell cycle inhibitor genes expression (By similarity). Required for cortical neuron differentiation and callosal axon elongatio
+Cir1	CF	SIN3A							R.2	Ery-low	Regulates transcription and acts as corepressor for RBPJ. Recruits RBPJ to the Sin3-histone deacetylase complex (HDAC). Required for RBPJ-mediated repression of transcription (By similarity). May modulate splice site selection during alternative splicing of pre-mRNAs.By similarity1 Publication
+Gon4l	CF	SIN3A							R.2		Has transcriptional repressor activity, probably as part of a complex with YY1, SIN3A AND HDAC1.  Required for B cell lymphopoiesis.
+Ing2	CF	SIN3A	SIN3A						R.2		Seems to be involved in p53/TP53 activation and p53/TP53-dependent apoptotic pathways, probably by enhancing acetylation of p53/TP53. Component of a mSin3A-like corepressor complex, which is probably involved in deacetylation of nucleosomal histones. ING2 activity seems to be modulated by binding to phosphoinositides
+Arid4a	TF	SIN3A									The protein encoded by this gene is a ubiquitously expressed nuclear protein. It binds directly, with several other proteins, to retinoblastoma protein (pRB) which regulates cell proliferation. pRB represses transcription by recruiting the encoded protein. This protein, in turn, serves as a bridging molecule to recruit HDACs and, in addition, provides a second HDAC-independent repression function. The encoded protein possesses transcriptional repression activity. 
+Arid4b	CF	SIN3A									
+MORF4L1P2		SIN3A									
+SUDS3		SIN3A						SDS3, SAP45			
+Hdac7	CF	SMRT							B		
+Actr6	CF	SCRAP							P1		
+Dmap1	CF	SCRAP							P1		
+Anp32a	CF	SWR							P1		
+Anp32b	CF	SWR							P1		
+Anp32e	CF	SWR							P1		
+Trrap	CF	SWR		SEC COMPLEX					P1		
+Kdm5a	CF					E: H3K4me	CLOCK1, BMAL, HDACs		A		
+Kdm5b	CF					E: H3K4me			A		
+Smarcal1	CF								A		
+Ash1l	CF					W: H3K36me 			B		This gene encodes a member of the trithorax group of transcriptional activators. The protein contains four AT hooks, a SET domain, a PHD-finger motif, and a bromodomain. It is localized to many small speckles in the nucleus, and also to cell-cell tight junctions
+Chd2	CF					Helicase	Parp1, Par		B		
+Chd3os	CF								B		
+Chd7	CF						pBAF complex		B		
+Hat1	CF					W: H4K5ac, H4K12ac, H2a5ac			B		The protein encoded by this gene is a type B histone acetyltransferase (HAT) that is involved in the rapid acetylation of newly synthesized cytoplasmic histones, which are in turn imported into the nucleus for de novo deposition onto nascent DNA chains
+Hdac10	CF					Polyamine deacetylase (PDAC)			B		
+Hdac4	CF								B		
+Hdac9	CF								B		
+Hmg20a	CF								B	Ery	Acts as inhibitor of HMG20B. Overcomes the repressive effects of the neuronal silencer REST and induces the activation of neuronal-specific genes. Involved in the recruitment of the histone methyltransferase KMT2A/MLL1 and consequent increased methylation of histone H3 lysine 4
+Hmgb3	CF								B	Ery	The encoded protein plays an important role in maintaining stem cell populations, and may be aberrantly expressed in tumor cell
+Hmgn1	CF								B		The protein encoded by this gene binds nucleosomal DNA and is associated with transcriptionally active chromatin. Along with a similar protein, HMG17, the encoded protein may help maintain an open chromatin configuration around transcribable genes.
+Kdm3a	CF					E: H3k9me1/2			B		
+Kdm6b	CF					E: H3K27me3			B		
+Kdm7a	CF					E: H3K9me2 H3K27me2			B		
+Kdm8	CF					E: H3K36me3 & peptidase			B		
+Mettl13	CF								B		
+Mettl7a1	CF								B		
+Nasp	CF								B		This gene encodes a H1 histone binding protein that is involved in transporting histones into the nucleus of dividing cells.
+Phf11a	CF								B		
+Phf11b	CF								B		
+Phf6	CF								B		
+Prdm16	CF								B		Binds DNA and functions as a transcriptional regulator (PubMed:12816872). Displays histone methyltransferase activity and monomethylates 'Lys-9' of histone H3 (H3K9me1) in vitro (By similarity). Probably catalyzes the monomethylation of free histone H3 in the cytoplasm which is then transported to the nucleus and incorporated into nucleosomes where SUV39H methyltransferases use it as a substrate to catalyze histone H3 'Lys-9' trimethylation (By similarity). Likely to be one of the primary histone methyltransferases along with MECOM/PRDM3 that direct cytoplasmic H3K9me1 methylation (By similarity). Functions in the differentiation of brown adipose tissue (BAT) which is specialized in dissipating chemical energy in the form of heat in response to cold or excess feeding while white adipose tissue (WAT) is specialized in the storage of excess energy and the control of systemic metabolism (By similarity). Together with CEBPB, regulates the differentiation of myoblastic precursors into brown adipose cells (By similarity). Functions as a repressor of TGF-beta signaling
+Rai1	CF								B		
+Setbp1	CF								B		
+Setd4	CF								B		
+Setd6	CF								B		
+Setd7	CF								B		
+Setd8 (Kmt5a)	CF					W: H4K20me1			B		Protein-lysine N-methyltransferase that monomethylates both histones and non-histone proteins. Specifically monomethylates 'Lys-20' of histone H4 (H4K20me1). H4K20me1 is enriched during mitosis and represents a specific tag for epigenetic transcriptional repression. Mainly functions in euchromatin regions, thereby playing a central role in the silencing of euchromatic genes. Required for cell proliferation, probably by contributing to the maintenance of proper higher-order structure of DNA during mitosis. Involved in chromosome condensation and proper cytokinesis. Nucleosomes are preferred as substrate compared to free histones. Mediates monomethylation of p53/TP53 at 'Lys-382', leading to repress p53/TP53-target genes. Plays a negative role in TGF-beta response regulation and a positive role in cell migration.
+Shprh	CF								B		
+Sirt3	CF								B		
+Sirt5	CF								B	Low	
+Sirt7	CF								B		
+Smyd2	CF					W: H3K4me, H3K36me 			B	Prog	
+Smyd3	CF					W: H3K4me2, H3K4me3, H4K5me 			B		
+Snd1	CF								B		
+Sp100	CF								B		
+Tdrd7	CF								B		
+Tsfm	CF								B		
+Uhrf1	CF								B		
+Wbscr27	CF							Metll27	B		
+Bcor	CF						Bcl6, Kdm2b, Tfap2a		P1		Transcriptional corepressor. May specifically inhibit gene expression when recruited to promoter regions by sequence-specific DNA-binding proteins such as BCL6 and MLLT3. This repression may be mediated at least in part by histone deacetylase activities which can associate with this corepressor. Involved in the repression of TFAP2A; impairs binding of BCL6 and KDM2B to TFAP2A promoter regions. Via repression of TFAP2A acts as a negative regulator of osteo-dentiogenic capacity in adult stem cells; the function implies inhibition of methylation on histone H3 'Lys-4' (H3K4me3) and 'Lys-36' (H3K36me2).
+Bcorl1	CF								P1		Transcriptional corepressor. May specifically inhibit gene expression when recruited to promoter regions by sequence-specific DNA-binding proteins such as BCL6. This repression may be mediated at least in part by histone deacetylase activities which can associate with this corepressor.
+Chd1l	CF								P1		DNA helicase which plays a role in chromatin-remodeling following DNA damage. Targeted to sites of DNA damage through interaction with poly(ADP-ribose) and functions to regulate chromatin during DNA repair. Able to catalyze nucleosome sliding in an ATP-dependent manner. Helicase activity is strongly stimulated upon poly(ADP-ribose)-binding.
+Clock	CF						bmal1		P1		The protein encoded by this gene plays a central role in the regulation of circadian rhythms. The protein encodes a transcription factor of the basic helix-loop-helix (bHLH) family and contains DNA binding histone acetyltransferase activity.
+Ctcf	CF								P1		
+Dnttip2	CF								P1		
+Ep300	CF								P1		
+Ep400	CF								P1		
+Eya1	CF								P1		
+Eya4	CF								P1		
+Foxp2	CF								P1		
+H2afx	CF								P1		
+H2afy	CF								P1		
+H2afy2	CF								P1		
+Jmjd4	CF								P1		Catalyzes the 2-oxoglutarate and iron-dependent C4-lysyl hydroxylation of ETF1 at 'Lys-63' thereby promoting the translational termination efficiency of ETF1.
+Jmjd6	CF						BRD4 & pTEFb		P1		Acts as a lysyl-hydroxylase that catalyzes 5-hydroxylation on specific lysine residues of target proteins such as U2AF2/U2AF65 and LUC7L2. Regulates RNA splicing by mediating 5-hydroxylation of U2AF2/U2AF65, affecting the pre-mRNA splicing activity of U2AF2/U2AF65 (PubMed:19574390). Hydroxylates its own N-terminus, which is required for homooligomerization (PubMed:22189873). In addition to peptidyl-lysine 5-dioxygenase activity, may act as an RNA hydroxylase, as suggested by its ability to bind single strand RNA (PubMed:20679243, PubMed:29176719). Also acts as an arginine demethylase which preferentially demethylates asymmetric dimethylation (PubMed:17947579, PubMed:24498420, PubMed:24360279). Demethylates histone H3 at 'Arg-2' (H3R2me) and histone H4 at 'Arg-3' (H4R3me), including mono-, symmetric di- and asymmetric dimethylated forms, thereby playing a role in histone code (PubMed:17947579, PubMed:24360279). However, histone arginine demethylation may not constitute the primary activity in vivo (PubMed:17947579, PubMed:21060799, PubMed:22189873). In collaboration with BRD4, interacts with the positive transcription elongation factor b (P-TEFb) complex in its active form to regulate polymerase II promoter-proximal pause release for transcriptional activation of a large cohort of genes. On distal enhancers, so called anti-pause enhancers, demethylates both histone H4R3me2 and the methyl cap of 7SKsnRNA leading to the dismissal of the 7SKsnRNA:HEXIM1 inhibitor complex. After removal of repressive marks, the complex BRD4:JMJD6 attract and retain the P-TEFb complex on chromatin, leading to its activation, promoter-proximal polymerase II pause release, and transcriptional activation (PubMed:24360279). Demethylates other arginine methylated-proteins such as ESR1 (PubMed:24498420). Has no histone lysine demethylase activity (PubMed:21060799). Required for differentiation of multiple organs during embryogenesis. Acts as a key regulator of hematopoietic differentiation: required for angiogenic sprouting by regulating the pre-mRNA splicing activity of U2AF2/U2AF65 (By similarity). Seems to be necessary for the regulation of macrophage cytokine responses
+Jmjd7	CF								P1		Bifunctional enzyme that acts both as an endopeptidase and 2-oxoglutarate-dependent monoxygenase (PubMed:28847961, PubMed:29915238). Endopeptidase that cleaves histones N-terminal tails at the carboxyl side of methylated arginine or lysine residues, to generate 'tailless nucleosomes', which may trigger transcription elongation (PubMed:28847961). Preferentially recognizes and cleaves monomethylated and dimethylated arginine residues of histones H2, H3 and H4 (PubMed:28847961). After initial cleavage, continues to digest histones tails via its aminopeptidase activity (PubMed:28847961). Additionally, may play a role in protein biosynthesis by modifying the translation machinery (PubMed:29915238). Acts as Fe(2+) and 2-oxoglutarate-dependent monoxygenase, catalyzing (S)-stereospecific hydroxylation at C-3 of 'Lys-22' of DRG1 and 'Lys-21' of DRG2 translation factors (TRAFAC), promoting their interaction with ribonucleic acids
+Jmjd8	CF								P1		Functions as a positive regulator of TNF-induced NF-kappa-B signaling (PubMed:27671354). Regulates angiogenesis and cellular metabolism through interaction with PKM
+Kdm5d	CF					E: H3K4me demthylase	ZMYND8		P1		Histone demethylase that specifically demethylates 'Lys-4' of histone H3, thereby playing a central role in histone code. Does not demethylate histone H3 'Lys-9', H3 'Lys-27', H3 'Lys-36', H3 'Lys-79' or H4 'Lys-20'. Demethylates trimethylated and dimethylated but not monomethylated H3 'Lys-4'. May play a role in spermatogenesis. Involved in transcriptional repression of diverse metastasis-associated genes; in this function seems to cooperate with ZMYND8. Suppresses prostate cancer cell invasion. Regulates androgen receptor (AR) transcriptional activity by demethylating H3K4me3 active transcription marks
+Max	CF								P1		
+Maz	CF								P1		
+Mettl1	CF								P1		
+Mettl14	CF								P1		
+Mettl15	CF								P1		
+Mettl16	CF								P1		
+Mettl17	CF								P1		
+Mettl18	CF								P1		
+Mettl2	CF								P1		
+Mettl21a	CF								P1		
+Mettl22	CF								P1		
+Mettl25	CF								P1		
+Mettl25	CF								P1		
+Mettl3	CF								P1		
+Mettl6	CF								P1		
+Mettl8	CF								P1		
+Mettl9	CF								P1		
+Prdm10	CF								P1		The protein encoded by this gene is a transcription factor that contains C2H2-type zinc-fingers. It also contains a positive regulatory domain, which has been found in several other zinc-finger transcription factors including those involved in B cell differentiation and tumor suppression. Studies of the mouse counterpart suggest that this protein may be involved in the development of the central nerve system (CNS), as well as in the pathogenesis of neuronal storage disease. Multiple alternatively spliced transcript variants encoding distinct isoforms have been observed.
+Prdm11	CF								P1		PRDM11 (PR/SET Domain 11) is a Protein Coding gene. Diseases associated with PRDM11 include Hermansky-Pudlak Syndrome 1. Gene Ontology (GO) annotations related to this gene include nucleic acid binding and methyltransferase activity. An important paralog of this gene is PRDM7.
+Prdm15	CF								P1		Sequence-specific DNA-binding transcriptional regulator. Plays a role as a molecular node in a transcriptional network regulating embryonic development and cell fate decision. Stimulates the expression of upstream key transcriptional activators and repressors of the Wnt/beta-catenin and MAPK/ERK pathways, respectively, that are essential for naive pluripotency and self-renewal maintenance of embryonic stem cells (ESCs). Specifically promotes SPRY1 and RSPO1 transcription activation through recognition and direct binding of a specific DNA sequence in their promoter regions. Involved in early embryo development (By similarity). Plays also a role in induced pluripotent stem cells (iPSCs) reprogramming (PubMed:28740264).
+Prdm2	CF								P1		S-adenosyl-L-methionine-dependent histone methyltransferase that specifically methylates 'Lys-9' of histone H3. May function as a DNA-binding transcription factor. Binds to the macrophage-specific TPA-responsive element (MTE) of the HMOX1 (heme oxygenase 1) gene and may act as a transcriptional activator of this gene
+Prdm4	CF								P1		The protein encoded by this gene is a transcription factor of the PR-domain protein family. It contains a PR-domain and multiple zinc finger motifs. Transcription factors of the PR-domain family are known to be involved in cell differentiation and tumorigenesis. An elevated expression level of this gene has been observed in PC12 cells treated with nerve growth factor, beta polypeptide (NGF). This gene is located in a chromosomal region that is thought to contain tumor suppressor genes.
+Prdm5	CF						Ehmt2, Hdac1		P1		Sequence-specific DNA-binding transcription factor. Represses transcription at least in part by recruitment of the histone methyltransferase EHMT2/G9A and histone deacetylases such as HDAC1. Regulates hematopoiesis-associated protein-coding and microRNA (miRNA) genes. May regulate the expression of proteins involved in extracellular matrix development and maintenance, including fibrillar collagens, such as COL4A1 and COL11A1, connective tissue components, such as HAPLN1, and molecules regulating cell migration and adhesion, including EDIL3 and TGFB2. May cause G2/M arrest and apoptosis in cancer cells.
+Prdm9	CF					H3K4me3			P1		The protein encoded by this gene is a zinc finger protein with histone methyltransferase activity that catalyzes histone H3 lysine 4 trimethylation (H3K4me3) during meiotic prophase. This protein contains multiple domains, including a Kruppel-associated box (KRAB) domain, an SSX repression domain (SSXRD), a PRD1-BF1 and RIZ homologous region, a subclass of SET (PR/SET) domain, and a tandem array of C2H2 zinc fingers. The zinc finger array recognizes a short sequence motif, leading to local H3K4me3, and meiotic recombination hotspot activity. The observed allelic variation alters the DNA-binding sequence specificity of the protein, resulting in distinct meiotic recombination hotspots amongst individuals and populations. Multiple alternate alleles of this gene have been described.
+Prmt3	CF								P1		This gene belongs to the protein arginine methyltransferase (PRMT) family. The encoded enzyme catalyzes the methylation of guanidino nitrogens of arginyl residues of proteins. The enzyme acts on 40S ribosomal protein S2 (rpS2), which is its major in-vivo substrate, and is involved in the proper maturation of the 80S ribosome. Alternative splicing results in multiple transcript variants
+Prmt9	CF								P1		This gene encodes a type II methyltransferase. Post-translational modification of target proteins by PRMTs plays an important regulatory role in many biological processes, whereby PRMTs methylate arginine residues by transferring methyl groups from S-adenosyl-L-methionine to the guanidino nitrogen atoms of arginine. The protein encoded by this gene methylates spliceosome associated protein 145 to regulate alternative splicing and acts as a modulator of small nuclear ribonucleoprotein maturation.
+Rnf168	CF						Rnf8		P1		E3 ubiquitin-protein ligase required for accumulation of repair proteins to sites of DNA damage. Acts with UBE2N/UBC13 to amplify the RNF8-dependent histone ubiquitination. Recruited to sites of DNA damage at double-strand breaks (DSBs) by binding to ubiquitinated histone H2A and H2AX and amplifies the RNF8-dependent H2A ubiquitination, promoting the formation of 'Lys-63'-linked ubiquitin conjugates.
+Rnf8	CF					W: H2AK63Ub			P1		E3 ubiquitin-protein ligase that plays a key role in DNA damage signaling via 2 distinct roles: by mediating the 'Lys-63'-linked ubiquitination of histones H2A and H2AX and promoting the recruitment of DNA repair proteins at double-strand breaks (DSBs) sites, and by catalyzing 'Lys-48'-linked ubiquitination to remove target proteins from DNA damage sites.
+Scml4	CF								P1		
+Senp1	CF								P1		
+Senp3	CF								P1		
+Setd3	CF								P1		Actin His73 methylase
+Tet3	CF								P1		
+Tle1	CF								P1		Transcriptional corepressor that binds to a number of transcription factors. Inhibits NF-kappa-B-regulated gene expression. Inhibits the transcriptional activation mediated by FOXA2, and by CTNNB1 and TCF family members in Wnt signaling. The effects of full-length TLE family members may be modulated by association with dominant-negative AES. Unusual function as coactivator for ESRRG
+Tle4	CF								P1		Transcriptional corepressor that binds to a number of transcription factors. Inhibits the transcriptional activation mediated by PAX5, and by CTNNB1 and TCF family members in Wnt signaling. The effects of full-length TLE family members may be modulated by association with dominant-negative AES. Essential for the transcriptional repressor activity of SIX3 during retina and lens development and for SIX3 transcriptional auto-repression
+Zmym2	CF								P1		
+Zmym3	CF								P1		
+Zmynd11	CF								P1		
+Zmynd8	CF								P1		
+Zzz3	CF								P1		
+Ankrd32	CF								P2		
+Anp32a	CF								P2		
+Arid4a	CF								P2		
+Arid5a	CF								P2		
+Arid5b	CF								P2		
+Arntl	CF								P2		
+Arrb1	CF								P2		
+Atad2	CF								P2		
+Atad2b	CF								P2		
+Atm	CF								P2		
+Atn1	CF								P2		
+Atr	CF								P2		
+Atrx	CF								P2		
+Atxn7	CF								P2		
+Atxn7l3	CF								P2		
+Aurka	CF								P2		
+Aurkb	CF								P2		
+Brcc3	CF								P2		
+Brwd3	CF								P2		
+Bub1	CF								P2		
+Ccdc101	CF								P2		
+Cdc73	CF								P2		
+Cdk1	CF								P2		
+Cdk17	CF								P2		
+Cdk5	CF								P2		
+Chuk	CF								P2		
+Cit	CF								P2		
+Cstf1	CF								P2		
+Cul4b	CF								P2		
+Ddb1	CF								P2		
+Ddb2	CF								P2		
+Ddx23	CF								P2		
+Ddx27	CF								P2		
+Ddx31	CF								P2		
+Ddx39	CF								P2		
+Ddx47	CF								P2		
+Ddx50	CF								P2		
+Ddx51	CF								P2		
+Dhx36	CF								P2		
+Dido1	CF								P2		
+Dnajc2	CF								P2		
+Dnmt3l	CF								P2		
+Dr1	CF								P2		
+Dtx3l	CF								P2		
+Dzip3	CF								P2		
+Eid1	CF								P2		
+Eid2	CF								P2		
+Eif4a2	CF								P2		
+Eif4a3	CF								P2		
+Elp5	CF								P2		
+Esco1	CF								P2		
+Esco2	CF								P2		
+Exosc2	CF								P2		
+Fbxw9	CF								P2		
+Gadd45a	CF								P2		
+Gadd45b	CF								P2		
+Gadd45g	CF								P2		
+Gse1	CF								P2		
+H3f3a	CF								P2		
+Hdgf	CF								P2		
+Hells	CF								P2		
+Hltf	CF								P2		
+Hmgn2	CF								P2		
+Las1l	CF								P2		
+Mapkapk3	CF								P2		
+Mbip	CF								P2		
+Mdc1	CF								P2		
+Mga	CF								P2		
+Mgmt	CF								P2		
+Ncl	CF								P2		
+Nek6	CF								P2		
+Nek9	CF								P2		
+Noc2l	CF								P2		
+Ntmt1	CF								P2		
+Nudt21	CF								P2		
+Pbk	CF								P2		
+Pdp1	CF								P2		
+Phf13	CF								P2		
+Phip	CF								P2		
+Pkm	CF								P2		
+Prkab1	CF								P2		
+Prkab2	CF								P2		
+Prkag2	CF								P2		
+Prkca	CF								P2		
+Prkcd	CF								P2		
+Prkdc	CF								P2		
+Prr14	CF								P2		
+Ptpn2	CF								P2		
+Pygo1	CF								P2		
+Rad51	CF								P2		
+Rrp8	CF								P2		
+Snai2	CF								P2		
+Sp140	CF								P2		
+Spen	CF								P2		
+Srsf1	CF								P2		
+Stk4	CF								P2		
+Syncrip	CF								P2		
+Tada1	CF								P2		
+Tada2b	CF								P2		
+Taf4a	CF								P2		
+Taf7	CF								P2		
+Taf9b	CF								P2		
+Tbp	CF								P2		
+Tex10	CF								P2		
+Tgfbr1	CF								P2		
+Tonsl	CF								P2		
+Top2a	CF								P2		
+Top2b	CF								P2		
+Trim16	CF								P2		
+Tyw5	CF								P2		
+Uba2	CF								P2		
+Ube2a	CF								P2		
+Ube2b	CF								P2		
+Ube2d1	CF								P2		
+Ube2d3	CF								P2		
+Ube2e1	CF								P2		
+Ubn1	CF								P2		
+Uchl5	CF								P2		
+Uhrf2	CF								P2		
+Usp11	CF								P2		
+Usp12	CF								P2		
+Usp16	CF								P2		
+Usp21	CF								P2		
+Uty	CF								P2		
+Vdr	CF								P2		
+Vrk1	CF								P2		
+Wac	CF								P2		
+Wdhd1	CF								P2		
+Wdr48	CF								P2		
+Wsb2	CF								P2		
+Ythdc1	CF								P2		
+Ythdf1	CF								P2		
+Ythdf3	CF								P2		
+Ywhae	CF								P2		
+Zbtb33	CF								P2		
+Zbtb7c	CF								P2		
+Zfp217	CF								P2		
+Zfp57	CF								P2		
+Zfp592	CF								P2		
+Zhx1	CF								P2		
+Asxl1	CF		Putative Pcg				Ncoa1,Ppar, Rar		R.1		PcG group, interacts with Ncoa1 and Ppar aand Rara
+Asxl2	CF		Putative Pcg				Pparg		R.1		This gene encodes a member of a family of epigenetic regulators that bind various histone-modifying enzymes and are involved in the assembly of transcription factors at specific genomic loci. Naturally occurring mutations in this gene are associated with cancer in several tissue types
+Brd2	CF								R.1		This protein associates with transcription complexes and with acetylated chromatin during mitosis, and it selectively binds to the acetylated lysine-12 residue of histone H4 via its two bromodomains.
+Brd3	CF								R.1		Chromatin reader that recognizes and binds hyperacetylated chromatin and plays a role in the regulation of transcription, probably by chromatin remodeling and interaction with transcription factors (PubMed:18406326, PubMed:27105114). Regulates transcription by promoting the binding of the transcription factor GATA1 to its targets
+Brd4	CF						JMJD6, pTEFb (CDK8)		R.1		https://www.genecards.org/cgi-bin/carddisp.pl?gene=BRD4
+Brdt	CF								R.1		Testis-specific chromatin protein that specifically binds H4K5ac and H4K8ac and plays a key role in spermatogenesis. Possesses 2 bromodomain motifs and a PEST sequence (a cluster of proline, glutamic acid, serine, and threonine residues), characteristic of proteins that undergo rapid intracellular degradation. In the post-meiotic phase of spermatogenesis, binds to hyperacetylated histones and participates in their general removal from DNA (PubMed:22901802). Also recognizes and binds a subset of butyrylated histones: able to bind histone H4 butyrylated at 'Lys-8' (H4K8ac), while it is not able to bind H4 butyrylated at 'Lys-5' (H4K5ac) (By similarity). Also acts as a component of the splicing machinery in pachytene spermatocytes and round spermatids and participates in 3'-UTR truncation of specific mRNAs in post-meiotic spermatids (By similarity). Required for chromocenter organization, a structure comprised of peri-centromeric heterochromatin.
+Chd6	CF						Nfe2l2		R.1		"DNA-dependent ATPase that plays a role in chromatin remodeling. Regulates transcription by disrupting nucleosomes in a largely non-sliding manner which strongly increases the accessibility of chromatin (PubMed:28533432). Activates transcription of specific genes in response to oxidative stress through interaction with NFE2L2. CHD6_HUMAN,Q8TD26
+ (Microbial infection) Acts as a transcriptional repressor of different viruses including influenza virus or papillomavirus. During influenza virus infection, the viral polymerase complex localizes CHD6 to inactive chromatin where it gets degraded in a proteasome independent-manner"
+Chd8	CF						Ctcf, beta-catenin		R.1		DNA helicase that acts as a chromatin remodeling factor and regulates transcription. Acts as a transcription repressor by remodeling chromatin structure and recruiting histone H1 to target genes. Suppresses p53/TP53-mediated apoptosis by recruiting histone H1 and preventing p53/TP53 transactivation activity. Acts as a negative regulator of Wnt signaling pathway by regulating beta-catenin (CTNNB1) activity. Negatively regulates CTNNB1-targeted gene expression by being recruited specifically to the promoter regions of several CTNNB1 responsive genes. Involved in both enhancer blocking and epigenetic remodeling at chromatin boundary via its interaction with CTCF. Acts as a suppressor of STAT3 activity by suppressing the LIF-induced STAT3 transcriptional activity. Also acts as a transcription activator via its interaction with ZNF143 by participating in efficient U6 RNA polymerase III transcription
+Chd9	CF						Ppara		R.1		Acts as a transcriptional coactivator for PPARA and possibly other nuclear receptors. Proposed to be a ATP-dependent chromatin remodeling protein. Has DNA-dependent ATPase activity and binds to A/T-rich DNA. Associates with A/T-rich regulatory regions in promoters of genes that participate in the differentiation of progenitors during osteogenesis
+Cxxc5	CF				CpG/hemi-methyl-CpG				R.1	Prog&B	The protein encoded by this gene is a retinoid-inducible nuclear protein containing a CXXC-type zinc finger motif. Binds preferentially to DNA containing cytidine-phosphate-guanosine (CpG) dinucleotides over CpH (H=A, T, and C), hemimethylated-CpG and hemimethylated-hydroxymethyl-CpG. The encoded protein is involved in myelopoiesis, is required for DNA damage-induced p53 activation, regulates the differentiation of C2C12 myoblasts into myocytes, and negatively regulates cutaneous wound healing
+Eya2	CF								R.1	HSc & Lymp	Histone phosphatase involved in DNA repair and organogenesis ( role)
+Gatad1	CF				H3K4me				R.1		The protein encoded by this gene contains a zinc finger at the N-terminus, and is thought to bind to a histone modification site that regulates gene expression. Mutations in this gene have been associated with autosomal recessive dilated cardiomyopathy.
+Gatad2a	CF								R.1		
+Hdac11	CF								R.1	Ery	Diseases associated with HDAC11 include Bicipital Tenosynovitis and Subungual Glomus Tumor. Among its related pathways are RNA Polymerase II Transcription Initiation And Promoter Clearance and Signaling by NOTCH1
+Hdac5	CF						MEf2, Mta1, Rara, Hdac3		R.1		class II histone deacetylase/acuc/apha family. During muscle differentiation, it shuttles into the cytoplasm, allowing the expression of myocyte enhancer factors. Involved in the MTA1-mediated epigenetic regulation of ESR1 expression in breast cancer. Serves as a corepressor of RARA and causes its deacetylation. It coimmunoprecipitates only with HDAC3 family member and might form multicomplex proteins. It also interacts with myocyte enhancer factor-2 (MEF2) proteins, resulting in repression of MEF2-dependent gen
+Hdac6	CF								R.1		Contains an internal duplication of two catalytic domains which appear to function independently of each other. Involved in the MTA1-mediated epigenetic regulation of ESR1 expression in breast cancer (PubMed:24413532). In addition to its protein deacetylase activity, plays a key role in the degradation of misfolded proteins: when misfolded proteins are too abundant to be degraded by the chaperone refolding system and the ubiquitin-proteasome, mediates the transport of misfolded proteins to a cytoplasmic juxtanuclear structure called aggresome
+Jmjd1c	CF								R.1	Gn	Probable histone demethylase that specifically demethylates 'Lys-9' of histone H3, thereby playing a central role in histone code. Demethylation of Lys residue generates formaldehyde and succinate. May be involved in hormone-dependent transcriptional activation, by participating in recruitment to androgen-receptor target genes
+Kat2b	CF								R.1		
+Kat5	CF								R.1		
+Kdm4a	CF								R.1	Ery	K36me3 demethylase
+Kdm4b	CF								R.1		Only able to demethylate trimethylated H3 'Lys-9', with a weaker activity than KDM4A, KDM4C and KDM4D
+Kdm4c	CF								R.1		Histone demethylase that specifically demethylates 'Lys-9' and 'Lys-36' residues of histone H3
+Kti12	CF								R.1		KTI12 Chromatin Associated Homolog
+L3mbtl3	CF								R.1	Prog & Lymph	This gene encodes a member of the malignant brain tumor (MBT) family of chromatin interacting transcriptional repressors. Members of this family function as methyl-lysine readers, which recognize methylated lysine residues on histone protein tails, and are associated with the repression of gene expression.
+Maml3	CF								R.1		Mastermind transcriptional coactivator of NOTCH
+Mbd1	CF								R.1		
+Mbd4	CF								R.1		
+Mbd6	CF								R.1		
+Mbtd1	CF				H4K20me1/2				R.1		Putative Polycomb group (PcG) protein. PcG proteins maintain the transcriptionally repressive state of genes, probably via a modification of chromatin, rendering it heritably changed in its expressibility. Specifically binds to monomethylated and dimethylated 'Lys-20' on histone H4
+Mdfi	CF								R.1	HSC	Inhibits the transactivation activity of the Myod family of myogenic factors and represses myogenesis. Acts by associating with Myod family members and retaining them in the cytoplasm by masking their nuclear localization signals. Can also interfere with the DNA-binding activity of Myod family members. Plays an important role in trophoblast and chondrogenic differentiation. Regulates the transcriptional activity of TCF7L1/TCF3 by interacting directly with TCF7L1/TCF3 and preventing it from binding DNA.
+Mecp2	CF								R.1		
+Mettl23	CF								R.1		The protein encoded by this gene functions as a transcription factor regulator in the transcriptional pathway for human cognition. It is a partner of the alpha subunit of the GA-binding protein transcription factor. Mutations in this gene cause mild autosomal recessive intellectual disability
+Mllt11	CF								R.1		
+Mllt4	CF								R.1		
+Mysm1	CF								R.1		Metalloprotease that specifically deubiquitinates monoubiquitinated histone H2A, a specific tag for epigenetic transcriptional repression, thereby acting as a coactivator. Preferentially deubiquitinates monoubiquitinated H2A in hyperacetylated nucleosomes. Deubiquitination of histone H2A leads to facilitate the phosphorylation and dissociation of histone H1 from the nucleosome. Acts as a coactivator by participating in the initiation and elongation steps of androgen receptor (AR)-induced gene activation. Required for correct regulation of hematopoiesis and lymphocyte differentiation
+Ncoa1	CF								R.1		Nuclear receptor coactivator that directly binds nuclear receptors and stimulates the transcriptional activities in a hormone-dependent fashion. Involved in the coactivation of different nuclear receptors, such as for steroids (PGR, GR and ER), retinoids (RXRs), thyroid hormone (TRs) and prostanoids (PPARs). Displays histone acetyltransferase activity toward H3 and H4; the relevance of such activity remains however unclear. Plays a central role in creating multisubunit coactivator complexes that act via remodeling of chromatin, and possibly acts by participating in both chromatin remodeling and recruitment of general transcription factors
+Ncoa2	CF								R.1		
+Ncoa3	CF								R.1		
+Ncoa5	CF								R.1		
+Ncoa6	CF								R.1		
+Ncoa7	CF								R.1		
+Nfrkb	CF								R.1		"Binds to the DNA consensus sequence 5'-GGGGAATCTCC-3'.
+ Putative regulatory component of the chromatin remodeling INO80 complex which is involved in transcriptional regulation, DNA replication and probably DNA repair. Modulates the deubiquitinase activity of UCHL5 in the INO80 complex"
+Nsd1	CF								R.1		Histone methyltransferase. Preferentially methylates 'Lys-36' of histone H3 and 'Lys-20' of histone H4 (in vitro). Transcriptional intermediary factor capable of negatively influencing transcription.
+Padi4	CF								R.1		Catalyzes the citrullination/deimination of arginine residues of proteins such as histones, thereby playing a key role in histone code and regulation of stem cell maintenance. Citrullinates histone H1 at 'Arg-54' (to form H1R54ci), histone H3 at 'Arg-2', 'Arg-8', 'Arg-17' and/or 'Arg-26' (to form H3R2ci, H3R8ci, H3R17ci, H3R26ci, respectively) and histone H4 at 'Arg-3' (to form H4R3ci). Acts as a key regulator of stem cell maintenance by mediating citrullination of histone H1: citrullination of 'Arg-54' of histone H1 (H1R54ci) results in H1 displacement from chromatin and global chromatin decondensation, thereby promoting pluripotency and stem cell maintenance.
+Phf14	CF								R.1		
+Phf2	CF								R.1		Lysine demethylase that demethylates both histones and non-histone proteins. Enzymatically inactive by itself, and becomes active following phosphorylation by PKA: forms a complex with ARID5B and mediates demethylation of methylated ARID5B. Demethylation of ARID5B leads to target the PHF2-ARID5B complex to target promoters, where PHF2 mediates demethylation of dimethylated 'Lys-9' of histone H3 (H3K9me2), followed by transcription activation of target genes.
+Phf23	CF								R.1		Acts as a negative regulator of autophagy, through promoting ubiquitination and degradation of LRSAM1, an E3 ubiquitin ligase that promotes autophagy in response to starvation or infecting bacteria
+Phf3	CF								R.1		This gene may function as a transcription factor and may be involved in glioblastomas development. Alternative splicing results in multiple transcript variants.
+Phf7	CF								R.1		May play a role in spermatogenesis.
+Phf8	CF					E: H3K9me1/2 H3K27me2 H3K20me1 			R.1		
+Sin3b	CF					Repressor	MAD/MAX		R.1		Acts as a transcriptional repressor. Interacts with MXI1 to repress MYC responsive genes and antagonize MYC oncogenic activities. Interacts with MAD-MAX heterodimers by binding to MAD. The heterodimer then represses transcription by tethering SIN3B to DNA. Also forms a complex with FOXK1 which represses transcription. With FOXK1, regulates cell cycle progression probably by repressing cell cycle inhibitor genes expression
+Smc5	CF								R.1		
+Smc6	CF								R.1		
+Smyd4	CF						Hdac1		R.1		
+Smyd5	CF					W: H3K20me3			R.1		https://epigeneticsandchromatin.biomedcentral.com/articles/10.1186/s13072-017-0115-7 https://www.nature.com/articles/srep29157
+Suv420h2	CF				H4K20me1/2	W: H4K20me2/3			R.1		Histone methyltransferase that specifically methylates monomethylated 'Lys-20' (H4K20me1) and dimethylated 'Lys-20' (H4K20me2) of histone H4 to produce respectively dimethylated 'Lys-20' (H4K20me2) and trimethylated 'Lys-20' (H4K20me3) and thus regulates transcription and maintenance of genome integrity (PubMed:24396869, PubMed:28114273). In vitro also methylates unmodified 'Lys-20' (H4K20me0) of histone H4 and nucleosomes (PubMed:24396869). H4 'Lys-20' trimethylation represents a specific tag for epigenetic transcriptional repression. Mainly functions in pericentric heterochromatin regions, thereby playing a central role in the establishment of constitutive heterochromatin in these regions. KMT5C is targeted to histone H3 via its interaction with RB1 family proteins (RB1, RBL1 and RBL2) (By similarity). Facilitates TP53BP1 foci formation upon DNA damage and proficient non-homologous end-joining (NHEJ)-directed DNA repair by catalyzing the di- and trimethylation of 'Lys-20' of histone H4 (PubMed:28114273). May play a role in class switch reconbination by catalyzing the di- and trimethylation of 'Lys-20' of histone H4 (By similarity).
+Ahctf1	CF								R.2	ery	NPC
+Ankra2	CF								R.2	lymp	May regulate the interaction between the 3M complex and the histone deacetylases HDAC4 and HDAC5
+Bbx	CF								R.2		TF cell cycle progression
+Crebbp	CF					Histone Acetyl Transf (W)			R.2		https://www.genecards.org/cgi-bin/carddisp.pl?gene=CREBBP
+Dhx8	CF								R.2		Involved in pre-mRNA splicing as component of the spliceosome (PubMed:11991638, PubMed:28502770, PubMed:28076346). Facilitates nuclear export of spliced mRNA by releasing the RNA from the spliceosome
+Eya3	CF					Tyr phosphatase & Transc Activator			R.2		Tyrosine phosphatase that specifically dephosphorylates 'Tyr-142' of histone H2AX (H2AXY142ph). 'Tyr-142' phosphorylation of histone H2AX plays a central role in DNA repair and acts as a mark that distinguishes between apoptotic and repair responses to genotoxic stress. Promotes efficient DNA repair by dephosphorylating H2AX, promoting the recruitment of DNA repair complexes containing MDC1 (PubMed:19234442, PubMed:19351884). Its function as histone phosphatase probably explains its role in transcription regulation during organogenesis
+Gltscr2	CF								R.2		Nucleolar protein which is involved in the integration of the 5S RNP into the ribosomal large subunit during ribosome biogenesis (PubMed:24120868). In ribosome biogenesis, may also play a role in rRNA transcription (PubMed:27729611). Also functions as a nucleolar sensor that regulates the activation of p53/TP53 in response to ribosome biogenesis perturbation, DNA damage and other stress conditions (PubMed:21741933, PubMed:24120868, PubMed:27829214). DNA damage or perturbation of ribosome biogenesis disrupt the interaction between NOP53 and RPL11 allowing RPL11 transport to the nucleoplasm where it can inhibit MDM2 and allow p53/TP53 activation (PubMed:24120868, PubMed:27829214). It may also positively regulate the function of p53/TP53 in cell cycle arrest and apoptosis through direct interaction, preventing its MDM2-dependent ubiquitin-mediated proteasomal degradation (PubMed:22522597). Originally identified as a tumor suppressor, it may also play a role in cell proliferation and apoptosis by positively regulating the stability of PTEN, thereby antagonizing the PI3K-AKT/PKB signaling pathway (PubMed:15355975, PubMed:16971513, PubMed:27729611). May also inhibit cell proliferation and increase apoptosis through its interaction with NF2 (PubMed:21167305). May negatively regulate NPM1 by regulating its nucleoplasmic localization, oligomerization and ubiquitin-mediated proteasomal degradation (PubMed:25818168). Thereby, may prevent NPM1 interaction with MYC and negatively regulate transcription mediated by the MYC-NPM1 complex (PubMed:25956029). May also regulate cellular aerobic respiration (PubMed:24556985). In the cellular response to viral infection, may play a role in the attenuation of interferon-beta through the inhibition of DDX58/RIG-1 (PubMed:27824081)
+Hdac8	CF						Mta1		R.2	Lymp	class I of the histone deacetylase family. lso involved in the deacetylation of cohesin complex protein SMC3 regulating release of cohesin complexes from chromatin. May play a role in smooth muscle cell contractility.
+Hirip3	CF								R.2		May play a role in chromatin function and histone metabolism via its interaction with HIRA and histones.
+Hmbox	CF								R.2		Binds directly to 5'-TTAGGG-3' repeats in telomeric DNA (By similarity). Associates with the telomerase complex at sites of active telomere processing and positively regulates telomere elongation
+Hmg20b	CF								R.2		SWI/Snf related. Required for correct progression through G2 phase of the cell cycle and entry into mitosis. Required for RCOR1/CoREST mediated repression of neuronal specific gene promoters.
+Hmga1	CF								R.2	Low-HSC	
+Hmga2	CF								R.2		
+Hmgb1	CF								R.2		Pleiotropic activities: nucleic acid sensor for inflammation, DNA repair, VDJ recombination, autophagy
+Hmgb2	CF								R.2	Ery	Pleiotropic activities: nucleic acid sensor for inflammation, DNA repair, VDJ recombination, autophagy
+Hmgn3	CF								R.2		
+Hmgn5	CF								R.2		
+Hmgxb3	CF								R.2		This gene is one of the non-canonical high mobility group (HMG) genes. The encoded protein contains an HMG-box domain found in DNA binding proteins such as transcription factors and chromosomal proteins.
+Hmgxb4	CF								R.2		Negatively regulates Wnt/beta-catenin signaling during development
+Ing1	CF								R.2	Ery	Cooperates with p53/TP53 in the negative regulatory pathway of cell growth by modulating p53-dependent transcriptional activation. Implicated as a tumor suppressor gene.
+Ing4	CF								R.2		This gene encodes a tumor suppressor protein that contains a PHD-finger, which is a common motif in proteins involved in chromatin remodeling. This protein can bind TP53 and EP300/p300, a component of the histone acetyl transferase complex, suggesting its involvement in the TP53-dependent regulatory pathway. Multiple alternatively spliced transcript variants have been observed that encode distinct proteins
+Kdm3b	CF								R.2		Histone demethylase that specifically demethylates 'Lys-9' of histone H3, thereby playing a central role in histone code. Demethylation of Lys residue generates formaldehyde and succinate. May have tumor suppressor activity
+Lbr	CF								R.2		Lamin receptor
+Ldb1	CF								R.2		Binds to the LIM domain of a wide variety of LIM domain-containing transcription factors. May regulate the transcriptional activity of LIM-containing proteins by determining specific partner interactions. Plays a role in the development of interneurons and motor neurons in cooperation with LHX3 and ISL1. Acts synergistically with LHX1/LIM1 in axis formation and activation of gene expression. Acts with LMO2 in the regulation of red blood cell development, maintaining erythroid precursors in an immature state
+Lrrfip1	CF								R.2		Transcriptional repressor which preferentially binds to the GC-rich consensus sequence (5'-AGCCCCCGGCG-3') and may regulate expression of TNF, EGFR and PDGFA. May control smooth muscle cells proliferation following artery injury through PDGFA repression. May also bind double-stranded RNA. Positively regulates Toll-like receptor (TLR) signaling in response to agonist probably by competing with the negative FLII
+Lrrfip2	CF								R.2		The protein encoded by this gene, along with MYD88, binds to the cytosolic tail of toll-like receptor 4 (TLR4), which results in activation of nuclear factor kappa B signaling.
+Maml1	CF								R.2		Mastermind transcriptional coactivator of NOTCH
+Maml2	CF								R.2		Mastermind transcriptional coactivator of NOTCH
+Maml3	CF								R.2		
+Mbtps1	CF								R.2		Serine protease that catalyzes the first step in the proteolytic activation of the sterol regulatory element-binding proteins (SREBPs). Other known substrates are BDNF, GNPTAB and ATF6. Cleaves after hydrophobic or small residues, provided that Arg or Lys is in position P4. Cleaves known substrates after Arg-Ser-Val-Leu (SERBP-2), Arg-His-Leu-Leu (ATF6), Arg-Gly-Leu-Thr (BDNF) and its own propeptide after Arg-Arg-Leu-Leu. Mediates the protein cleavage of GNPTAB into subunit alpha and beta, thereby participating in biogenesis of lysosomes. Involved in the regulation of M6P-dependent Golgi-to-lysosome trafficking of lysosomal enzymes (PubMed:30046013). It is required for the activation of CREB3L2/BBF2H7, a transcriptional activator of MIA3/TANGO and other genes controlling mega vesicle formation. Therefore, it plays a key role in the regulation of mega vesicle-mediated collagen trafficking
+Mbtps2	CF								R.2		Cleaves several transcription factors that are type-2 transmembrane proteins within membrane-spanning domains. Known substrates include sterol regulatory element-binding protein (SREBP) -1, SREBP-2 and forms of the transcriptional activator ATF6.
+Mdfic	CF								R.2		Acts as a transcriptional activator or repressor. Inhibits the transcriptional activation of Zic family proteins ZIC1, ZIC2 and ZIC3. Retains nuclear Zic proteins ZIC1, ZIC2 and ZIC3 in the cytoplasm. Modulates the expression from cellular promoters. Binds to the axin complex, resulting in an increase in the level of free beta-catenin. Affects axin-regulation of the WNT and JNK signaling pathway
+Mdm2	CF								R.2		This gene encodes a nuclear-localized E3 ubiquitin ligase. The encoded protein can promote tumor formation by targeting tumor suppressor proteins, such as p53, for proteasomal degradation. This gene is itself transcriptionally-regulated by p53. Overexpression or amplification of this locus is detected in a variety of different cancers.
+Mdm4	CF								R.2		This gene encodes a nuclear protein that contains a p53 binding domain at the N-terminus and a RING finger domain at the C-terminus, and shows structural similarity to p53-binding protein MDM2. Both proteins bind the p53 tumor suppressor protein and inhibit its activity, and have been shown to be overexpressed in a variety of human cancers. However, unlike MDM2 which degrades p53, this protein inhibits p53 by binding its transcriptional activation domain.
+Mecom	CF								R.2		
+Mettl4	CF					m6A in DNA & RNA (W)			R.2	low	N(6)-adenine-specific DNA methyltransferase that mediates methylation of DNA on the 6th position of adenine (N(6)-methyladenosine) and is required to regulate Polycomb silencing. N(6)-methyladenosine deposition by METTL4 triggers ubiquitination and degradation of sensor proteins ASXL1 and MPND, leading to inactivation of the PR-DUB complex and subsequent preservation of Polycomb silencing
+Mettl5	CF								R.2	HSC & Ery	METTL5 (Methyltransferase Like 5) is a Protein Coding gene. Diseases associated with METTL5 include Intellectual Developmental Disorder, Autosomal Recessive 72 and Epilepsy, Familial Temporal Lobe, 4. Gene Ontology (GO) annotations related to this gene include nucleic acid binding and protein methyltransferase activity.
+Mier1	CF								R.2		Transcriptional repressor regulating the expression of a number of genes including SP1 target genes. Probably functions through recruitment of HDAC1 a histone deacetylase involved in chromatin silencing
+Mier2	CF								R.2		
+Mier3	CF								R.2		Transcriptional repressor.
+Msl3l2	CF								R.2	low	
+Mybbp1a	CF								R.2		May activate or repress transcription via interactions with sequence specific DNA-binding proteins (By similarity). Repression may be mediated at least in part by histone deacetylase activity (HDAC activity) (By similarity). Acts as a corepressor and in concert with CRY1, represses the transcription of the core circadian clock component PER2 (By similarity). Preferentially binds to dimethylated histone H3 'Lys-9' (H3K9me2) on the PER2 promoter
+Mycbp	CF								R.2	low-med	The protein encoded by this gene binds to the N-terminus of the oncogenic protein C-MYC, enhancing the ability of C-MYC to activate E box-dependent transcription. The encoded protein is normally found in the cytoplasm, but it translocates to the nucleus during S phase of the cell cycle and associates with C-MYC. This protein may be involved in spermatogenesis. This gene can be silenced by microRNA-22. Two transcript variants, one protein-coding and the other probably not protein-coding, have been found for this gene
+Mycbp2	CF								R.2	high	Atypical E3 ubiquitin-protein ligase which specifically mediates ubiquitination of threonine and serine residues on target proteins, instead of ubiquitinating lysine residues (PubMed:29643511). Shows esterification activity towards both threonine and serine, with a preference for threonine, and acts via two essential catalytic cysteine residues that relay ubiquitin to its substrate via thioester intermediates (PubMed:29643511). Interacts with the E2 enzymes UBE2D1, UBE2D3, UBE2E1 and UBE2L3 (PubMed:18308511, PubMed:29643511). Plays a key role in neural development, probably by mediating ubiquitination of threonine residues on target proteins (Probable). Involved in different processes such as regulation of neurite outgrowth, synaptic growth, synaptogenesis and axon degeneration (By similarity). Required for the formation of major central nervous system axon tracts (By similarity). Required for proper axon growth by regulating axon navigation and axon branching: acts by regulating the subcellular location and stability of MAP3K12/DLK (By similarity). Required for proper localization of retinogeniculate projections but not for eye-specific segregation (By similarity). Regulates axon guidance in the olfactory system (By similarity). Involved in Wallerian axon degeneration, an evolutionarily conserved process that drives the loss of damaged axons: acts by promoting destabilization of NMNAT2, probably via ubiquitination of NMNAT2 (By similarity). Catalyzes ubiquitination of threonine and/or serine residues on NMNAT2, consequences of threonine and/or serine ubiquitination are however unknown (PubMed:29643511). Regulates the internalization of TRPV1 in peripheral sensory neurons (By similarity). Mediates ubiquitination and subsequent proteasomal degradation of TSC2/tuberin (PubMed:18308511, PubMed:27278822). Independently of the E3 ubiquitin-protein ligase activity, also acts as a guanosine exchange factor (GEF) for RAN in neurons of dorsal root ganglia (PubMed:26304119). May function as a facilitator or regulator of transcriptional activation by MYC (PubMed:9689053). Acts in concert with HUWE1 to regulate the circadian clock gene expression by promoting the lithium-induced ubiquination and degradation of NR1D
+Myef2	CF								R.2	Ery	Transcriptional repressor of the myelin basic protein gene (MBP). Binds to the proximal MB1 element 5'-TTGTCC-3' of the MBP promoter. Its binding to MB1 and function are inhibited by PURA (By similarity).
+Nab1	CF								R.2		Acts as a transcriptional repressor for zinc finger transcription factors EGR1 and EGR2
+Nab2	CF								R.2		Acts as a transcriptional repressor for zinc finger transcription factors EGR1 and EGR2. Isoform 2 lacks repression ability.
+Nabp1	CF								R.2		Component of the SOSS complex, a multiprotein complex that functions downstream of the MRN complex to promote DNA repair and G2/M checkpoint. In the SOSS complex, acts as a sensor of single-stranded DNA that binds to single-stranded DNA, in particular to polypyrimidines. The SOSS complex associates with DNA lesions and influences diverse endpoints in the cellular DNA damage response including cell-cycle checkpoint activation, recombinational repair and maintenance of genomic stability. Required for efficient homologous recombination-dependent repair of double-strand breaks (DSBs) and ATM-dependent signaling pathways.
+Nabp2	CF								R.2		Component of the SOSS complex, a multiprotein complex that functions downstream of the MRN complex to promote DNA repair and G2/M checkpoint. In the SOSS complex, acts as a sensor of single-stranded DNA that binds to single-stranded DNA, in particular to polypyrimidines. The SOSS complex associates with DNA lesions and influences diverse endpoints in the cellular DNA damage response including cell-cycle checkpoint activation, recombinational repair and maintenance of genomic stability. Required for efficient homologous recombination-dependent repair of double-strand breaks (DSBs) and ATM-dependent signaling pathways.
+Naca	CF								R.2		Prevents inappropriate targeting of non-secretory polypeptides to the endoplasmic reticulum (ER). Binds to nascent polypeptide chains as they emerge from the ribosome and blocks their interaction with the signal recognition particle (SRP), which normally targets nascent secretory peptides to the ER. Also reduces the inherent affinity of ribosomes for protein translocation sites in the ER membrane (M sites) (By similarity). Isoform 1 and isoform 2 appear to bind DNA and play roles in transcription. Isoform 1 may function as a specific coactivator for JUN, acting to stabilize the interaction of JUN homodimers with promoter elements.
+Nap1l1	CF								R.2		Regulates neurogenesis via the modulation of RASSF10; regulates RASSF10 expression by promoting SETD1A-mediated H3K4 methylation at the RASSF10 promoter
+Nap1l4	CF								R.2		Acts as histone chaperone in nucleosome assembly (PubMed:28366643). In condensing spermatids, mediates the loading of the heterodimer composed of histones H2AFB1 and HIST1H2BA/TH2B onto the nucleosomes, thereby promoting the replacement of histones to protamine in male germ cells
+Ncoa4	CF								R.2	Low	
+Nmi	CF								R.2		May be involved in augmenting coactivator protein recruitment to a group of sequence-specific transcription factors. Augments cytokine-mediated STAT transcription. Enhances CBP/p300 coactivator protein recruitment to STAT1 and STAT5.
+Nono	CF								R.2		DNA- and RNA binding protein, involved in several nuclear processes. Binds the conventional octamer sequence in double-stranded DNA. Also binds single-stranded DNA and RNA at a site independent of the duplex site.
+Npm1	CF								R.2		Involved in diverse cellular processes such as ribosome biogenesis, centrosome duplication, protein chaperoning, histone assembly, cell proliferation, and regulation of tumor suppressors p53/TP53 and ARF.
+Nr1d1	CF								R.2		Transcriptional repressor which coordinates circadian rhythm and metabolic pathways in a heme-dependent manner. Integral component of the complex transcription machinery that governs circadian rhythmicity and forms a critical negative limb of the circadian clock by directly repressing the expression of core clock components ARTNL/BMAL1, CLOCK and CRY1. Also regulates genes involved in metabolic functions, including lipid and bile acid metabolism, adipogenesis, gluconeogenesis and the macrophage inflammatory response. Acts as a receptor for heme which stimulates its interaction with the NCOR1/HDAC3 corepressor complex, enhancing transcriptional repression. Recognizes two classes of DNA response elements within the promoter of its target genes and can bind to DNA as either monomers or homodimers, depending on the nature of the response element.
+Paxbp1	CF								R.2		Adapter protein linking the transcription factors PAX3 and PAX7 to the histone methylation machinery and involved in myogenesis. Associates with a histone methyltransferase complex that specifically mediates dimethylation and trimethylation of 'Lys-4' of histone H3. Mediates the recruitment of that complex to the transcription factors PAX3 and PAX7 on chromatin to regulate the expression of genes involved in muscle progenitor cells proliferation including ID3 and CDC20
+Pdcd2	CF								R.2		May be a DNA-binding protein with a regulatory function. May play an important role in cell death and/or in regulation of cell proliferation.
+Per1	CF								R.2		Circadian clock
+Per2	CF								R.2		Circadian clock
+Per3	CF								R.2		Circadian clock
+Phb	CF								R.2		Prohibitin inhibits DNA synthesis. It has a role in regulating proliferation. As yet it is unclear if the protein or the mRNA exhibits this effect. May play a role in regulating mitochondrial respiration activity and in aging
+Phb2	CF								R.2		Acts as a mediator of transcriptional repression by nuclear hormone receptors via recruitment of histone deacetylases. Functions as an estrogen receptor (ER)-selective coregulator that potentiates the inhibitory activities of antiestrogens and represses the activity of estrogens. Competes with NCOA1 for modulation of ER transcriptional activity.
+Pias1	CF								R.2		
+Pias2	CF								R.2		
+Pias3	CF								R.2		
+Pias4	CF								R.2		
+Pmf1	CF								R.2		Part of the MIS12 complex which is required for normal chromosome alignment and segregation and for kinetochore formation during mitosis (By similarity). May act as a cotranscription partner of NFE2L2 involved in regulation of polyamine-induced transcription of SSAT
+Pml	CF								R.2		Functions via its association with PML-nuclear bodies (PML-NBs) in a wide range of important cellular processes, including tumor suppression, transcriptional regulation, apoptosis, senescence, DNA damage response, and viral defense mechanisms.
+Pnrc1	CF								R.2		"Proline-rich nuclear receptor coactivator 1
+ GenePNRC1"
+Pnrc2	CF								R.2		Involved in nonsense-mediated mRNA decay (NMD) by acting as a bridge between the mRNA decapping complex and the NMD machinery (PubMed:19150429). May act by targeting the NMD machinery to the P-body and recruiting the decapping machinery to aberrant mRNAs (PubMed:19150429). Required for UPF1/RENT1 localization to the P-body (PubMed:19150429). Plays a role in glucocorticoid receptor-mediated mRNA degradation by interacting with the glucocorticoid receptor NR3C1 in a ligand-dependent manner when it is bound to the 5' UTR of target mRNAs and recruiting the RNA helicase UPF1 and the mRNA-decapping enzyme DCP1A, leading to RNA decay (PubMed:25775514). Also acts as a nuclear receptor coactivator
+Ppargc1b	CF								R.2		Plays a role of stimulator of transcription factors and nuclear receptors activities. Activates transcriptional activity of estrogen receptor alpha, nuclear respiratory factor 1 (NRF1) and glucocorticoid receptor in the presence of glucocorticoids. May play a role in constitutive non-adrenergic-mediated mitochondrial biogenesis as suggested by increased basal oxygen consumption and mitochondrial number when overexpressed
+Ppie	CF								R.2		Involved in pre-mRNA splicing as component of the spliceosome. Combines RNA-binding and PPIase activities. Binds mRNA and has a preference for single-stranded RNA molecules with poly-A and poly-U stretches, suggesting it binds to the poly(A)-region in the 3'-UTR of mRNA molecules. Catalyzes the cis-trans isomerization of proline imidic peptide bonds in proteins. Inhibits KMT2A activity; this requires proline isomerase activity.
+Pprc1	CF								R.2		Acts as a coactivator during transcriptional activation of nuclear genes related to mitochondrial biogenesis and cell growth. Involved in the transcription coactivation of CREB and NRF1 target genes
+Pqbp1	CF								R.2		Intrinsically disordered protein that acts as a scaffold, and which is involved in different processes, such as pre-mRNA splicing, transcription regulation, innate immunity and neuron development (By similarity). Interacts with splicing-related factors via the intrinsically disordered region and regulates alternative splicing of target pre-mRNA species (PubMed:23512658). May suppress the ability of POU3F2 to transactivate the DRD1 gene in a POU3F2 dependent manner (By similarity). Can activate transcription directly or via association with the transcription machinery (By similarity).
+Prmt10	CF							Also Prmt9	R.2		Protein arginine methyltransferases are enyzmes that catalyze the transfer of methyl groups from S-adenosylmethionine (SAM) to the arginine residues on histones and other proteins. The dysregulation of this methylation is critical in the development of certain cancers.
+Psip1	CF						Menin, kmt2a	LEDGF	R.2		Transcriptional coactivator involved in neuroepithelial stem cell differentiation and neurogenesis. Involved in particular in lens epithelial cell gene regulation and stress responses. May play an important role in lens epithelial to fiber cell terminal differentiation. May play a protective role during stress-induced apoptosis
+Psmc3	CF								R.2		Plays an important role in meiotic recombination. Stimulates DMC1-mediated strand exchange required for pairing homologous chromosomes during meiosis. The complex PSMC3IP/MND1 binds DNA, stimulates the recombinase activity of DMC1 as well as DMC1 D-loop formation from double-strand DNA. This complex stabilizes presynaptic RAD51 and DMC1 filaments formed on single strand DNA to capture double-strand DNA. This complex stimulates both synaptic and presynaptic critical steps in RAD51 and DMC1-promoted homologous pairing. May inhibit HIV-1 viral protein TAT activity and modulate the activity of proteasomes through association with PSMC3. Acts as a tissue specific coactivator of hormone-dependent transcription mediated by nuclear receptors.
+Ptov1	CF								R.2		May activate transcription. Required for nuclear translocation of FLOT1. Promotes cell proliferation (By similarity).By similarity
+Pttg1	CF								R.2		Regulatory protein, which plays a central role in chromosome stability, in the p53/TP53 pathway, and DNA repair. Probably acts by blocking the action of key proteins. During the mitosis, it blocks Separase/ESPL1 function, preventing the proteolysis of the cohesin complex and the subsequent segregation of the chromosomes. At the onset of anaphase, it is ubiquitinated, conducting to its destruction and to the liberation of ESPL1. Its function is however not limited to a blocking activity, since it is required to activate ESPL1. Negatively regulates the transcriptional activity and related apoptosis activity of p53/TP53. The negative regulation of p53/TP53 may explain the strong transforming capability of the protein when it is overexpressed. May also play a role in DNA repair via its interaction with Ku, possibly by connecting DNA damage-response pathways with sister chromatid separation
+Pura	CF								R.2		
+Purb	CF								R.2		
+Pwp1	CF								R.2		Chromatin-associated factor that regulates transcription (By similarity). Regulates Pol I-mediated rRNA biogenesis and, probably, Pol III-mediated transcription (By similarity). Regulates the epigenetic status of rDNA (By similarity)
+Pygo2	CF								R.2		Diseases associated with PYGO2 include Oligospermia. Among its related pathways are Signaling by Wnt and Activated PKN1 stimulates transcription of AR (androgen receptor) regulated genes KLK2 and KLK3. Gene Ontology (GO) annotations related to this gene include chromatin binding and histone acetyltransferase regulator activity
+Rbbp8	CF								R.2		Endonuclease that cooperates with the MRE11-RAD50-NBN (MRN) complex in DNA-end resection, the first step of double-strand break (DSB) repair through the homologous recombination (HR) pathway. HR is restricted to S and G2 phases of the cell cycle and preferentially repairs DSBs resulting from replication fork collapse. Key determinant of DSB repair pathway choice, as it commits cells to HR by preventing classical non-homologous end-joining (NHEJ). Functions downstream of the MRN complex and ATM, promotes ATR activation and its recruitment to DSBs in the S/G2 phase facilitating the generation of ssDNA. Component of the BRCA1-RBBP8 complex that regulates CHEK1 activation and controls cell cycle G2/M checkpoints on DNA damage. During immunoglobulin heavy chain class-switch recombination, promotes microhomology-mediated alternative end joining (A-NHEJ) and plays an essential role in chromosomal translocations
+Rbl1	CF								R.2		Key regulator of entry into cell division. Directly involved in heterochromatin formation by maintaining overall chromatin structure and, in particular, that of constitutive heterochromatin by stabilizing histone methylation. Recruits and targets histone methyltransferases KMT5B and KMT5C, leading to epigenetic transcriptional repression. Controls histone H4 'Lys-20' trimethylation. Probably acts as a transcription repressor by recruiting chromatin-modifying enzymes to promoters. Potent inhibitor of E2F-mediated trans-activation. Forms a complex with adenovirus E1A and with SV40 large T antigen
+Rbl2	CF								R.2		Key regulator of entry into cell division. Directly involved in heterochromatin formation by maintaining overall chromatin structure and, in particular, that of constitutive heterochromatin by stabilizing histone methylation. Recruits and targets histone methyltransferases KMT5B and KMT5C, leading to epigenetic transcriptional repression. Controls histone H4 'Lys-20' trimethylation. Probably acts as a transcription repressor by recruiting chromatin-modifying enzymes to promoters. Potent inhibitor of E2F-mediated trans-activation, associates preferentially with E2F5. Binds to cyclins A and E. Binds to and may be involved in the transforming capacity of the adenovirus E1A protein.
+Rbx1	CF								R.2		E3 ubiquitin ligase component of multiple cullin-RING-based E3 ubiquitin-protein ligase (CRLs) complexes which mediate the ubiquitination and subsequent proteasomal degradation of target proteins, including proteins involved in cell cycle progression, signal transduction, transcription and transcription-coupled nucleotide excision repair
+Rcc1	CF					Guanine-nucleotide releasing factor			R.2		Guanine-nucleotide releasing factor that promotes the exchange of Ran-bound GDP by GTP, and thereby plays an important role in RAN-mediated functions in nuclear import and mitosis. Contributes to the generation of high levels of chromosome-associated, GTP-bound RAN, which is important for mitotic spindle assembly and normal progress through mitosis. Via its role in maintaining high levels of GTP-bound RAN in the nucleus, contributes to the release of cargo proteins from importins after nuclear import. Involved in the regulation of onset of chromosome condensation in the S phase. Binds both to the nucleosomes and double-stranded DNA
+Set	CF					Inhibitor of HAT activity			R.2		The protein encoded by this gene inhibits acetylation of nucleosomes, especially histone H4, by histone acetylases (HAT). This inhibition is most likely accomplished by masking histone lysines from being acetylated, and the consequence is to silence HAT-dependent transcription. The encoded protein is part of a complex localized to the endoplasmic reticulum but is found in the nucleus and inhibits apoptosis following attack by cytotoxic T lymphocytes. This protein can also enhance DNA replication of the adenovirus genome. Several transcript variants encoding different isoforms have been found for this gene
+Setd2	CF								R.2		
+Setx	CF					RNA:DNA Helicase			R.2		Probable RNA/DNA helicase involved in diverse aspects of RNA metabolism and genomic integrity. Plays a role in transcription regulation by its ability to modulate RNA Polymerase II (Pol II) binding to chromatin and through its interaction with proteins involved in transcription (PubMed:19515850, PubMed:21700224). Contributes to the mRNA splicing efficiency and splice site selection (PubMed:19515850). Required for the resolution of R-loop RNA-DNA hybrid formation at G-rich pause sites located downstream of the poly(A) site, allowing XRN2 recruitment and XRN2-mediated degradation of the downstream cleaved RNA and hence efficient RNA polymerase II (RNAp II) transcription termination (PubMed:19515850, PubMed:21700224, PubMed:26700805)
+Sirt1	CF					Histone Deacetylase			R.2	Med/low	https://www.genecards.org/cgi-bin/carddisp.pl?gene=SIRT1
+Sirt2	CF								R.2		
+Sirt4	CF								R.2	Low	
+Sirt6	CF								R.2	low	
+Hmgn2	CF								R.3		
+Kdm4d	CF					E:H3K9me2/3			R.3	Lymp-low	
+Nr1d2	CF								R.3	Low	This gene encodes a member of the nuclear hormone receptor family, specifically the NR1 subfamily of receptors. The encoded protein functions as a transcriptional repressor and may play a role in circadian rhythms and carbohydrate and lipid metabolism
+Padi1	CF								R.3		
+Padi2	CF								R.3		
+Padi3	CF								R.3		
+Smyd1	CF					H3k4me (W)			R.3	Low	Methylates histone H3 at 'Lys-4' (H3K4me), seems able to perform both mono-, di-, and trimethylation. Acts as a transcriptional repressor.
+Aff1 (AF4)	TF										
+Aff2	TF										
+Aff3	TF										
+Aim2	TF										
+Arid3a	TF										
+Arid3b	TF										
+Arid5a	TF										
+Arid5b	TF										
+Atf1	TF										
+Atf2	TF										
+Atf4	TF										
+Atf5	TF										
+Atf6	TF										
+Atf6b	TF										
+Atf7	TF										
+Atf7ip	TF										
+Bach1	TF										
+Bach2	TF										
+Batf	TF										
+Batf3	TF										
+Bcl10	TF										
+Bcl3	TF										
+Bcl6	TF										
+Bcl9	TF										
+Bcl9l	TF										
+Bclaf1	TF										
+Bhlha15	TF										
+Bhlhe40	TF										
+Btg1	TF										
+Btg2	TF										
+Camta2	TF										
+Cebpa	TF										
+Cebpb	TF										
+Cebpe	TF										
+Cebpg	TF										
+Cebpz	TF										
+Ciita	TF										
+Cited2	TF										
+Cited4	TF										
+Creb3	TF										
+Creb3l2	TF										
+Creg1	TF										
+Crem	TF										
+Crtc1	TF										
+Crtc3	TF										
+Ctbp1	TF										
+Ctbp2	TF										
+Cux1	TF										
+Dach1	TF										
+Ddit3	TF										
+E2f1	TF										
+E2f2	TF										
+E2f3	TF										
+E2f4	TF										
+E2f6	TF										
+E2f7	TF										
+E2f8	TF										
+Ebf1	TF										
+Egr1	TF										
+Elf1	TF										
+Elf2	TF										
+Elf4	TF										
+Elk3	TF										
+Elk4	TF										
+Eomes	TF										
+Erg	TF										
+Esr1	TF										
+Esr2	TF										
+Ets1	TF										
+Ets2	TF										
+Etv3	TF										
+Etv6	TF										
+Eya2	TF										
+Fli1	TF										
+Flii	TF										
+Fos	TF										
+Foxj2	TF										
+Foxk1	TF										
+Foxk2	TF										
+Foxm1	TF										
+Foxn2	TF										
+Foxn3	TF										
+Foxo1	TF										
+Foxo3	TF										
+Foxo4	TF										
+Foxp1	TF										
+Foxp2	TF										
+Foxp3	TF										
+Foxp4	TF										
+Fubp1	TF										
+Fubp3	TF										
+Gabpa	TF										
+Gabpb1	TF										
+Gabpb2	TF										
+Gata1	TF										
+Gata2	TF										
+Gata3	TF										
+Gfi1	TF										
+Gfi1b	TF										
+Gmeb2	TF										
+Hes1	TF										
+Hes6	TF										
+Hhex	TF										
+Hic2	TF										
+Hif1a	TF										
+Hif1an	TF										
+Hif3a	TF										
+Hipk2	CF					Kinase (Ser/Thr)					Serine/threonine-protein kinase involved in transcription regulation, p53/TP53-mediated cellular apoptosis and regulation of the cell cycle. Acts as a corepressor of several transcription factors, including SMAD1 and POU4F1/Brn3a and probably NK homeodomain transcription factors. Phosphorylates PDX1, ATF1, PML, p53/TP53, CREB1, CTBP1, CBX4, RUNX1, EP300, CTNNB1, HMGA1 and ZBTB4. Inhibits cell growth and promotes apoptosis through the activation of p53/TP53 both at the transcription level and at the protein level (by phosphorylation and indirect acetylation). The phosphorylation of p53/TP53 may be mediated by a p53/TP53-HIPK2-AXIN1 complex. Involved in the response to hypoxia by acting as a transcriptional co-suppressor of HIF1A. Mediates transcriptional activation of TP73. In response to TGFB, cooperates with DAXX to activate JNK. Negative regulator through phosphorylation and subsequent proteasomal degradation of CTNNB1 and the antiapoptotic factor CTBP1. In the Wnt/beta-catenin signaling pathway acts as an intermediate kinase between MAP3K7/TAK1 and NLK to promote the proteasomal degradation of MYB. Phosphorylates CBX4 upon DNA damage and promotes its E3 SUMO-protein ligase activity. Activates CREB1 and ATF1 transcription factors by phosphorylation in response to genotoxic stress. In response to DNA damage, stabilizes PML by phosphorylation. PML, HIPK2 and FBXO3 may act synergically to activate p53/TP53-dependent transactivation. Promotes angiogenesis, and is involved in erythroid differentiation, especially during fetal liver erythropoiesis. Phosphorylation of RUNX1 and EP300 stimulates EP300 transcription regulation activity. Triggers ZBTB4 protein degradation in response to DNA damage. Modulates HMGA1 DNA-binding affinity. In response to high glucose, triggers phosphorylation-mediated subnuclear localization shifting of PDX1. Involved in the regulation of eye size, lens formation and retinal lamination during late embryogenesis.
+Hivep1	TF										
+Hivep2	TF										
+Hivep3	TF										
+Hlf	TF										
+Hnf4a	TF										
+Hopx	TF										
+Hoxa3	TF										
+Hoxa5	TF										
+Hoxa7	TF										
+Hoxa9	TF										
+Hoxb4	TF										
+Hsf1	TF										
+Htatsf1	TF										
+Id2	TF										
+Id3	TF										
+Ighmbp2	TF										
+Ikzf1	TF										
+Ikzf2	TF										
+Ikzf3	TF										
+Ikzf4	TF										
+Ikzf5	TF										
+Ilf2	TF										
+Ilf3	TF										
+Irf1	TF										
+Irf2	TF										
+Irf3	TF										
+Irf4	TF										
+Irf5	TF										
+Irf6	TF										
+Irf7	TF										
+Irf8	TF										
+Irf9	TF										
+Jdp2	TF										
+Junb	TF										
+Jund	TF										
+Klf1	TF										
+Klf10	TF										
+Klf11	TF										
+Klf12	TF										
+Klf13	TF										
+Klf16	TF										
+Klf2	TF										
+Klf3	TF										
+Klf4	TF										
+Klf5	TF										
+Klf6	TF										
+Klf7	TF										
+Klf9	TF										
+Lcorl	TF										
+Lef1	TF										
+Litaf	TF										
+Lmo1	TF										
+Lmo2	TF										
+Lmo4	TF										
+Lyar	CF						Prmt5			DM-LSC	Plays a role in the maintenance of the appropriate processing of 47S/45S pre-rRNA to 32S/30S pre-rRNAs and their subsequent processing to produce 18S and 28S rRNAs (PubMed:24495227). Also acts at the level of transcription regulation. Along with PRMT5, binds the gamma-globin (HBG1/HBG2) promoter and represses its expression (PubMed:25092918). In neuroblastoma cells, may also repress the expression of oxidative stress genes, including CHAC1, HMOX1, SLC7A11, ULBP1 and SNORD41 that encodes a small nucleolar RNA (PubMed:28686580). Preferentially binds to a DNA motif containing 5'-GGTTAT-3' (PubMed:25092918). Negatively regulates the antiviral innate immune response by targeting IRF3 and impairing its DNA-binding activity (PubMed:31413131). In addition, inhibits NF-kappa-B-mediated expression of proinflammatory cytokines (PubMed:31413131). Stimulates phagocytosis of photoreceptor outer segments by retinal pigment epithelial cells (By similarity). Prevents nucleolin/NCL self-cleavage, maintaining a normal steady-state level of NCL protein in undifferentiated embryonic stem cells (ESCs), which in turn is essential for ESC self-renewal
+Lyl1	TF										
+Lztr1	TF										
+Maf	TF										
+Maf1	TF										
+Mafb	TF										
+Mafg	TF										
+Mafk	TF										
+Max	TF										
+Maz	TF										
+Mef2a	TF										
+Mef2c	TF										
+Mef2d	TF										
+Meis1	TF										
+Mettl16										DM-LSC	
+Mga	TF										
+Mlk1	TF										
+Mlk2	TF										
+Mlx	TF										
+Mlxip	TF										
+Mnt	TF										
+Mtf1	TF										
+Mxd1	TF										
+Mxd3	TF										
+Mxd4	TF										
+Mxi1	TF										
+Myb	TF										
+Mybl1	TF										
+Mybl2	TF										
+Myc	TF										
+Mycn	TF										
+Mynn	TF										
+Nat10										DM-LSC	RNA cytidine acetyltransferase that catalyzes the formation of N(4)-acetylcytidine (ac4C) modification on mRNAs, 18S rRNA and tRNAs (PubMed:25411247, PubMed:25653167, PubMed:30449621). Catalyzes ac4C modification of a broad range of mRNAs, enhancing mRNA stability and translation (PubMed:30449621). mRNA ac4C modification is frequently present within wobble cytidine sites and promotes translation efficiency (PubMed:30449621). Mediates the formation of ac4C at position 1842 in 18S rRNA (PubMed:25411247). May also catalyze the formation of ac4C at position 1337 in 18S rRNA (By similarity). Required for early nucleolar cleavages of precursor rRNA at sites A0, A1 and A2 during 18S rRNA synthesis (PubMed:25411247, PubMed:25653167). Catalyzes the formation of ac4C in serine and leucine tRNAs (By similarity). Requires the tRNA-binding adapter protein THUMPD1 for full tRNA acetyltransferase activity but not for 18S rRNA acetylation (PubMed:25653167). In addition to RNA acetyltransferase activity, also able to acetylate lysine residues of proteins, such as histones, microtubules, p53/TP53 and MDM2, in vitro (PubMed:14592445, PubMed:17631499, PubMed:19303003, PubMed:26882543, PubMed:27993683, PubMed:30165671). The relevance of the protein lysine acetyltransferase activity is however unsure in vivo (PubMed:30449621). Activates telomerase activity by stimulating the transcription of TERT, and may also regulate telomerase function by affecting the balance of telomerase subunit assembly, disassembly, and localization (PubMed:14592445, PubMed:18082603). Involved in the regulation of centrosome duplication by acetylating CENATAC during mitosis, promoting SASS6 proteasome degradation (PubMed:31722219).
+Ncl											Nucleolin is the major nucleolar protein of growing eukaryotic cells. It is found associated with intranucleolar chromatin and pre-ribosomal particles. It induces chromatin decondensation by binding to histone H1. It is thought to play a role in pre-rRNA transcription and ribosome assembly. May play a role in the process of transcriptional elongation. Binds RNA oligonucleotides with 5'-UUAGGG-3' repeats more tightly than the telomeric single-stranded DNA 5'-TTAGGG-3' repeats.
+Nfat5	TF										
+Nfatc1	TF										
+Nfatc2	TF										
+Nfatc3	TF										
+Nfe	TF										
+Nfe2l	TF										
+Nfia	TF										
+Nfic	TF										
+Nfil3	TF										
+Nfix	TF										
+Nfkb1	TF										
+Nfkb2	TF										
+Nfkbia	TF										
+Nfkbib	TF										
+Nfkbie	TF										
+Nfx1	TF										
+Nfya	TF										
+Nfyb	TF										
+Nfyc	TF										
+NOC3L										DM-LSC	
+Notch1	TF										
+Notch2	TF										
+Nr1h2	TF										
+Nr1h3	TF										
+Nr2c2	TF										
+Nr2f6	TF										
+Nr3c1	TF										
+Nr4a1	TF										
+Nrf1	TF										
+Nrip1	TF										
+Nrip3	TF										
+Nufip1	TF										
+Pa2g4	TF										
+Patz1	TF										
+Pax5	TF										
+Pbx1	TF										
+Pbx2	TF										
+Pbx3	TF										
+Pbx4	TF										
+Pbxip1	TF										
+Phtf1	TF										
+Phtf2	TF										
+Phyhin1	TF										
+Pir	TF										
+Pknox1	TF										
+Plagl2	TF										
+Pnn	TF										
+Pogk	TF										
+Pou2af1	TF										
+Pou2f1	TF										
+Pou2f2	TF										
+Pou2f3	TF										
+Pou5f2	TF										
+Pou6f1	TF										
+Pou6f2	TF										
+Ppard	TF										
+Pparg	TF										
+Prdm1	TF										
+Prdm10	TF										
+Prdm15	TF										
+Prdm16	TF										
+Prdm2	TF										
+Prdm4	TF										
+Prdm5	TF										
+Preb	TF										
+Rai1	TF										
+Rara	TF										
+Rarg	TF										
+Rb1	TF										
+Rbpj	TF										
+Rel	TF										
+Rela	TF										
+Relb	TF										
+Rfx2	TF										
+Rfx3	TF										
+Rfx5	TF										
+Rfx7	TF										
+Rora	TF										
+Runx1	TF										
+Runx2	TF										
+Runx3	TF										
+Rxra	TF										
+Satb1	TF										
+Sav1	TF										
+Scand1	TF										
+Sertad1	TF										
+Sertad2	TF										
+Sertad3	TF										
+Smad1	TF										
+Smad2	TF										
+Smad3	TF										
+Smad4	TF										
+Smad5	TF										
+Smad7	TF										
+Sox12	TF										
+Sox13	TF										
+Sox18	TF										
+Sox4	TF										
+Sox5	TF										
+Sox6	TF										
+Sp1	TF										
+Sp2	TF										
+Sp3	TF										
+Sp4	TF										
+Spi1	TF										
+Spib	TF										
+Spic	TF										
+Srebf1	TF										
+Srebf2	TF										
+Stat1	TF										
+Stat2	TF										
+Stat3	TF										
+Stat4	TF										
+Stat5a	TF										
+Stat5b	TF										
+Stat6	TF										
+Tal1	TF										
+Tbx21	TF										
+Tbx6	TF										
+Tc f7l2	TF										
+Tcf12	TF										
+Tcf15	TF										
+Tcf19	TF										
+Tcf20	TF										
+Tcf25	TF										
+Tcf3	TF										
+Tcf4	TF										
+Tcf7	TF										
+Tcf7l1	TF										
+Tef	TF										
+Tfdp2	TF										
+Tgif1	TF										
+Thap1	TF										
+Thap11	TF										
+Thap2	TF										
+Thap3	TF										
+Thap4	TF										
+Thap7	TF										
+Thra	TF										
+Thrap3	TF										
+Timeless	TF										
+Tle2	TF										
+Tle3	TF										
+Tle4	TF										
+Tle6	TF										
+Tox	TF										
+Trerf1	TF										
+Trps1	TF										
+Tsc22d1	TF										
+Tsc22d2	TF										
+Tsc22d3	TF										
+Tsc22d4	TF										
+Tshz1	TF										
+Tshz3	TF										
+Ubtf	TF										
+Vav1	TF										
+Vdr	TF										
+Vgll4	TF										
+Xbp1	TF										
+Ybx1	TF										
+Yy1	TF										
+Zbtb1	TF										
+Zbtb11	TF										
+Zbtb12	TF										
+Zbtb16	TF										
+Zbtb17	TF										
+Zbtb2	TF										
+Zbtb20	TF										
+Zbtb22	TF										
+Zbtb24	TF										
+Zbtb25	TF										
+Zbtb34	TF										
+Zbtb38	TF										
+Zbtb4	TF										
+Zbtb40	TF										
+Zbtb43	TF										
+Zbtb44	TF										
+Zbtb45	TF										
+Zbtb46	TF										
+Zbtb48	TF										
+Zbtb49	TF										
+Zbtb7a	TF										
+Zbtb7b	TF										
+Zbtb9	TF										
+Zeb1	TF										
+Zeb2	TF										
+Zfhx2	TF										
+Zfhx3	TF										
+Zfp1	TF										
+Zfp110	TF										
+Zfp120	TF										
+Zfp148	TF										
+Zfp182	TF										
+Zfp217	TF										
+Zfp219	TF										
+Zfp260	TF										
+Zfp276	TF										
+Zfp281	TF										
+Zfp292	TF										
+Zfp329	TF										
+Zfp335	TF										
+Zfp341	TF										
+Zfp358	TF										
+Zfp366	TF										
+Zfp367	TF										
+Zfp36l1	TF										
+Zfp36l2	TF										
+Zfp386	TF										
+Zfp398	TF										
+Zfp410	TF										
+Zfp422	TF										
+Zfp429	TF										
+Zfp445	TF										
+Zfp467	TF										
+Zfp513	TF										
+Zfp516	TF										
+Zfp523	TF										
+Zfp524	TF										
+Zfp53	TF										
+Zfp532	TF										
+Zfp553	TF										
+Zfp574	TF										
+Zfp579	TF										
+Zfp580	TF										
+Zfp637	TF										
+Zfp64	TF										
+Zfp644	TF										
+Zfp653	TF										
+Zfp664	TF										
+Zfp68	TF										
+Zfp688	TF										
+Zfp7	TF										
+Zfp710	TF										
+Zfp768	TF										
+Zfp771	TF										
+Zfp780b	TF										
+Zfp800	TF										
+Zfp808	TF										
+Zfp809	TF										
+Zfp821	TF										
+Zfp827	TF										
+Zfp831	TF										
+Zfp839	TF										
+Zfp869	TF										
+Zfp871	TF										
+Zfp91	TF										
+Zfp934	TF										
+Zfp945	TF										
+Zfp949	TF										
+Zfp961	TF										
+Zfyve1	TF										
+Zfyve26	TF										
+Zfyve27	TF										
+Zhx1	TF										
+Zhx2	TF										
+Zkscan14	TF										
+Zkscan17	TF										
+Zkscan3	TF										
+Zmat1	TF										
+Zmat2	TF										
+Zmym2	TF										
+Zmynd19	TF										
+Znf512b	TF										
+Znfx1	TF										
+Znhit3	TF										
+Zscan21	TF										
+Zscan29	TF										
+Zzef1	TF										

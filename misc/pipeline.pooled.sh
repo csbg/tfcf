@@ -1,0 +1,7 @@
+Rscript src/POOLED_01_CollectData_v4.R
+Rscript src/POOLED_09_CleanData.R
+Rscript src/POOLED_10_03_IndividualAnalysis_NormFactorsFromControls.R
+Rscript src/POOLED_11_03_ReplicatesLimma_NormFactorsFromControls.R
+Rscript src/POOLED_12_01_Controls.R
+Rscript src/FIG_01_POOLED_vsControls.R
+Rscript src/FIG_01_POOLED_vsWT.R

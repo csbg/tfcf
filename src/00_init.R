@@ -22,16 +22,8 @@ if(Sys.getenv("CODEBASE") == ""){
 
 # GFS points to where the data is stored and results will be written to
 if(dir.exists("/media/AGFORTELNY")){
-  print("Setting GFS")
-  
-  # Working without singularity on the CAME cluster
-  # if(dir.exists("/usr/local/AGFORTELNY/")) Sys.setenv(GFS="/usr/local/AGFORTELNY/")
-  
-  # Working in singularity on the CAME cluster
-  if(dir.exists("/media/AGFORTELNY")) Sys.setenv(GFS="/media/AGFORTELNY")
-  
-  # If it wasn't set by any of the above comments
-  if(Sys.getenv("GFS") == "") stop("Environmental variables missing")
+  print("Setting GFS within singularity to /media/AGFORTELNY")
+  Sys.setenv(GFS="/media/AGFORTELNY")
 }
 
 
@@ -41,6 +33,7 @@ if(dir.exists("/media/AGFORTELNY")){
 
 PATHS <- list()
 PATHS$LOCATIONS <- list()
+
 
 # Get paths from setup.sh
 ll <- readLines("setup.sh")
@@ -57,15 +50,13 @@ ll <- data.table(
   })
 )
 
+
 # define paths (from setup.sh or environmental variable if set)
 for(varx in ll$var){
-  pathx <- if(Sys.getenv(varx) == "") ll[var == varx]$path else Sys.getenv(ll[i]$var)
+  pathx <- if(Sys.getenv(varx) != "" & dir.exists(Sys.getenv(varx))) Sys.getenv(ll[var == varx]$var) else ll[var == varx]$path
   PATHS$LOCATIONS[[varx]] <- pathx
 }
-PATHS$LOCATIONS
-sapply(PATHS$LOCATIONS, dir.exists)
 stopifnot(all(sapply(PATHS$LOCATIONS, dir.exists)))
-
 
 
 # functions ----------------------------------------------------------------
@@ -111,7 +102,7 @@ getMainDatasets <- function(){
   ff <- ff[!grepl(".log$", ff)]
   ff <- ff[!grepl("_onlyRNA", ff)]
   ff <- ff[!grepl("RNAonly", ff)]
-  ff <- ff[grepl("^ECCITE", ff) | grepl("^CITESEQ", ff)]
+  #ff <- ff[grepl("^ECCITE", ff) | grepl("^CITESEQ", ff)]
   ff <- ff[!grepl("ECCITE4_INT", ff)]
   ff <- ff[!grepl("ECCITE1_", ff)]
   ff <- ff[!grepl("LINES", ff)]
@@ -122,9 +113,9 @@ getMainDatasets <- function(){
 
 
 
-# Comparisons (POOLED) -------------------------------------------------------------
+# COMPARISONS, NAMES, DEFINITIONS -------------------------------------------------------------
 COMPARISONS <- list(
-  LSK.CKIT=c("LSKd9", "cKit"),
+  CKIT.LSK=c("cKit", "LSKd9"),
   GMP.LSK=c("GMP", "LSKd7"),
   MEP.LSK=c("MEP", "LSKd7"),
   GMP.MEP=c("GMP", "MEP"),
@@ -137,11 +128,13 @@ COMPARISONS <- list(
   DMEry.LSC=c("DM.Ery", "DM.LSC"),
   DMMye.LSC=c("DM.Mye", "DM.LSC"),
   DMMye.Ery=c("DM.Mye", "DM.Ery"),
-  DMCD11b.LSC=c("DM.LSC.CD11b", "DM.LSC")
+  DMCD11b.LSC=c("DM.LSC.CD11b", "DM.LSC"),
+  DMd10v5=c("DM.d10", "DM.d5"),
+  DMd17v10=c("DM.d17", "DM.d10")
 )
 
 COMPARISONS.healthy <- c(
-  "LSK.CKIT",
+  "CKIT.LSK",
   "GMP.LSK",
   "MEP.LSK",
   "GMP.MEP",
@@ -149,11 +142,14 @@ COMPARISONS.healthy <- c(
   "GMPcd11.DN"
 )
 
+CLEAN.CELLTYPES <- fread("metadata/FIGS_celltypes.tsv", fill=TRUE)
+CLEAN.CELLTYPES[NewName == "", NewName := Name]
 
-cleanComparisons <- function(x, order=TRUE, ggtext=FALSE, dm="clean"){
+# CLEAN FUNCTIONS ---------------------------------------------------------
+cleanComparisons <- function(x, order=TRUE, ggtext=FALSE, dm="clean", reverse=FALSE, colors=c("832424", "3A3A98")){
   transformPretty <- function(i, gg=ggtext){
     if(gg){
-      i <- gsub("^(.+)\\.(.+)$", "<strong style='color:#832424;'>\\1</strong> vs <strong style='color:#3A3A98;'>\\2</strong>", i)
+      i <- gsub("^(.+)\\.(.+)$", paste0("<strong style='color:#",colors[1],";'>\\1</strong> vs <strong style='color:#",colors[2],";'>\\2</strong>"), i)
     } else {
       i <- gsub("\\.", " vs ", i)
     }
@@ -167,8 +163,40 @@ cleanComparisons <- function(x, order=TRUE, ggtext=FALSE, dm="clean"){
   }
   
   x <- transformPretty(x)
-  if(order) x <- factor(x, levels = intersect(transformPretty(names(COMPARISONS)), unique(x)))
+  if(order){
+    x <- factor(x, levels = c("Main branch", intersect(transformPretty(names(COMPARISONS)), unique(x))))
+    if(reverse){
+      x <- factor(x, levels=rev(levels(x)))
+    }
+  }
   x
+}
+
+
+cleanCelltypes <- function(x, order=TRUE, twoLines=FALSE, reverse=TRUE, clean=TRUE, drop=FALSE){
+  if(clean){
+    stopifnot(all(x %in% CLEAN.CELLTYPES$Name))
+    x <- CLEAN.CELLTYPES[match(x, Name)]$NewName
+  }
+  order.levels <- if(reverse) rev(CLEAN.CELLTYPES$NewName) else CLEAN.CELLTYPES$NewName
+  if(drop==TRUE) order.levels <- order.levels[order.levels %in% x]
+  if(order) x <- factor(x, levels=order.levels)
+  if(twoLines) x <- sub(" ", "\n", x)
+  return(x)
+}
+
+cleanCelltypesBroad <- function(x, order=TRUE, twoLines=FALSE, reverse=TRUE, clean=TRUE, drop=FALSE){
+  stopifnot(all(x %in% CLEAN.CELLTYPES$Type))
+  # if(clean){
+  #   stopifnot(all(x %in% CLEAN.CELLTYPES$Name))
+  #   x <- CLEAN.CELLTYPES[match(x, Name)]$NewName
+  # }
+  order.leves <- unique(CLEAN.CELLTYPES$Type)
+  order.levels <- if(reverse) rev(order.leves) else order.leves
+  if(drop==TRUE) order.levels <- order.levels[order.levels %in% x]
+  if(order) x <- factor(x, levels=order.levels)
+  if(twoLines) x <- sub(" ", "\n", x)
+  return(x)
 }
 
 
@@ -178,6 +206,18 @@ PATHS$RESOURCES <- list(
   HM.MAP = dirout_load("PPI_00_getData/")("BioMart_Human_Mouse_2021_07_27.txt"),
   Enrichr.mouse = dirout_load("EXT_02_EnrichR_Genesets")("Genesets_Mouse.RData")
 )
+# BioMart:
+# Run on July 27, 2021. BioMART Ensembl
+# Dataset
+# - Mouse genes (GRCm39)
+# Filters
+# - [None selected]
+# Attributes
+# - Gene stable ID
+# - Human gene stable ID
+# - Human homology type
+# - Gene name
+# - Human gene name
 
 PATHS$CHIP <- list()
 PATHS$CHIP$Targets <- dirout_load("CHIP_20_01_Peaks_julen")("ChIP.Targets.RData")
@@ -192,20 +232,33 @@ PATHS$POOLED$DATA <- list(
 sapply(PATHS$POOLED$DATA, file.exists)
 
 
-PATHS$FULLINT <- list()
-PATHS$FULLINT$Monocle <- dirout_load("FULLINT_01_01_Integration")("MonocleObject.RData")
-PATHS$FULLINT$DEG <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("DEG_Results_nebula.RData")
-PATHS$FULLINT$DEG.clean <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("DEG_Results_all.tsv")
-PATHS$FULLINT$DEG.clean.leukemia <- dirout_load("FULLINT_10_01_BasicAnalysis_leukemia")("DEG_Results_all.tsv")
-PATHS$FULLINT$DEG.clean.invitro <- dirout_load("FULLINT_10_01_BasicAnalysis_in.vitro")("DEG_Results_all.tsv")
-PATHS$FULLINT$DEG.clean.invivo <- dirout_load("FULLINT_10_01_BasicAnalysis_in.vivo")("DEG_Results_all.tsv")
-PATHS$FULLINT$DEG.ann <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("DEG_Annnotation.tsv")
-PATHS$FULLINT$DEG.logFCMT <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("DEG_Results_logFCMT.csv")
-PATHS$FULLINT$DEG.UMAP <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("RegulatoryMap_UMAP_top.genes.tsv")
+PATHS$SCRNA <- list()
+PATHS$SCRNA$ANN <- dirout_load("SCRNA_01_01_Seurat")("SampleAnnotation.tsv")
+PATHS$SCRNA$MONOCLE.NAMES <- setdiff(list.dirs(dirout_load("SCRNA_02_01_Integration")(""), full.names = FALSE), "")
+PATHS$SCRNA$MONOCLE.DIR <- function(x){dirout_load("SCRNA_02_01_Integration")(paste0(x, "/", "MonocleObject.RData"))}
+PATHS$SCRNA$Citeseq <- dirout_load("SCRNA_02_01_Integration")("CITESEQ_Antibodies.RData")
+# PATHS$FULLINT$Monocle <- dirout_load("FULLINT_01_01_Integration")("MonocleObject.RData")
+# PATHS$FULLINT$Citeseq <- dirout_load("FULLINT_01_01_Integration")("CITESEQ_Antibodies.RData")
+# PATHS$FULLINT$DEG <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("DEG_Results_nebula.RData")
+# PATHS$FULLINT$DEG.clean <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("DEG_Results_all.tsv")
+# PATHS$FULLINT$DEG.clean.leukemia <- dirout_load("FULLINT_10_01_BasicAnalysis_leukemia")("DEG_Results_all.tsv")
+# PATHS$FULLINT$DEG.clean.invitro <- dirout_load("FULLINT_10_01_BasicAnalysis_in.vitro")("DEG_Results_all.tsv")
+# PATHS$FULLINT$DEG.clean.invivo <- dirout_load("FULLINT_10_01_BasicAnalysis_in.vivo")("DEG_Results_all.tsv")
+# PATHS$FULLINT$DEG.ann <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("DEG_Annnotation.tsv")
+# PATHS$FULLINT$DEG.logFCMT <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("DEG_Results_logFCMT.csv")
+# PATHS$FULLINT$DEG.UMAP <- dirout_load("FULLINT_10_01_BasicAnalysis_combined")("RegulatoryMap_UMAP_top.genes.tsv")
 
 
 # COLORS ------------------------------------------------------------------
 COLOR.Genotypes = c(WT="#33a02c", Cas9="#6a3d9a")
 COLORS.HM.FUNC <- colorRampPalette(c("#6a3d9a", "#a6cee3", "white", "#fdbf6f", "#e31a1c"))
+COLORS.CELLTYPES.scRNA <- fread("metadata/markers.signatures.use.scRNA.tsv")
+COLORS.CELLTYPES.scRNA <- setNames(COLORS.CELLTYPES.scRNA$Color, COLORS.CELLTYPES.scRNA$FinalName)
+COLORS.CELLTYPES.scRNA["NA"] <- "lightgrey"
+COLORS.CELLTYPES.scRNA.ainhoa <- setNames(CLEAN.CELLTYPES$Color, CLEAN.CELLTYPES$NewName)
 
 scale_fill_hexbin <- function(...){scale_fill_gradientn(colours=c("#a6cee3", "#fdbf6f", "#ff7f00", "#e31a1c"), ...)}
+
+
+
+message("-------------------> Project initiation completed")
