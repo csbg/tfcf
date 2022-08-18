@@ -13,8 +13,8 @@ To run this code you need the Singularity container, the data processed by cell 
     - Cluster and cell type analyses of the above are in files SCRNA_20 to SCRNA_22
     - Differential expression analyses in files SCRNA_30 to SCRNA_41
 - Additional functions are defined in files starting with FUNC
+- Publication figures are produced in files starting with FIG
     - Analyses of FACS-based screens in file FIG_01
     - Analyses of Perturb-seq data focused on UMAPs, clusters, and cell types in FIG_02
     - Analyses of Perturb-seq data focused on differential expression analyses in FIG_03
     - Exporting of supplementary tables in FIG_80
-- Publication figures are produced in files starting with FIG
