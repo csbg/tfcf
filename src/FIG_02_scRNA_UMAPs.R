@@ -462,7 +462,7 @@ ggsaveNF(outBase("CellCounts_InVivoSparse.pdf"), w=1.5,h=1, guides = TRUE)
 pDT <- annList[tissue != "leukemia"][timepoint != "28d"][,.N, by=c("gene", "tissue")][!is.na(gene)]
 pDT <- pDT[gene %in% dla.healthy$supp]
 pDT$gene <- factor(pDT$gene, levels=dla.healthy$supp)
-pDT$gene <- factor(pDT$gene, levels=rev(pDT[,sum(N), by="gene"][order(V1)]$gene))
+#pDT$gene <- factor(pDT$gene, levels=rev(pDT[,sum(N), by="gene"][order(V1)]$gene))
 ggplot(pDT, aes(x=gene,y=N, fill=tissue)) + 
   themeNF(rotate = TRUE) +
   geom_bar(stat="identity", position="dodge") +
@@ -488,13 +488,16 @@ ggplot(pDT,  aes(x=Clusters, y=frac, fill=factor(guide_i))) +
 ggsaveNF(outBase("NTC_clonality.pdf"), w=4, h=2)
 
 pDT <- dcast.data.table(pDT, Clusters + tissue + sample_broad ~ paste0("Guide", guide_i), value.var = "frac")
-ggplot(pDT, aes(x=Guide1, y=Guide2, color=sample_broad)) + 
+pDT[, timepoint := gsub("^(.+)_(\\d+d)$", "\\2", sample_broad)]
+pDT[, batch := as.numeric(factor(sample_broad)), by=c("tissue", "timepoint")]
+ggplot(pDT, aes(x=Guide1, y=Guide2, shape=factor(paste("Batch", batch)), color=factor(paste("Batch", batch)))) + 
   geom_point() +
   themeNF() +
   scale_x_log10() +
   scale_y_log10() +
-  facet_grid(. ~ tissue)
-ggsaveNF(outBase("NTC_clonalityScatter.pdf"), w=2, h=1)
+  facet_wrap(~ tissue + timepoint, ncol = 2) + 
+  scale_shape_manual(values=rep(c(1,16,2,18,3,4), 20))
+ggsaveNF(outBase("NTC_clonalityScatter.pdf"), w=1.8, h=2)
 
 # . Plot all guides ---------------------------------------------------------
 tx <- "in.vivo"
@@ -655,7 +658,7 @@ ggsaveNF(out("UMAP_Samples.pdf"), w=2,h=2)
 #   ylab("") + xlab("Enrichment in immature B-cells")
 # ggsaveNF(out("ClusterEnrichments_manual_BcellsOnly.pdf"), w=1,h=1.5)
 
-typex <- "main"
+typex <- "supp"
 for(typex in names(dla.healthy)){
   dla <- dla.healthy[[typex]]
 
@@ -789,6 +792,7 @@ suppx <- "main"
 for(suppx in names(dla.healthy)){
   dla <- dla.healthy[[suppx]]
   pDT <- fish.enrich[gene %in% dla][(Clusters %in% c("GMP", "MkP", "Eo/Ba", "HSC", "EBMP") & day=="day7") | (Clusters == "GMP (late)" & day=="day9")]
+  pDT$Clusters <- factor(pDT$Clusters, levels = c("HSC", "EBMP", "GMP", "GMP (late)", "MkP", "Eo/Ba"))
   pDT$gene <- factor(pDT$gene, levels = rev(dla))
   #pDT$Complex <- dla[match(pDT$gene, Factor)]$Complex
   #pDT[, Clusters := cleanCelltypes(Clusters, clean=FALSE, twoLines = FALSE, order = TRUE, reverse = TRUE)]
