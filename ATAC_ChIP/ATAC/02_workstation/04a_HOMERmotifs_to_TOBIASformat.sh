@@ -29,17 +29,19 @@ homerIds <- unlist(lapply(homerIds,
 
 # Change weird characters (mandatory to use TOBIAS)
 homerIds <- unlist(lapply(homerIds,
+                function (x) {gsub(' ', '', x)[[1]]}))
+homerIds <- unlist(lapply(homerIds,
                 function (x) {gsub(':', '-', x)[[1]]}))
 homerIds <- unlist(lapply(homerIds,
-                function (x) {gsub('\\?', '', x)[[1]]}))
+                function (x) {gsub('\\\?', '', x)[[1]]}))
 homerIds <- unlist(lapply(homerIds,
-                function (x) {gsub('\\|', '--', x)[[1]]}))
+                function (x) {gsub('\\\|', '--', x)[[1]]}))
 homerIds <- unlist(lapply(homerIds,
-                function (x) {gsub('\\+', '--', x)[[1]]}))
+                function (x) {gsub('\\\+', '--', x)[[1]]}))
 homerIds <- unlist(lapply(homerIds,
-                function (x) {gsub('\\(', '_', x)[[1]]}))
+                function (x) {gsub('\\\(', '_', x)[[1]]}))
 homerIds <- unlist(lapply(homerIds,
-                function (x) {gsub('\\)', '', x)[[1]]}))
+                function (x) {gsub('\\\)', '', x)[[1]]}))
 homerIds <- unlist(lapply(homerIds,
                 function (x) {gsub(',', '-', x)[[1]]}))
 homerIds <- unlist(lapply(homerIds,
@@ -48,7 +50,9 @@ homerIds <- unlist(lapply(homerIds,
 
 # Look for duplicates
 n_occur <- data.frame(table(homerIds))
-for (id1 in n_occur[n_occur$Freq > 1,'homerIds']) {
+summary(n_occur)
+print(n_occur[n_occur\$Freq > 1,])
+for (id1 in n_occur[n_occur\$Freq > 1,'homerIds']) {
     pos <- homerIds == id1
     homerIds[pos] <- paste0(id1, paste0('_', 1:sum(pos)))
 }
