@@ -70,8 +70,6 @@ source(paste(Sys.getenv("CODEBASE"), "resources", "RFunctions", "GSEA_hitlist.R"
 if(!dir.exists("lockfiles/")) dir.create("lockfiles/")
 # renv::snapshot(lockfile = paste0("lockfiles/renv_lockfile_", make.names(Sys.time()), ".lockfile"), force = TRUE, prompt = FALSE)
 
-
-
 # Enrichr DBs -------------------------------------------------------------
 ENRICHR.DBS <- c("KEGG_2019_Mouse", "WikiPathways_2019_Mouse",
                  "MSigDB_Hallmark_2020", "MSigDB_Oncogenic_Signatures",

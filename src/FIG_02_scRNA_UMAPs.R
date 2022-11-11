@@ -3,6 +3,8 @@ base.dir <- "FIG_02_scRNA_UMAPs/"
 outBase <- dirout(base.dir)
 
 require(ggrepel)
+require(WriteXLS)
+
 
 # FUNCTIONS ---------------------------------------------------------------
 ds <- function(path){load(path); return(monocle.obj)}
@@ -432,7 +434,6 @@ inDir <- dirout_load("SCRNA_21_02_ClusterEnrichments_simple")
 #}
 
 
-
 # . Cell numbers ----------------------------------------------------------
 pDT <- annList[tissue != "leukemia"][timepoint != "28d"][,.N, by=c("Clusters", "tissue")]
 pDT[, sum := sum(N), by="tissue"]
@@ -557,6 +558,15 @@ fish.bcells <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichme
 fish.enrich.broad <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_broad_in.vivo_noMixscape_14d",".tsv"))
 fish.EryVsMye <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments","_eryVsMye", "_in.vivo", "_noMixscape", "_14d",".tsv"))
 fish.d28 <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_earlyBranches_in.vivo_noMixscape_28d.tsv"))
+
+
+
+# . supp table ------------------------------------------------------------
+exDT <- fish.enrich.broad[,c("Clusters", "gene", "log2OR", "padj", "N", "sig.perc"),with=F]
+exDT[, sig.perc := sig.perc * 100]
+colnames(exDT) <- c("Cell type", "CF-KO", "log2 odds ratio", "adjusted p-value", "Count", "Percent significant")
+WriteXLS(x=exDT, ExcelFileName=out("Supplementary_Table_CellTypes_invivo.xls"), AdjWidth=TRUE, BoldHeaderRow=TRUE, FreezeRow=1, SheetNames="Table")
+write.tsv(exDT, out("Supplementary_Table_CellTypes_invivo.tsv"))
 
 
 # . Plot distribution of one gene -------------------------------------------
@@ -765,6 +775,15 @@ fish.enrich <- list(
   )
 fish.enrich <- rbindlist(fish.enrich, idcol="day")
 
+
+# . supp table ------------------------------------------------------------
+exDT <- fish.enrich[,c("day", "Clusters", "gene", "log2OR", "padj", "N", "sig.perc"),with=F]
+exDT[, sig.perc := sig.perc * 100]
+colnames(exDT) <- c("Day", "Cell type", "CF-KO", "log2 odds ratio", "adjusted p-value", "Count", "Percent significant")
+WriteXLS(x=exDT, ExcelFileName=out("Supplementary_Table_CellTypes_exvivo.xls"), AdjWidth=TRUE, BoldHeaderRow=TRUE, FreezeRow=1, SheetNames="Table")
+write.tsv(exDT, out("Supplementary_Table_CellTypes_exvivo.tsv"))
+
+
 # . BULK Signatures ---------------------------------------------------------
 pDT <- merge(umap.proj$izzo, marker.signatures.bulk, by="rn")
 pDT[, value.norm := scale(value), by="variable"]
@@ -853,6 +872,13 @@ for(xnam in names(clusters.plot.cts)){
 fish.enrich <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_numeric_leukemia_noMixscape_6d.tsv"))
 fish.enrich$celltype <- unique(ann[,c("Cluster.number", "Clusters"),with=F])[match(fish.enrich$Clusters, paste("cl", Cluster.number))]$Clusters
 
+
+# . supp table ------------------------------------------------------------
+exDT <- fish.enrich[,c("Clusters", "gene", "log2OR", "padj", "N", "sig.perc"),with=F]
+exDT[, sig.perc := sig.perc * 100]
+colnames(exDT) <- c("Cluster", "CF-KO", "log2 odds ratio", "adjusted p-value", "Count", "Percent significant")
+WriteXLS(x=exDT, ExcelFileName=out("Supplementary_Table_Clusters_leukemia.xls"), AdjWidth=TRUE, BoldHeaderRow=TRUE, FreezeRow=1, SheetNames="Table")
+write.tsv(exDT, out("Supplementary_Table_Clusters_leukemia.tsv"))
 
 # . Clusters on UMAP --------------------------------------------------------
 typex <- "original"
