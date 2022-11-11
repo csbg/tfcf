@@ -7,3 +7,5 @@ This repository contains the code to analyze the data from the manuscript.
 - lockfiles: archived renv lockfiles
 - misc: archived scripts not required for the analysis
 - ATAC_ChIP: Code to analyze epigenomics datasets. This folder contains a separate README file that describes how to run the code.
+- CRISPR: Code to generate count matrices from FACS based CRISPR datasets. This folder contains a separate README file that describes how to run the code.
+- cellRanger: Code to generate CellRanger's output from Perturb-seq data. This folder contains a separate README file that describes how to run the code.
