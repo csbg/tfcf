@@ -146,6 +146,7 @@ START_TIME=$SECONDS
 
 if [ ! -e ${EDITED_DIR} ]; then
     mkdir -p ${EDITED_DIR}
+    mkdir -p ${EDITED_DIR}/fastq_extr
 fi
 
 if [ ! -e ${EDITED_DIR}/QC/ ] && echo exists ; then
