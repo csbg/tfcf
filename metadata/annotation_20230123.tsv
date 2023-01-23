@@ -47,13 +47,4 @@ Perturb-seq (10X)		inVivo_OP4_ckit_14d_1	YES	inVivo	3prime	Lin+,ckit+	14d		c7a25
 Perturb-seq (10X)		DM_OP5_NM_6d_1	YES	leukemia	3prime	noMarker	6d		9122edef6537ffb47d356b76779d6612	DM_OP5_NM_6d_1/outs/metrics_summary.csv	
 Perturb-seq (10X)		inVivo_OPA_ckit_14d_1	YES	inVivo	3prime	Lin+,ckit+	14d		0e79ca28d285585548e4a3fe7da45478	inVivo_OPA_ckit_14d_1/outs/metrics_summary.csv	
 Perturb-seq (10X)		inVivo_OPA_lin-_14d_1	YES	inVivo	3prime	Lin-	14d		e97172143b1834318256d5b5285f3422	inVivo_OPA_lin-_14d_1/outs/metrics_summary.csv	
-Perturb-seq (10X)		inVivo_OPA_lin-_14d_2	YES	inVivo	3prime	Lin-	14d		fbbcfaa342a7b6394e20d54785866d37	inVivo_OPA_lin-_14d_2/outs/metrics_summary.csv
-Perturb-seq (10X)		inVivo_OP5_Lin-_14d_1	YES	inVivo	3prime	Lin-	14d		493a4885d2f3fdcb53360183a47d5f88	inVivo_OP5_Lin-_14d_1/outs/metrics_summary.csv	
-Perturb-seq (10X)		inVivo_OP5_Lin-_14d_2	YES	inVivo	3prime	Lin-	14d		c848193a1c806f57f656d4b710feef46	inVivo_OP5_Lin-_14d_2/outs/metrics_summary.csv	
-Perturb-seq (10X)		inVivo_OP5_ckit_14d_1	YES	inVivo	3prime	Lin+,ckit+	14d		fa119ae98984cda6560c0e2353b0530a	inVivo_OP5_ckit_14d_1/outs/metrics_summary.csv	
-Perturb-seq (10X)		inVivo_OP7-8_Lin-_14d_1	YES	inVivo	3prime	Lin-	14d		35b382b0497833faee019d3511237993	inVivo_OP7-8_Lin-_14d_1/outs/metrics_summary.csv	
-Perturb-seq (10X)		inVivo_OP7-8_Lin-_14d_2	YES	inVivo	3prime	Lin-	14d		59e195bb4e09d0b0aae32514cee7d50c	inVivo_OP7-8_Lin-_14d_2/outs/metrics_summary.csv	
-Perturb-seq (10X)		inVivo_OP7-8_Lin-_14d_3	YES	inVivo	3prime	Lin-	14d		6206d98cd46eb6b39fc70b1fe65a619e	inVivo_OP7-8_Lin-_14d_3/outs/metrics_summary.csv	
-Perturb-seq (10X)		inVivo_OP7-8_ckit_14d_1	YES	inVivo	3prime	Lin+,ckit+	14d		6fa802c2545beca4240b23b1add621b6	inVivo_OP7-8_ckit_14d_1/outs/metrics_summary.csv	
-Perturb-seq (10X)		inVivo_OP7-8_ckit_14d_2	YES	inVivo	3prime	Lin+,ckit+	14d		9f1ea401fc3511f9e7f12b9198f124cb	inVivo_OP7-8_ckit_14d_2/outs/metrics_summary.csv	
-Perturb-seq (10X)		inVivo_OPA_ckit_14d_2	YES	inVivo	3prime	Lin+,ckit+	14d		253a01e0851d589dbaae8fea1961a190	inVivo_OPA_ckit_14d_2/outs/metrics_summary.csv	
+Perturb-seq (10X)		inVivo_OPA_lin-_14d_2	YES	inVivo	3prime	Lin-	14d		fbbcfaa342a7b6394e20d54785866d37	inVivo_OPA_lin-_14d_2/outs/metrics_summary.csv	

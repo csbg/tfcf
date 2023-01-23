@@ -14,6 +14,16 @@ for(tissuex in PATHS$SCRNA$MONOCLE.NAMES){
 }
 
 
+# Duplet scors ------------------------------------------------------------
+ff <- list.files(dirout_load("SCRNA_03_01_Duplets")(""), pattern="Duplet_Scores_.*.tsv", full.names = TRUE)
+ds <- lapply(ff, fread)
+names(ds) <- basename(ff)
+ds <- rbindlist(ds, idcol = "sample")
+ds[, sample := gsub("Duplet_Scores_(.+).tsv", "\\1", sample)]
+ds[, rn := paste0(rn, "_", sample)]
+ds <- ds[,c("rn", "dupletScore")]
+
+
 # Projection from Monocle (original) --------------------------------------
 res <- data.table()
 tx <- names(mobjs)[1]
@@ -28,6 +38,21 @@ for(tx in names(mobjs)){
   res <- rbind(res, dDT.umap)
 }
 colnames(res)[colnames(res) %in% c("V1", "V2")] <- c("UMAP_1", "UMAP_2")
+stopifnot(!any(is.na(res$UMAP_1)))
+
+# Duplets
+res <- merge(res, ds, by="rn", all=TRUE)[!is.na(UMAP_1)]
+stopifnot(nrow(res[is.na(dupletScore)]) == 0)
+table(res$dupletScore > 0.9)
+ggplot(res[!is.na(tissue)], aes(x=UMAP_1, y=UMAP_2)) + 
+  scale_fill_hexbin() +
+  facet_wrap(~tissue, ncol=3) +
+  theme_bw(12) +
+  stat_summary_hex(aes(z=dupletScore),fun=mean, bins=100)
+ggsave(out("ProjMonocle_Duplets.pdf"), w=12,h=4)
+res <- res[dupletScore < 0.9]
+
+# Save
 saveRDS(res, out("ProjMonocle.RDS"))
 
 # Clusters
@@ -40,7 +65,11 @@ for(mnam in names(mobjs)){
   dDT.ct[[mnam]]$functional.cluster.conf <- 1
 }
 dDT.ct <- rbindlist(dDT.ct)
+dDT.ct <- dDT.ct[match(res$rn, rn)]
+stopifnot(!any(is.na(dDT.ct$sample)))
 saveRDS(dDT.ct, out("ProjMonocle_Clusters.RDS"))
+
+
 
 
 # celltypes from singleR after further curation -------------------------------------------------------
@@ -55,6 +84,8 @@ singleR.cell.types <- setNames(
   c("rn", "sample", "functional.cluster", "functional.cluster.conf")
   )
 singleR.cell.types[rn %in% leukemia.cells & functional.cluster %in% c("GMP", "GMP (early)", "HSC", "LSC"), functional.cluster := "LSC"]
+singleR.cell.types <- singleR.cell.types[match(res$rn, rn)]
+stopifnot(!any(is.na(singleR.cell.types$sample)))
 saveRDS(singleR.cell.types, out("ProjMonocle_celltypes.RDS"))
 
 
@@ -63,9 +94,14 @@ ff <- list.files(dirout_load("SCRNA_08_01_ProjectionInvivo")(""), pattern="Outpu
 dL <- lapply(ff, fread)
 dDT <- rbindlist(dL, fill=TRUE)
 dDT.umap <- dDT[,c("rn", "sample", "UMAP_1", "UMAP_2", "tissue"), with=F]
+dDT.umap <- merge(dDT.umap, ds, by="rn", all=TRUE)[!is.na(UMAP_1)]
+stopifnot(nrow(dDT.umap[is.na(dupletScore)]) == 0)
+dDT.umap <- dDT.umap[dupletScore < 0.9]
 saveRDS(dDT.umap, out("ProjVivo.RDS"))
 
 dDT.ct <- dDT[,c("rn", "sample", "functional.cluster", "functional.cluster.conf"), with=F]
+dDT.ct <- dDT.ct[match(dDT.umap$rn, rn)]
+stopifnot(!any(is.na(dDT.ct$sample)))
 saveRDS(dDT.ct, out("ProjVivo_celltypes.RDS"))
 
 # Crossprojection_Invivo -------------------------------------------------------
@@ -75,6 +111,9 @@ dDT <- rbindlist(dL, fill=TRUE)
 dDT.umap <- dDT[,c("rn", "sample", "UMAP_1", "UMAP_2", "tissue"), with=F]
 dDT.umap.invivo <- readRDS(out("ProjMonocle.RDS"))
 dDT.umap <- rbind(dDT.umap, dDT.umap.invivo[tissue == "in.vivo"])
+dDT.umap <- merge(dDT.umap, ds, by="rn", all=TRUE)[!is.na(UMAP_1)]
+stopifnot(nrow(dDT.umap[is.na(dupletScore)]) == 0)
+dDT.umap <- dDT.umap[dupletScore < 0.9]
 saveRDS(dDT.umap, out("ProjVivoX.RDS"))
 
 
@@ -83,9 +122,14 @@ ff <- list.files(dirout_load("SCRNA_08_03_ProjectionIzzo_separate/Izzo_WT1/")(""
 dL <- lapply(ff, fread)
 dDT <- rbindlist(dL, fill=TRUE)
 dDT.umap <- dDT[,c("rn", "sample", "UMAP_1", "UMAP_2", "tissue"), with=F]
+dDT.umap <- merge(dDT.umap, ds, by="rn", all=TRUE)[!is.na(UMAP_1)]
+stopifnot(nrow(dDT.umap[is.na(dupletScore)]) == 0)
+dDT.umap <- dDT.umap[dupletScore < 0.9]
 saveRDS(dDT.umap, out("ProjIzzo.RDS"))
 
 dDT.ct <- dDT[,c("rn", "sample", "functional.cluster", "functional.cluster.conf"), with=F]
+dDT.ct <- dDT.ct[match(dDT.umap$rn, rn)]
+stopifnot(!any(is.na(dDT.ct$sample)))
 saveRDS(dDT.ct, out("ProjIzzo_celltypes.RDS"))
 
 
