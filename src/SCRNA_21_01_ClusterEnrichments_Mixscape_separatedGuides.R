@@ -148,29 +148,29 @@ foreach(fish.test.x = names(fish.test.sets)) %dopar% {
     xRot()
   ggsave(out("Guides_Fisher_Mixscape_",fish.test.x,".pdf"), w=10, h=length(unique(res$grp)) * 0.50 + 1, limitsize = FALSE)
 }
-
-
-
-# specific gene
-gg <- "Kmt2d"
-fish.test.x <- "noBcells_in.vivo_withMixscape"
-sx <- "in.vivo_OP2_14d"
-gx <- "Rbbp4_BR_14486"
-cx <- "Gran. P"
-pDT <- fish.test.sets[[fish.test.x]]
-pDT[, perturbed := !(mixscape_class.global %in% c("NP", "NTC") | is.na(mixscape_class.global))]
-pDT[, gene := gsub("_.+", "", guide)]
-pDT <- pDT[(gene == gg & perturbed == TRUE) | mixscape_class == "NTC"]
-pDT <- pDT[, .N, by=c("gene", "Clusters", "sample")]
-pDT[, sum := sum(N), by=c("Clusters", "sample")]
-pDT[, fraction := N/sum]
-#pDT[rel2NTCs == Inf, rel2NTCs := 1]
-pDT <- pDT[gene != "NTC"]
-ggplot(pDT, aes(x=cleanCelltypes(Clusters, reverse = FALSE), y=fraction, fill=sample)) + 
-  themeNF(rotate=TRUE) +
-  geom_bar(stat="identity", position="dodge") +
-  geom_text(aes(label=paste0(N,"/", sum))) + 
-  ggtitle(gg)
-
-
-annListOriginal[tissue == "in.vivo"][grepl(gg, guide)][,.N, by=c("Clusters", "tissue", "sample")]
+# 
+# 
+# 
+# # specific gene
+# gg <- "Kmt2d"
+# fish.test.x <- "noBcells_in.vivo_withMixscape"
+# sx <- "in.vivo_OP2_14d"
+# gx <- "Rbbp4_BR_14486"
+# cx <- "Gran. P"
+# pDT <- fish.test.sets[[fish.test.x]]
+# pDT[, perturbed := !(mixscape_class.global %in% c("NP", "NTC") | is.na(mixscape_class.global))]
+# pDT[, gene := gsub("_.+", "", guide)]
+# pDT <- pDT[(gene == gg & perturbed == TRUE) | mixscape_class == "NTC"]
+# pDT <- pDT[, .N, by=c("gene", "Clusters", "sample")]
+# pDT[, sum := sum(N), by=c("Clusters", "sample")]
+# pDT[, fraction := N/sum]
+# #pDT[rel2NTCs == Inf, rel2NTCs := 1]
+# pDT <- pDT[gene != "NTC"]
+# ggplot(pDT, aes(x=cleanCelltypes(Clusters, reverse = FALSE), y=fraction, fill=sample)) + 
+#   themeNF(rotate=TRUE) +
+#   geom_bar(stat="identity", position="dodge") +
+#   geom_text(aes(label=paste0(N,"/", sum))) + 
+#   ggtitle(gg)
+# 
+# 
+# annListOriginal[tissue == "in.vivo"][grepl(gg, guide)][,.N, by=c("Clusters", "tissue", "sample")]

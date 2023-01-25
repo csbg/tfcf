@@ -109,7 +109,7 @@ ff <- list.files(dirout_load("SCRNA_08_01_ProjectionInvivo")(""), pattern="Outpu
 dL <- lapply(ff, fread)
 dDT <- rbindlist(dL, fill=TRUE)
 dDT.umap <- dDT[,c("rn", "sample", "UMAP_1", "UMAP_2", "tissue"), with=F]
-dDT.umap.invivo <- readRDS(out("ProjMonocle.RDS"))
+dDT.umap.invivo <- readRDS(out("ProjMonocle.RDS"))[,-"dupletScore", with=F]
 dDT.umap <- rbind(dDT.umap, dDT.umap.invivo[tissue == "in.vivo"])
 dDT.umap <- merge(dDT.umap, ds, by="rn", all=TRUE)[!is.na(UMAP_1)]
 stopifnot(nrow(dDT.umap[is.na(dupletScore)]) == 0)
@@ -123,8 +123,8 @@ dL <- lapply(ff, fread)
 dDT <- rbindlist(dL, fill=TRUE)
 dDT.umap <- dDT[,c("rn", "sample", "UMAP_1", "UMAP_2", "tissue"), with=F]
 dDT.umap <- merge(dDT.umap, ds, by="rn", all=TRUE)[!is.na(UMAP_1)]
-stopifnot(nrow(dDT.umap[is.na(dupletScore)]) == 0)
-dDT.umap <- dDT.umap[dupletScore < 0.9]
+stopifnot(nrow(dDT.umap[is.na(dupletScore) & sample != "Izzo_WT1"]) == 0)
+dDT.umap <- dDT.umap[dupletScore < 0.9 | sample == "Izzo_WT1"]
 saveRDS(dDT.umap, out("ProjIzzo.RDS"))
 
 dDT.ct <- dDT[,c("rn", "sample", "functional.cluster", "functional.cluster.conf"), with=F]

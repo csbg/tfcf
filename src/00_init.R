@@ -255,7 +255,7 @@ COLORS.CELLTYPES.scRNA <- setNames(COLORS.CELLTYPES.scRNA$Color, COLORS.CELLTYPE
 COLORS.CELLTYPES.scRNA["NA"] <- "lightgrey"
 COLORS.CELLTYPES.scRNA.ainhoa <- setNames(CLEAN.CELLTYPES$Color, CLEAN.CELLTYPES$NewName)
 
-scale_fill_hexbin <- function(...){scale_fill_gradientn(colours=c("#a6cee3", "#fdbf6f", "#ff7f00", "#e31a1c"), ...)}
+  scale_fill_hexbin <- function(...){scale_fill_gradientn(colours=c("#a6cee3", "#fdbf6f", "#ff7f00", "#e31a1c"), ...)}
 
 
 

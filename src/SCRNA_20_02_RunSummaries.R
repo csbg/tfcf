@@ -35,8 +35,9 @@ cts <- readRDS(dirout_load("SCRNA_10_collect_UMAPs")("ProjMonocle_celltypes.RDS"
 for(tissue.name in names(mobjs)){
 
   analysis.name <- "monocle.singleR"
-
+  
   monocle.obj <- mobjs[[tissue.name]]
+  monocle.obj <- monocle.obj[,colnames(monocle.obj) %in% cts$rn]
   monocle.obj$clusters.final <-  setNames(cts[match(colnames(monocle.obj), rn),]$functional.cluster, colnames(monocle.obj))
   
   out <- dirout(paste0("SCRNA_20_Summary/", tissue.name, "_", analysis.name))

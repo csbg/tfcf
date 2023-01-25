@@ -69,13 +69,6 @@ names(marker.signatures.DA) <- TISSUES
 # Marker overlaps
 marker.overlaps <- fread(dirout_load("SCRNA_06_03_MarkerOverlaps")("Enrichments.tsv"))
 
-# Doublet scores?
-ff <- list.files(dirout_load("SCRNA_03_01_Duplets")(""), pattern="^Duplet_Scores_.+.tsv$", full.names = TRUE)
-names(ff) <- gsub("^Duplet_Scores_(.+).tsv$", "\\1", basename(ff))
-ff <- lapply(ff, fread)
-duplet.scores <- rbindlist(ff, idcol="sample")
-duplet.scores[, rn := paste0(rn, "_", sample)]
-
 # Cell annotations
 annList <- lapply(names(inDir.funcs), function(inDir.current){
   ann <- fread(inDir.funcs[[inDir.current]]("Annotation.tsv"))
@@ -84,7 +77,6 @@ annList <- lapply(names(inDir.funcs), function(inDir.current){
   ann
   })
 annList <- rbindlist(annList, fill=TRUE)
-annList$dupletScore <- duplet.scores[match(annList$rn, rn),]$dupletScore
 
 # numeric clusters
 ann.numeric <- readRDS(dirout_load("SCRNA_10_collect_UMAPs")("ProjMonocle_Clusters.RDS"))
@@ -133,9 +125,14 @@ for(tissuex in PATHS$SCRNA$MONOCLE.NAMES){
   (load(PATHS$SCRNA$MONOCLE.DIR(tissuex)))
   mobjs[[tissuex]] <- monocle.obj
 }
+# add gene names
 for(tissuex in names(mobjs)){
   mobjs[[tissuex]]$CellType <- annList[match(colnames(mobjs[[tissuex]]), rn)]$Clusters
   fData(mobjs[[tissuex]])$gene_short_name <- row.names(fData(mobjs[[tissuex]]))
+}
+# Remove duplets
+for(tissuex in names(mobjs)){
+  mobjs[[tissuex]] <- mobjs[[tissuex]][,colnames(mobjs[[tissuex]]) %in% annList$rn]
 }
 
 izzo <- fread(dirout_load("SCRNA_08_03_ProjectionIzzo_separate")("Izzo_WT1/Output_izzo.tsv"))
@@ -186,14 +183,6 @@ ggplot(umap.proj$izzo[tissue != "Izzo_WT1"], aes(x=UMAP_1, UMAP_2)) +
 ggsaveNF(outBase("UMAP_Izzo_projected.pdf"), w=3,h=1.5)
 
 
-# . Dupletscores ------------------------------------------------------------
-ggplot(annList, aes(x=UMAP1, y=UMAP2)) + 
-  themeNF() +
-  stat_summary_hex(aes(z=dupletScore),fun=mean, bins=100) +
-  facet_grid(. ~ tissue)
-ggsaveNF(outBase("Duplets.pdf"),w=3,h=10, guides = TRUE)
-
-
 # . UMAP Projections ---------------------------------------------------------
 tx <- "in.vivo"
 tx <- "leukemia"
@@ -212,7 +201,7 @@ for(tx in names(inDir.funcs)){
     xDT <- umap.proj[[x]][match(ann$rn, rn)]
     hex.obj <- hexbin::hexbin(x=xDT$UMAP_1, y=xDT$UMAP_2, xbins = 100, IDs=TRUE)
     pDT <- cbind(ann, data.table(hex.x=hex.obj@xcm, hex.y=hex.obj@ycm, hex.cell=hex.obj@cell)[match(hex.obj@cID, hex.cell),])
-    pDT <- pDT[,.(N=.N, dupletScore=mean(dupletScore)), by=c("hex.x", "hex.y", "Clusters")]
+    pDT <- pDT[,.(N=.N), by=c("hex.x", "hex.y", "Clusters")]
     pDT[, sum := sum(N), by=c("hex.x", "hex.y")]
     pDT[, frac := N / sum]
     pDT <- pDT[order(frac, decreasing = TRUE)][,head(.SD, 1), by=c("hex.x", "hex.y")]
@@ -328,14 +317,6 @@ for(tx in names(inDir.funcs)){
 
 
 # . Marker gene expression --------------------------------------------------
-# for(tx in names(mobjs)){
-#   out <- dirout(paste0(base.dir, "/", tx))
-#   plot_genes_by_group(mobjs[[tx]], markers = marker.genes, group_cells_by = "CellType") + 
-#     scale_size_continuous(range=c(0,5)) +
-#     themeNF(rotate = TRUE) +
-#     xlab("Cell type")
-#   ggsaveNF(out("Markers_Clusters.pdf"), w=1.5,h=2.5)
-# }
 pDT <- lapply(mobjs, function(obj) DotPlotData(cds = obj, markers = marker.genes, cols = "CellType"))
 pDT <- rbindlist(pDT, idcol="tissue")
 pDT <- pDT[tissue %in% c("ex.vivo", "in.vivo")]
@@ -856,7 +837,7 @@ ann <- annList[tissue == inDir.current]
 # Use in vivo projected UMAP?
 #ann <- merge(ann[,-c("UMAP1", "UMAP2"),with=F], setNames(umap.proj[["in.vivo.X"]][,c("rn", "UMAP_1", "UMAP_2")], c("rn", "UMAP1", "UMAP2")), by="rn")
 abs <- fread(inDir.funcs[[inDir.current]]("Antibodies.tsv"))
-abs <- merge(abs[,-c("UMAP1", "UMAP2"),with=F], setNames(umap.proj[["in.vivo.X"]][,c("rn", "UMAP_1", "UMAP_2")], c("rn", "UMAP1", "UMAP2")), by="rn")
+abs <- merge(abs[,-c("UMAP1", "UMAP2"),with=F], setNames(umap.proj[["in.vivo"]][,c("rn", "UMAP_1", "UMAP_2")], c("rn", "UMAP1", "UMAP2")), by="rn")
 abs$Clusters <- ann[match(abs$rn, rn)]$Clusters
 abs$Cluster.number <- ann[match(abs$rn, rn)]$Cluster.number
 #clusters.plot <- c(8,16,12,5,11,15,6,7,18)
@@ -882,11 +863,11 @@ write.tsv(exDT, out("Supplementary_Table_Clusters_leukemia.tsv"))
 
 # . Clusters on UMAP --------------------------------------------------------
 typex <- "original"
-for(typex in c("original", "in.vivo.X")){
+for(typex in c("original", "in.vivo")){
   xDT <- umap.proj[[typex]][match(ann$rn, rn)]
   hex.obj <- hexbin::hexbin(x=xDT$UMAP_1, y=xDT$UMAP_2, xbins = 100, IDs=TRUE)
   pDT <- cbind(ann, data.table(hex.x=hex.obj@xcm, hex.y=hex.obj@ycm, hex.cell=hex.obj@cell)[match(hex.obj@cID, hex.cell),])
-  pDT <- pDT[,.(N=.N, dupletScore=mean(dupletScore)), by=c("hex.x", "hex.y", "Cluster.number", "Clusters")]
+  pDT <- pDT[,.(N=.N), by=c("hex.x", "hex.y", "Cluster.number", "Clusters")]
   pDT[, sum := sum(N), by=c("hex.x", "hex.y")]
   pDT[, frac := N / sum]
   pDT <- pDT[order(frac, decreasing = TRUE)][,head(.SD, 1), by=c("hex.x", "hex.y")]
