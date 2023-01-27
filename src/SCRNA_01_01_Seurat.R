@@ -29,7 +29,7 @@ SANN$s <- paste0("s", 1:nrow(SANN))
 SANN[, sample_old := sample]
 SANN[, sample_new := New_Name]
 SANN[, sample := sample_new]
-SANN[, sample_broad := paste0(tissue, "_", gsub("^.+(OP\\d).+$", "\\1", sample), "_", timepoint)]
+SANN[, sample_broad := paste0(tissue, "_", gsub("^.+(OP.).+$", "\\1", sample), "_", timepoint)]
 SANN[!grepl("OP\\d", sample_broad), sample_broad := sample_new]
 #SANN[grepl("CITESEQ", sample_old), sample_broad := sample_old]
 SANN[sample %in% SANN[,.N, by="sample"][N > 1]$sample]

@@ -143,12 +143,14 @@ pDT[,sumS := sum(N), by="sample"]
 pDT[,sumC := sum(N), by="Clusters"]
 pDT[,percentS := N/sumS*100]
 pDT[,percentC := N/sumC*100]
-ggplot(pDT, aes(y=sample,x=factor(as.numeric(Clusters)), size=percentS, color=percentC)) +
+if(!any(is.na(as.numeric(pDT$Clusters)))) pDT[, Clusters := factor(as.numeric(Clusters))]
+ggplot(pDT, aes(y=sample,x=Clusters, size=percentS, color=percentC)) +
   scale_size_continuous(name="% of sample") +
   scale_color_gradient(name="% of cluster", low="black", high="red") +
   theme_bw() +
-  geom_point()
-ggsave(out("Samples_Clusters.pdf"), w=8,h=length(unique(pDT$sample)) * 0.3+1)
+  geom_point() +
+  xRot()
+ggsave(out("Samples_Clusters.pdf"), w=length(unique(pDT$Clusters)) * 0.3 + 3,h=length(unique(pDT$sample)) * 0.3+1)
 
 
 # broad samples -----------------------------------------------------------------
@@ -156,20 +158,22 @@ ggplot(ann, aes(x=UMAP1, y=UMAP2)) +
   theme_bw(12) +
   geom_hex(bins=100) +
   scale_fill_gradient(low="lightgrey", high="blue") +
-  facet_wrap(~sample_broad, ncol=3)
-ggsave(out("SamplesBroad_UMAP.pdf"), w=3*2+2,h=3 + 1)
+  facet_wrap(~sample_broad, ncol=5)
+ggsave(out("SamplesBroad_UMAP.pdf"), w=5*2+2,h=ceiling(length(unique(ann$sample_broad))/5) * 2 + 1)
 
 pDT <- ann[,.N, by=c("sample_broad", "Clusters")]
 pDT[,sumS := sum(N), by="sample_broad"]
 pDT[,sumC := sum(N), by="Clusters"]
 pDT[,percentS := N/sumS*100]
 pDT[,percentC := N/sumC*100]
-ggplot(pDT, aes(y=sample_broad,x=factor(as.numeric(Clusters)), size=percentS, color=percentC)) +
+if(!any(is.na(as.numeric(pDT$Clusters)))) pDT[, Clusters := factor(as.numeric(Clusters))]
+ggplot(pDT, aes(y=sample_broad,x=Clusters, size=percentS, color=percentC)) +
   scale_size_continuous(name="% of sample_broad") +
   scale_color_gradient(name="% of cluster", low="black", high="red") +
   theme_bw() +
-  geom_point()
-ggsave(out("SamplesBroad_Clusters.pdf"), w=8,h=length(unique(pDT$sample_broad)) * 1+1)
+  geom_point() +
+  xRot()
+ggsave(out("SamplesBroad_Clusters.pdf"), w=length(unique(pDT$Clusters)) * 0.3 + 3,h=length(unique(pDT$sample_broad)) * 0.3+1)
 
 
 # Cell cycle --------------------------------------------------------------
