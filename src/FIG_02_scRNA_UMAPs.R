@@ -535,9 +535,11 @@ inDir.current <- "in.vivo"
 out <- dirout(paste0(base.dir, "/", inDir.current))
 ann <- annList[tissue == inDir.current]
 # FIX MIXSCAPE
+list.files(dirout_load(base.dir)("cluster.enrichments"))
 fish.bcells <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments","_basic", "_in.vivo", "_noMixscape", "_14d",".tsv"))
-fish.enrich.broad <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_broad_in.vivo_noMixscape_14d",".tsv"))
+fish.enrich.broad <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_DavidSpecial_in.vivo_noMixscape_14d",".tsv"))
 fish.EryVsMye <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments","_eryVsMye", "_in.vivo", "_noMixscape", "_14d",".tsv"))
+fish.monoVsGran <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments","_monoVsGran", "_in.vivo", "_noMixscape", "_14d",".tsv"))
 fish.d28 <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_earlyBranches_in.vivo_noMixscape_28d.tsv"))
 
 
@@ -656,29 +658,45 @@ for(typex in names(dla.healthy)){
   # Plot enrichments with DLA order
   pDT <- fish.enrich.broad[gene %in% dla]
   pDT$gene <- factor(pDT$gene, levels = rev(dla))
-  pDT[, Clusters := cleanCelltypesBroad(Clusters, clean=FALSE, reverse=FALSE)]
+  pDT <- pDT[!(Clusters == "MEP (pert.)" & log2OR < 0)]
+  pDT[Clusters == "Mega", Clusters := "MkP"]
+  pDT[, Clusters := cleanCelltypes(Clusters, clean=TRUE, reverse=FALSE)]
   h=length(unique(dla)) * 0.07 + 0.1
   ggplot(pDT, aes(y=gene, x=Clusters, size=sig.perc, color=log2OR_cap)) + 
-    themeNF(rotate=F) +
+    themeNF(rotate=T) +
     scale_color_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
     scale_size_continuous(name="% sign.", range = c(0,5)) +
     geom_point() +
     geom_point(shape=1, color="lightgrey") +
-    xlab("Gene") + ylab("Cell type")
-  ggsaveNF(out("ClusterEnrichments_manual_cleaned_",typex,".pdf"), h=h,w=0.65)
+    xlab("Lineage") + ylab("")
+  ggsaveNF(out("ClusterEnrichments_manual_cleaned_",typex,".pdf"), h=h,w=0.9)
   
   # Plot mye vs GMP enrichments with DLA order
   pDT <- fish.EryVsMye[Clusters == "GMP"][gene %in% dla]#[log2OR > 0 | log2OR < -2]
   #pDT$gene <- factor(pDT$gene, levels = pDT[order(log2OR)]$gene)
   pDT$gene <- factor(pDT$gene, levels = rev(dla))
-  ggplot(pDT, aes(x=log2OR, y=gene, size=sig.perc, color=log2OR_cap)) + 
+  ggplot(pDT, aes(x=log2OR, y=gene, alpha=sig.perc, fill=sign(log2OR_cap))) + 
     themeNF(rotate=F) +
-    scale_color_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
-    scale_size_continuous(name="% sign.", range = c(0,5), limits = c(0,1)) +
-    geom_point() +
-    ylab("") + xlab("Myeloid enrichment vs Erythroid (log2OR)") +
+    geom_col() +
+    scale_fill_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
+    #scale_size_continuous(name="% sign.", range = c(0,5), limits = c(0,1)) +
+    #geom_point() +
+    ylab("") + xlab("Myeloid enrichment vs erythroid (log2OR)") +
     geom_vline(xintercept = 0)
-  ggsaveNF(out("ClusterEnrichments_manual_MEPvsGMP_",typex,".pdf"), w=0.6,h=h)
+  ggsaveNF(out("ClusterEnrichments_manual_MEPvsGMP_",typex,".pdf"), w=1,h=h)
+  
+  pDT <- fish.monoVsGran[Clusters == "Mono"][gene %in% dla]#[log2OR > 0 | log2OR < -2]
+  #pDT$gene <- factor(pDT$gene, levels = pDT[order(log2OR)]$gene)
+  pDT$gene <- factor(pDT$gene, levels = rev(dla))
+  ggplot(pDT, aes(x=log2OR, y=gene, alpha=sig.perc, fill=sign(log2OR_cap))) + 
+    themeNF(rotate=F) +
+    geom_col() +
+    scale_fill_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
+    #scale_size_continuous(name="% sign.", range = c(0,5), limits = c(0,1)) +
+    #geom_point() +
+    ylab("") + xlab("Monocyte enrichment vs granulocyte (log2OR)") +
+    geom_vline(xintercept = 0)
+  ggsaveNF(out("ClusterEnrichments_manual_MonoVsGran_",typex,".pdf"), w=1,h=h)
 }
 
 # Plot mye vs GMP EARLY enrichments in d28

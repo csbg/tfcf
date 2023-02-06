@@ -29,6 +29,7 @@ annList <- annList[!is.na(mixscape_class)]
 annList[, gene := gsub("_.+$", "", CRISPR_Cellranger)]
 
 
+
 # Identify and remove or label perturbed clusters (clusters with only perturbations) ---------------------
 clDT <- dcast.data.table(annList[,.N, by=c("mixscape_class.global", "tissue", "Cluster.number")], tissue + Cluster.number ~ mixscape_class.global, value.var = "N")
 clDT[, frac := KO/NTC]
@@ -47,7 +48,7 @@ write.tsv(clDT.remove, out("ClustersRemoved_leukemia.tsv"))
 annList <- annList[Clusters != "remove"]
 
 
-# Define sets to analyze ------------------------------------------------------
+# Define sets to analyze across tissues ------------------------------------------------------
 fish.test.sets <- list()
 TISSUES <- unique(annList$tissue)
 CELLTYPES <- unique(annList$Clusters)
@@ -57,6 +58,7 @@ for(tx in TISSUES){
   fish.test.sets[[paste("basic", tx, sep="_")]] <- annList[tissue == tx]
 }
 
+# broad clusters
 for(tx in TISSUES){
   x <- annList[tissue == tx]
   x <- merge(x, celltype.ann, by.x="Clusters", by.y="Name")[,-"Clusters",with=F]
@@ -64,6 +66,7 @@ for(tx in TISSUES){
   fish.test.sets[[paste("broad", tx, sep="_")]] <- x
 }
 
+# Numeric clusters
 for(tx in TISSUES){
   x <- annList[tissue == tx]
   x[, Clusters := paste("cl", Cluster.number)]
@@ -72,9 +75,22 @@ for(tx in TISSUES){
 
 
 
-# IN VIVO SETS
+# in vivo sets to analyze -------------------------------------------------
 tx <- "in.vivo"
 x <- annList[tissue == tx]
+
+# david special
+table(x$Clusters)
+xxx <- merge(x, celltype.ann, by.x="Clusters", by.y="Name")
+xxx[Clusters == "Mono", Type := "Mono"]
+xxx[Clusters == "MEP (pert.)", Type := "MEP (pert.)"]
+xxx[grepl("Ery", Clusters), Type := "Ery"]
+xxx[grepl("GMP", Clusters), Type := "GMP"]
+xxx[grepl("^Gran", Clusters), Type := Clusters]
+xxx[Clusters %in% c("MEP (early)", "MEP"), Type := "MEP"]
+with(xxx, table(NewName, Type))
+xxx[,Clusters := Type]
+fish.test.sets[[paste("DavidSpecial", tx, sep="_")]] <- xxx
 
 # without b cells
 fish.test.sets[[paste("noBcells", tx, sep="_")]] <- x[!(grepl("B.cell", Clusters) | grepl("CLP", Clusters))]
@@ -93,6 +109,15 @@ eba <- list(
 xxx <- x[Clusters %in% do.call(c, eba)]
 for(xnam in names(eba)){xxx[Clusters %in% eba[[xnam]], Clusters := xnam]}
 fish.test.sets[[paste("eryVsMye", tx, sep="_")]] <- xxx
+
+# Mono vs Gran
+eba <- list(
+  Gran.=c(grep("^Gran", CELLTYPES, value=TRUE)),
+  Mono=c(grep("^Mono", CELLTYPES, value=TRUE))
+)
+xxx <- x[Clusters %in% do.call(c, eba)]
+for(xnam in names(eba)){xxx[Clusters %in% eba[[xnam]], Clusters := xnam]}
+fish.test.sets[[paste("monoVsGran", tx, sep="_")]] <- xxx
 
 # # broad groups
 # xxx <- x[!(grepl("B.cell", Clusters) | grepl("CLP", Clusters) | grepl("EBMP", Clusters))]
@@ -130,19 +155,21 @@ fish.test.sets[[paste("eryVsMye", tx, sep="_")]] <- xxx
 
 
 
-# W/O Mixscape ------------------------------------------------------------
+# Remove (don't use) Mixscape ------------------------------------------------------------
 fish.test.sets <- c(
   setNames(lapply(fish.test.sets, function(dt) dt[mixscape_class.global != "NP"]), paste0(names(fish.test.sets), "_withMixscape")),
   setNames(fish.test.sets, paste0(names(fish.test.sets), "_noMixscape"))
   )
 
-# remove those with 0 rows
+
+
+# Remove lowly represented guides -----------------------------------------
 sapply(fish.test.sets, nrow)
 fish.test.sets <- fish.test.sets[sapply(fish.test.sets, nrow) > 0]
 
 
 
-# START ANALYSIS
+# Perform fisher exact terst ----------------------------------------------
 (fish.test.x <- names(fish.test.sets)[1])
 foreach(fish.test.x = names(fish.test.sets)) %dopar% {
   res <- data.table()
@@ -202,8 +229,7 @@ foreach(fish.test.x = names(fish.test.sets)) %dopar% {
 }
 
 
-
-# specific gene
+# Look at one specific gene ----------------------------------------------
 gg <- "Kmt2d"
 fish.test.x <- "noBcells_in.vivo_withMixscape"
 sx <- "in.vivo_OP2_14d"
