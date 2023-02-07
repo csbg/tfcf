@@ -27,11 +27,11 @@ deDT$use <- TRUE
 #deDT[tissue %in% grep("_s", unique(deDT$tissue), value=TRUE), use := TRUE]
 
 # Reformat correlations
-pDT <- cMT[grepl("_s$", rownames(cMT)), grepl("_s$", colnames(cMT))]
+pDT <- cMT #[grepl("_s$", rownames(cMT)), grepl("_s$", colnames(cMT))]
 pDT <- data.table::melt(data.table(pDT, keep.rownames = TRUE), id.vars = "rn")
 pDT[, rn := gsub(" ", ".", rn)]
-pDT <- cbind(pDT, setNames(data.table(do.call(rbind, strsplit(gsub("_everything.+$", "", sub("\\.", "_", pDT$rn)), "_"))), paste0(c("gene", "tissue", "time"), "_x")))
-pDT <- cbind(pDT, setNames(data.table(do.call(rbind, strsplit(gsub("_everything.+$", "", sub("\\.", "_", pDT$variable)), "_"))), paste0(c("gene", "tissue", "time"), "_y")))
+pDT <- cbind(pDT, setNames(data.table(do.call(rbind, strsplit(gsub("_everything.+$", "", sub("\\.", "_", pDT$rn)), "_"))), paste0(c("gene", "tissue", "time", "type"), "_x")))
+pDT <- cbind(pDT, setNames(data.table(do.call(rbind, strsplit(gsub("_everything.+$", "", sub("\\.", "_", pDT$variable)), "_"))), paste0(c("gene", "tissue", "time", "type"), "_y")))
 pDT <- pDT[, -c("rn", "variable"), with=F]
 cDT <- pDT
 
@@ -705,3 +705,19 @@ ggsaveNF(out("GSEA.pdf"),w=w,h=h, guides = TRUE)
 #   ggsave(out("UMAP_GSEA_", dbx, ".pdf"), w=10,h=6)
 # }
 
+
+
+
+# correlation when using clusters -----------------------------------------
+pDT <- cDT[time_x == "14d" & time_y == time_x]
+pDT <- pDT[tissue_x == "in.vivo" & tissue_x == tissue_y]
+pDT <- rbindlist(list(
+  same_approach=pDT[type_x == type_y & gene_x != gene_y],
+  same_gene=pDT[type_x != type_y & gene_x == gene_y]
+), idcol = "type")
+ggplot(pDT, aes(x=gsub("_", "\n", type), y=value)) + 
+  geom_violin(fill="lightblue", color="black") +
+  geom_boxplot(width=.1, coef=Inf) +
+  themeNF() +
+  labs(x="", y="Correlation")
+ggsaveNF(out("Comparison_withOrWithoutClusters.pdf"),w=1,h=1, guides = TRUE)  

@@ -50,7 +50,10 @@ ggplot(res[!is.na(tissue)], aes(x=UMAP_1, y=UMAP_2)) +
   theme_bw(12) +
   stat_summary_hex(aes(z=dupletScore),fun=mean, bins=100)
 ggsave(out("ProjMonocle_Duplets.pdf"), w=12,h=4)
+table(res$tissue)
+#res <- res[dupletScore < 0.9 | tissue != "in.vivo"]
 res <- res[dupletScore < 0.9]
+table(res$tissue)
 
 # Save
 saveRDS(res, out("ProjMonocle.RDS"))
@@ -96,7 +99,10 @@ dDT <- rbindlist(dL, fill=TRUE)
 dDT.umap <- dDT[,c("rn", "sample", "UMAP_1", "UMAP_2", "tissue"), with=F]
 dDT.umap <- merge(dDT.umap, ds, by="rn", all=TRUE)[!is.na(UMAP_1)]
 stopifnot(nrow(dDT.umap[is.na(dupletScore)]) == 0)
+table(dDT.umap$tissue)
+#dDT.umap <- dDT.umap[dupletScore < 0.9 | tissue != "in.vivo"]
 dDT.umap <- dDT.umap[dupletScore < 0.9]
+table(dDT.umap$tissue)
 saveRDS(dDT.umap, out("ProjVivo.RDS"))
 
 dDT.ct <- dDT[,c("rn", "sample", "functional.cluster", "functional.cluster.conf"), with=F]
@@ -113,7 +119,10 @@ dDT.umap.invivo <- readRDS(out("ProjMonocle.RDS"))[,-"dupletScore", with=F]
 dDT.umap <- rbind(dDT.umap, dDT.umap.invivo[tissue == "in.vivo"])
 dDT.umap <- merge(dDT.umap, ds, by="rn", all=TRUE)[!is.na(UMAP_1)]
 stopifnot(nrow(dDT.umap[is.na(dupletScore)]) == 0)
+table(dDT.umap$tissue)
+#dDT.umap <- dDT.umap[dupletScore < 0.9 | tissue != "in.vivo"]
 dDT.umap <- dDT.umap[dupletScore < 0.9]
+table(dDT.umap$tissue)
 saveRDS(dDT.umap, out("ProjVivoX.RDS"))
 
 
@@ -124,9 +133,11 @@ dDT <- rbindlist(dL, fill=TRUE)
 dDT.umap <- dDT[,c("rn", "sample", "UMAP_1", "UMAP_2", "tissue"), with=F]
 dDT.umap <- merge(dDT.umap, ds, by="rn", all=TRUE)[!is.na(UMAP_1)]
 stopifnot(nrow(dDT.umap[is.na(dupletScore) & sample != "Izzo_WT1"]) == 0)
+table(dDT.umap$tissue)
+# dDT.umap <- dDT.umap[dupletScore < 0.9 | tissue != "in.vivo" | sample == "Izzo_WT1"]
 dDT.umap <- dDT.umap[dupletScore < 0.9 | sample == "Izzo_WT1"]
+table(dDT.umap$tissue)
 saveRDS(dDT.umap, out("ProjIzzo.RDS"))
-
 dDT.ct <- dDT[,c("rn", "sample", "functional.cluster", "functional.cluster.conf"), with=F]
 dDT.ct <- dDT.ct[match(dDT.umap$rn, rn)]
 stopifnot(!any(is.na(dDT.ct$sample)))
@@ -134,7 +145,7 @@ saveRDS(dDT.ct, out("ProjIzzo_celltypes.RDS"))
 
 
 
-# Export TSV for Jake -----------------------------------------------------
-dDT <- readRDS(out("ProjMonocle_celltypes.RDS"))
-write.tsv(dDT, out("ProjMonocle_celltypes.tsv"))
-table(dDT$sample)
+# # Export TSV for Jake -----------------------------------------------------
+# dDT <- readRDS(out("ProjMonocle_celltypes.RDS"))
+# write.tsv(dDT, out("ProjMonocle_celltypes.tsv"))
+# table(dDT$sample)

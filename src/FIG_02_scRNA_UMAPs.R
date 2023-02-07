@@ -855,11 +855,14 @@ ann <- annList[tissue == inDir.current]
 # Use in vivo projected UMAP?
 #ann <- merge(ann[,-c("UMAP1", "UMAP2"),with=F], setNames(umap.proj[["in.vivo.X"]][,c("rn", "UMAP_1", "UMAP_2")], c("rn", "UMAP1", "UMAP2")), by="rn")
 abs <- fread(inDir.funcs[[inDir.current]]("Antibodies.tsv"))
-abs <- merge(abs[,-c("UMAP1", "UMAP2"),with=F], setNames(umap.proj[["in.vivo"]][,c("rn", "UMAP_1", "UMAP_2")], c("rn", "UMAP1", "UMAP2")), by="rn")
+abs <- merge(abs[,-c("UMAP1", "UMAP2"),with=F], setNames(umap.proj[["in.vivo.X"]][,c("rn", "UMAP_1", "UMAP_2")], c("rn", "UMAP1", "UMAP2")), by="rn")
 abs$Clusters <- ann[match(abs$rn, rn)]$Clusters
 abs$Cluster.number <- ann[match(abs$rn, rn)]$Cluster.number
 #clusters.plot <- c(8,16,12,5,11,15,6,7,18)
-clusters.plot.cts <- list("Ery Prog."=17, "Late GMP"=c(6,22,19),"Eo/Ba"=13,"MkP"=23)
+
+
+# . Define clustesr -------------------------------------------------------
+clusters.plot.cts <- list("Ery Prog."=17, "Late GMP"=c(6,16,2),"Eo/Ba"=14,"MkP"=21)
 clusters.plot <- unlist(clusters.plot.cts)
 ann[, Clusters := "other"]
 for(xnam in names(clusters.plot.cts)){
@@ -881,7 +884,7 @@ write.tsv(exDT, out("Supplementary_Table_Clusters_leukemia.tsv"))
 
 # . Clusters on UMAP --------------------------------------------------------
 typex <- "original"
-for(typex in c("original", "in.vivo")){
+for(typex in c("original", "in.vivo.X")){
   xDT <- umap.proj[[typex]][match(ann$rn, rn)]
   hex.obj <- hexbin::hexbin(x=xDT$UMAP_1, y=xDT$UMAP_2, xbins = 100, IDs=TRUE)
   pDT <- cbind(ann, data.table(hex.x=hex.obj@xcm, hex.y=hex.obj@ycm, hex.cell=hex.obj@cell)[match(hex.obj@cID, hex.cell),])
@@ -1007,38 +1010,38 @@ for(suppx in c("main", "supp")){
 }
 
 
-# . ChIP seq target gene sets ---------------------------------------------------------------
-targets <- fread("metadata/FIGS_06_ChIPtargetsJulen.txt")
-#gplots::venn(split(targets$Gene, paste(targets$CF, targets$Population)))
-#targets <- targets[Gene %in% targets[, .N, by="Gene"][N == 1]$Gene]
-targets[,id := paste(CF, Population)]
-mt <- monocle3::aggregate_gene_expression(norm_method = "log", cds = mobjs[["leukemia"]], gene_group_df = targets[,c("Gene", "id")])
-pDT <- merge(ann, melt(data.table(data.frame(t(mt)), keep.rownames = TRUE), id.vars = "rn"), by="rn")
-pDT[, chip_target := gsub("\\..+$", "", variable)]
-pDT[, chip_target_population := gsub("^.+?\\.", "", variable)]
-p <- ggplot(pDT, aes(x=UMAP1, y=UMAP2)) +
-  stat_summary_hex(aes(z=value),fun=mean, bins=100) +
-  facet_grid(chip_target_population ~ chip_target) +
-  scale_fill_gradient2(high="#e31a1c", low="#1f78b4") +
-  themeNF()
-ggsaveNF(out("ChIP_targets.pdf"), w=5,h=3)
-
-pDT.cl <- pDT[, .(sig=mean(value)), by=c("Cluster.number", "chip_target", "chip_target_population", "Clusters")]
-suppx <- "main"
-popx <- "subset"
-for(suppx in c("supp", "main")){
-  for(popx in c("all", "subset")){
-    pDTx <- if(suppx == "main") pDT.cl[Cluster.number %in% clusters.plot] else pDT.cl
-    pDTx <- if(popx == "subset") pDTx[chip_target_population %in% c("Leukemia", "MatureMye")] else pDTx
-    w=length(unique(pDTx$chip_target_population)) * 0.2 + 0.4
-    h=length(unique(pDTx$Cluster.number)) * 0.07 + 0.2
-    ggplot(pDTx, aes(x=chip_target_population, y=factor(as.numeric(Cluster.number)), fill=sig)) + geom_tile() +
-      facet_grid(Clusters ~ chip_target, space="free", scales = "free") +
-      themeNF(rotate = TRUE) +
-      scale_fill_gradient2(high="#e31a1c", low="#1f78b4")
-    ggsaveNF(out("ChIP_targets_aggregate_", suppx,"_population_", popx, ".pdf"), w=w, h=h)
-  }
-}
+# # . ChIP seq target gene sets ---------------------------------------------------------------
+# targets <- fread("metadata/FIGS_06_ChIPtargetsJulen.txt")
+# #gplots::venn(split(targets$Gene, paste(targets$CF, targets$Population)))
+# #targets <- targets[Gene %in% targets[, .N, by="Gene"][N == 1]$Gene]
+# targets[,id := paste(CF, Population)]
+# mt <- monocle3::aggregate_gene_expression(norm_method = "log", cds = mobjs[["leukemia"]], gene_group_df = targets[,c("Gene", "id")])
+# pDT <- merge(ann, melt(data.table(data.frame(t(mt)), keep.rownames = TRUE), id.vars = "rn"), by="rn")
+# pDT[, chip_target := gsub("\\..+$", "", variable)]
+# pDT[, chip_target_population := gsub("^.+?\\.", "", variable)]
+# p <- ggplot(pDT, aes(x=UMAP1, y=UMAP2)) +
+#   stat_summary_hex(aes(z=value),fun=mean, bins=100) +
+#   facet_grid(chip_target_population ~ chip_target) +
+#   scale_fill_gradient2(high="#e31a1c", low="#1f78b4") +
+#   themeNF()
+# ggsaveNF(out("ChIP_targets.pdf"), w=5,h=3)
+# 
+# pDT.cl <- pDT[, .(sig=mean(value)), by=c("Cluster.number", "chip_target", "chip_target_population", "Clusters")]
+# suppx <- "main"
+# popx <- "subset"
+# for(suppx in c("supp", "main")){
+#   for(popx in c("all", "subset")){
+#     pDTx <- if(suppx == "main") pDT.cl[Cluster.number %in% clusters.plot] else pDT.cl
+#     pDTx <- if(popx == "subset") pDTx[chip_target_population %in% c("Leukemia", "MatureMye")] else pDTx
+#     w=length(unique(pDTx$chip_target_population)) * 0.2 + 0.4
+#     h=length(unique(pDTx$Cluster.number)) * 0.07 + 0.2
+#     ggplot(pDTx, aes(x=chip_target_population, y=factor(as.numeric(Cluster.number)), fill=sig)) + geom_tile() +
+#       facet_grid(Clusters ~ chip_target, space="free", scales = "free") +
+#       themeNF(rotate = TRUE) +
+#       scale_fill_gradient2(high="#e31a1c", low="#1f78b4")
+#     ggsaveNF(out("ChIP_targets_aggregate_", suppx,"_population_", popx, ".pdf"), w=w, h=h)
+#   }
+# }
 
 
 # . LSC marker plot ---------------------------------------------------------
