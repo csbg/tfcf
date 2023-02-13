@@ -27,16 +27,20 @@ for(tx in TISSUES){inDir.funcs[[tx]] <- dirout_load(paste0("SCRNA_20_Summary/", 
 source("src/FUNC_Monocle_PLUS.R")
 
 # Load data ---------------------------------------------------------------
+dla.table <- fread("metadata/FIGS_02_CFs.main.txt")
 
 # Factors
 dla.healthy <- list(
-  supp=fread("metadata/FIGS_02_CFs.supp.txt")$Factor,
-  main=fread("metadata/FIGS_02_CFs.main.txt")$Factor
+  supp=dla.table$CF,
+  main=with(dla.table, CF[LargePlot]),
+  main.small=with(dla.table, CF[SmallPlot])
+  
 )
 
 dla.cancer <- list(
-  main=fread("metadata/FIGS_06_CFs.main.txt")$Factor,
-  supp=fread("metadata/FIGS_06_CFs.supp.txt")$Factor
+  supp=dla.table$CF,
+  main=with(dla.table, CF[LargePlot]),
+  main.small=with(dla.table, CF[SmallPlot])
 )
 
 # Annotations
@@ -447,7 +451,7 @@ pDT$gene <- factor(pDT$gene, levels=dla.healthy$supp)
 #pDT$gene <- factor(pDT$gene, levels=rev(pDT[,sum(N), by="gene"][order(V1)]$gene))
 ggplot(pDT, aes(x=gene,y=N, fill=tissue)) + 
   themeNF(rotate = TRUE) +
-  geom_bar(stat="identity", position="dodge") +
+  geom_bar(stat="identity", position=position_dodge2(width = 0.9, preserve = "single")) +
   scale_y_log10() +
   xlab("CF") + ylab("Number of cells (log10)")
 ggsaveNF(outBase("CellCounts_CFs.pdf"), w=2,h=1, guides = TRUE)
@@ -989,13 +993,13 @@ pDT <- copy(fish.enrich)
 #pDT$Complex <- dla[match(pDT$gene, Factor)]$Complex
 #pDT[, celltype := cleanCelltypes(celltype, clean=TRUE, twoLines = FALSE, order = TRUE, reverse = TRUE)]
 pDT[, log2OR_cap := pmin(2, abs(log2OR)) * sign(log2OR)]
-for(suppx in c("main", "supp")){
+for(suppx in names(dla.cancer)){
   dla <- dla.cancer[[suppx]]
   pDTx <- if(suppx == "main") pDT[Clusters %in% paste("cl", setdiff(clusters.plot, 15))] else pDT
   pDTx <- pDTx[gene %in% dla]
   pDTx$gene <- factor(pDTx$gene, levels = dla)
   pDTx[,Clusters := as.numeric(gsub("cl ", "", Clusters))]
-  w=length(unique(dla)) * 0.04 + 1
+  w=length(unique(pDTx$gene)) * 0.04 + 1
   h=length(unique(pDTx$Clusters)) * 0.06 + 0.3
   ggplot(pDTx, aes(x=gene, y=factor(Clusters), size=sig.perc*100, color=log2OR_cap)) + 
     themeNF(rotate=TRUE) +
