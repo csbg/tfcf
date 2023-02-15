@@ -57,3 +57,5 @@ Perturb-seq (10X)		inVivo_OP7-8_Lin-_14d_3	YES	inVivo	3prime	Lin-	14d		6206d98cd
 Perturb-seq (10X)		inVivo_OP7-8_ckit_14d_1	YES	inVivo	3prime	Lin+,ckit+	14d		6fa802c2545beca4240b23b1add621b6	inVivo_OP7-8_ckit_14d_1/outs/metrics_summary.csv	
 Perturb-seq (10X)		inVivo_OP7-8_ckit_14d_2	YES	inVivo	3prime	Lin+,ckit+	14d		9f1ea401fc3511f9e7f12b9198f124cb	inVivo_OP7-8_ckit_14d_2/outs/metrics_summary.csv	
 Perturb-seq (10X)		inVivo_OPA_ckit_14d_2	YES	inVivo	3prime	Lin+,ckit+	14d		253a01e0851d589dbaae8fea1961a190	inVivo_OPA_ckit_14d_2/outs/metrics_summary.csv	
+Perturb-seq (10X)		DM_OPN_NM_6d_1	YES	leukemia	3prime	noMarker	6d		61a9f38d2ce5cda63192c4a6a631eda4	DM_OPN_NM_6d_1/outs/metrics_summary.csv	
+Perturb-seq (10X)		DM_OPN_NM_6d_2	YES	leukemia	3prime	noMarker	6d		6de17f3a0e3da10544baa6a55ff6feca	DM_OPN_NM_6d_2/outs/metrics_summary.csv	

@@ -110,8 +110,8 @@ for(tx in setdiff(PATHS$SCRNA$MONOCLE.NAMES, "in.vivo")){
   
   query <- as.Seurat.NF(mobjs[[tx]])
   
-  sx <- query$sample[1]
-  for(sx in unique(query$sample)){
+  sx <- query$sample[14]
+  for(sx in unique(query$sample)[14:15]){
     
     # Only cells from one sample
     query.use <- subset(query, cells=colnames(query)[query$sample == sx])

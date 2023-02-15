@@ -866,7 +866,7 @@ abs$Cluster.number <- ann[match(abs$rn, rn)]$Cluster.number
 
 
 # . Define clustesr -------------------------------------------------------
-clusters.plot.cts <- list("Ery Prog."=17, "Late GMP"=c(6,16,2),"Eo/Ba"=14,"MkP"=21)
+clusters.plot.cts <- list("Ery Prog."=20, "Late GMP"=c(18,19,21,25),"Eo/Ba"=11,"MkP"=26)
 clusters.plot <- unlist(clusters.plot.cts)
 ann[, Clusters := "other"]
 for(xnam in names(clusters.plot.cts)){

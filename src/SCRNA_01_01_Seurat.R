@@ -73,7 +73,7 @@ write.tsv(SANN, out("SampleAnnotation.tsv"))
 
 
 # Read data, Seurat processing
-dsx <- SANN$sample_found[1]
+dsx <- SANN$sample_found[56]
 for(dsx in SANN$sample_found){
   
   # File
@@ -289,7 +289,24 @@ for(dsx in SANN$sample_found){
       }
     }
   }
-
+  
+  # Remove metabolic guides from Nisha's side project
+  rm.guides <- c("Mat2a", "Nampt", "Ogdh", "Sdha", "Fh1", "Scd1")
+  cx <- "guide"
+  for(cx in colnames(seurat.obj@meta.data)){
+    message(cx)
+    gx <- rm.guides[1]
+    
+    for(gx in rm.guides){
+      print(sum(idx <- grepl(gx, seurat.obj@meta.data[[cx]])))
+      if(sum(idx) > 0){
+        stopifnot(any(is.na(seurat.obj@meta.data[[cx]])))
+        seurat.obj@meta.data[[cx]][idx] <- NA
+      }
+    }
+  }
+  
+  # Export data
   seurat.obj <- SCRNA.DietSeurat(sobj = seurat.obj)
   save(seurat.obj, additional.info.x, file=dsx.file)
   write(seurat.obj@meta.data$md5sum[1], dsx.md5sum.file)
