@@ -76,8 +76,8 @@ GOI.targets <- list(
   #   "B-cell"=c("Il7r","Cd19","Pax5","Ebf1"))
   markers2 = with(fread("metadata/FIGS_02_DE_Genes.tsv", check.names = TRUE), split(Gene.list, Programme))
 )
-GOI.targets$LSC <- list(LSC=c("Hif1a", "Myc", "Bcat1", grep("Hox", unique(deDT$gene_id), value=TRUE)))
-GOI.targets$ISGs <- list("Interferon stimulated genes"=fread("metadata/FIGS_02_ISG_Core.txt")$Gene)
+# GOI.targets$LSC <- list(LSC=c("Hif1a", "Myc", "Bcat1", grep("Hox", unique(deDT$gene_id), value=TRUE)))
+# GOI.targets$ISGs <- list("Interferon stimulated genes"=fread("metadata/FIGS_02_ISG_Core.txt")$Gene)
 
 
 dla.vulcano.genes <- fread("metadata/FIGS_VulcanoGenes.tsv", header = FALSE)
@@ -85,9 +85,12 @@ dla.vulcano.genes <- setdiff(unique(do.call(c, dla.vulcano.genes)), "")
 
 # dla.factors <- fread("metadata/FIGS_Order_Fig3_v2.tsv")
 # dla.factors <- lapply(as.list(dla.factors), function(ll) setdiff(ll, ""))
+dla.table <- fread("metadata/FIGS_02_CFs.main.txt")
 dla.factors <- list(
-  supp=fread("metadata/FIGS_02_CFs.supp.txt")$Factor,
-  main=fread("metadata/FIGS_02_CFs.main.txt")$Factor
+  supp=dla.table$CF,
+  main=with(dla.table, CF[LargePlot]),
+  main.small=with(dla.table, CF[SmallPlot]),
+  all = setdiff(sort(unique(annList$gene)), "NTC")
 )
 
 # SETUP ENDS HERE ---------------------------------------------------------
@@ -118,27 +121,29 @@ write.tsv(pDT, out("Supplementary_Table_GSEA.tsv"))
 (tx <- deDT[use == TRUE]$tissue[1])
 for(tx in unique(deDT[use == TRUE]$tissue)){
   pDT <- deDT[tissue == tx]
-  (lnam <- names(GOI.targets)[2])
+  (lnam <- names(GOI.targets)[1])
   for(lnam in names(GOI.targets)){
     goi <- rbindlist(lapply(GOI.targets[[lnam]], data.table), idcol = "celltype")
     goi[! V1 %in% pDT$gene_id]
     xDT <- merge(pDT, goi, by.x="gene_id", by.y="V1")
     xDT$gene_id <- factor(xDT$gene_id, levels = goi$V1)
-    xDT$celltype <- factor(xDT$celltype, levels = unique(goi$celltype))
+    xDT$celltype <- factor(xDT$celltype, levels = rev(unique(goi$celltype)))
     #xDT$guide <- factor(xDT$guide, levels = GOI$BAF)
     xDT <- hierarch.ordering(xDT, "guide", "gene_id", value.var = "estimate")
     # xDT <- hierarch.ordering(xDT, "gene_id", "guide", value.var = "estimate")
-    h=length(unique(xDT$gene_id)) * 0.05 + length(unique(xDT$celltype)) * 0.05 + 0.5
-    w=length(unique(xDT$guide)) * 0.07 + 0.7
+    w=length(unique(xDT$gene_id)) * 0.05 + length(unique(xDT$celltype)) * 0.05 + 0.5
+    h=length(unique(xDT$guide)) * 0.05 + 0.5
     xDT[abs(estimate) > 5, estimate := pmin(abs(estimate),5) * sign(estimate)]
-    ggplot(xDT, aes(x=guide, y=gene_id, color=estimate, size=pmin(5, -log10(q_value)))) + 
+    ggplot(xDT, aes(y=guide, x=gene_id, color=estimate, size=pmin(5, -log10(q_value)))) + 
       themeNF(rotate=TRUE) +
       geom_point() +
       scale_color_gradient2(name="log2FC", low="blue", high="red") +
       scale_size_continuous(name="-log10(padj)", range = c(0,5)) +
+      scale_x_discrete(position = "top") +
+      theme(axis.text.x = element_text(vjust=1, hjust=0)) +
       ggtitle(tx) +
-      facet_grid(celltype ~ ., space = "free", scales = "free") +
-      ylab("Gene expression") + xlab("CRISPR targets")
+      facet_grid(. ~ celltype, space = "free", scales = "free") +
+      xlab("Gene expression") + ylab("CRISPR targets")
     ggsaveNF(out("GeneDE_", tx, "_", lnam, "_allGuides.pdf"),w=w,h=h, guides = TRUE)
     
     (dla.nam <- names(dla.factors)[3])
@@ -147,15 +152,17 @@ for(tx in unique(deDT[use == TRUE]$tissue)){
       xDT2 <- xDT[guide %in% dla]
       if(nrow(xDT2) == 0) next
       xDT2$guide <- factor(xDT2$guide, levels=dla)
-      w=length(unique(xDT2$guide)) * 0.07 + 0.7
-      ggplot(xDT2, aes(x=guide, y=gene_id, color=estimate, size=pmin(5, -log10(q_value)))) + 
+      h=length(unique(xDT2$guide)) * 0.05 + 0.5
+      ggplot(xDT2, aes(y=guide, x=gene_id, color=estimate, size=pmin(5, -log10(q_value)))) + 
         themeNF(rotate=TRUE) +
         geom_point() +
         scale_color_gradient2(name="log2FC", low="blue", high="red") +
         scale_size_continuous(name="-log10(padj)", range = c(0,5)) +
+        scale_x_discrete(position = "top") +
+        theme(axis.text.x = element_text(vjust=1, hjust=0)) +
         ggtitle(tx) +
-        facet_grid(celltype ~ ., space = "free", scales = "free") +
-        ylab("Gene expression") + xlab("CRISPR targets")
+        facet_grid(. ~ celltype, space = "free", scales = "free") +
+        xlab("Gene expression") + ylab("CRISPR targets")
       ggsaveNF(out("GeneDE_", tx, "_", lnam, "_", dla.nam,".pdf"),w=w,h=h, guides = TRUE)}
   }
 }

@@ -27,21 +27,6 @@ for(tx in TISSUES){inDir.funcs[[tx]] <- dirout_load(paste0("SCRNA_20_Summary/", 
 source("src/FUNC_Monocle_PLUS.R")
 
 # Load data ---------------------------------------------------------------
-dla.table <- fread("metadata/FIGS_02_CFs.main.txt")
-
-# Factors
-dla.healthy <- list(
-  supp=dla.table$CF,
-  main=with(dla.table, CF[LargePlot]),
-  main.small=with(dla.table, CF[SmallPlot])
-  
-)
-
-dla.cancer <- list(
-  supp=dla.table$CF,
-  main=with(dla.table, CF[LargePlot]),
-  main.small=with(dla.table, CF[SmallPlot])
-)
 
 # Annotations
 SANN <- fread(PATHS$SCRNA$ANN)
@@ -121,6 +106,19 @@ umap.proj <- list(
 # )
 # stopifnot(length(union(res$rn, annList$rn)) == length(intersect(res$rn, annList$rn)))
 # annList <- res
+
+# DLA factors to plot
+dla.table <- fread("metadata/FIGS_02_CFs.main.txt")
+
+# Factors
+dla.healthy <- list(
+  supp=dla.table$CF,
+  main=with(dla.table, CF[LargePlot]),
+  main.small=with(dla.table, CF[SmallPlot])
+)
+dla.healthy$all <- setdiff(sort(unique(annList$gene)), "NTC")
+dla.cancer <- dla.healthy
+
 
 # load Monocle Objects
 mobjs <- list()
@@ -543,6 +541,7 @@ list.files(dirout_load(base.dir)("cluster.enrichments"))
 fish.bcells <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments","_basic", "_in.vivo", "_noMixscape", "_14d",".tsv"))
 fish.enrich.broad <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_DavidSpecial_in.vivo_noMixscape_14d",".tsv"))
 fish.EryVsMye <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments","_eryVsMye", "_in.vivo", "_noMixscape", "_14d",".tsv"))
+fish.early <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments","_earlyBranches", "_in.vivo", "_noMixscape", "_14d",".tsv"))
 fish.monoVsGran <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments","_monoVsGran", "_in.vivo", "_noMixscape", "_14d",".tsv"))
 fish.d28 <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_earlyBranches_in.vivo_noMixscape_28d.tsv"))
 
@@ -670,6 +669,7 @@ for(typex in names(dla.healthy)){
     themeNF(rotate=T) +
     scale_color_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
     scale_size_continuous(name="% sign.", range = c(0,5)) +
+    scale_y_discrete(position="right") +
     geom_point() +
     geom_point(shape=1, color="lightgrey") +
     xlab("Lineage") + ylab("")
@@ -685,9 +685,24 @@ for(typex in names(dla.healthy)){
     scale_fill_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
     #scale_size_continuous(name="% sign.", range = c(0,5), limits = c(0,1)) +
     #geom_point() +
+    scale_y_discrete(position="right") +
     ylab("") + xlab("Myeloid enrichment vs erythroid (log2OR)") +
     geom_vline(xintercept = 0)
-  ggsaveNF(out("ClusterEnrichments_manual_MEPvsGMP_",typex,".pdf"), w=1,h=h)
+  ggsaveNF(out("ClusterEnrichments_manual_GMPvsMEP_",typex,".pdf"), w=1,h=h)
+  
+  pDT <- fish.early[Clusters == "GMP"][gene %in% dla]#[log2OR > 0 | log2OR < -2]
+  #pDT$gene <- factor(pDT$gene, levels = pDT[order(log2OR)]$gene)
+  pDT$gene <- factor(pDT$gene, levels = rev(dla))
+  ggplot(pDT, aes(x=log2OR, y=gene, alpha=sig.perc, fill=sign(log2OR_cap))) + 
+    themeNF(rotate=F) +
+    geom_col() +
+    scale_fill_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
+    #scale_size_continuous(name="% sign.", range = c(0,5), limits = c(0,1)) +
+    #geom_point() +
+    scale_y_discrete(position="right") +
+    ylab("") + xlab("Myeloid enrichment vs erythroid (log2OR)") +
+    geom_vline(xintercept = 0)
+  ggsaveNF(out("ClusterEnrichments_manual_EarlyGMPvsMEP_",typex,".pdf"), w=1,h=h)
   
   pDT <- fish.monoVsGran[Clusters == "Mono"][gene %in% dla]#[log2OR > 0 | log2OR < -2]
   #pDT$gene <- factor(pDT$gene, levels = pDT[order(log2OR)]$gene)
@@ -698,6 +713,7 @@ for(typex in names(dla.healthy)){
     scale_fill_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
     #scale_size_continuous(name="% sign.", range = c(0,5), limits = c(0,1)) +
     #geom_point() +
+    scale_y_discrete(position="right") +
     ylab("") + xlab("Monocyte enrichment vs granulocyte (log2OR)") +
     geom_vline(xintercept = 0)
   ggsaveNF(out("ClusterEnrichments_manual_MonoVsGran_",typex,".pdf"), w=1,h=h)
@@ -825,6 +841,7 @@ for(suppx in names(dla.healthy)){
     scale_size_continuous(name="% sign.", range = c(0,4)) +
     geom_point() +
     geom_point(shape=1, color="lightgrey") +
+    scale_y_discrete(position="right") +
     xlab("Gene") + ylab("Cell type") +
     #facet_grid(Clusters ~ . , space="free", scales = "free") +
     theme(strip.text.y = element_text(angle=0))
@@ -1006,6 +1023,7 @@ for(suppx in names(dla.cancer)){
     scale_color_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
     scale_size_continuous(name="% sign.", range = c(0,4)) +
     geom_point() +
+    scale_y_discrete(position="right") +
     geom_point(shape=1, color="lightgrey") +
     xlab("Gene") + ylab("Cluster / cell type") +
     facet_grid(celltype ~ . , space="free", scales = "free") +
