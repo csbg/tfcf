@@ -208,15 +208,16 @@ for(tx in names(inDir.funcs)){
     pDT[, frac := N / sum]
     pDT <- pDT[order(frac, decreasing = TRUE)][,head(.SD, 1), by=c("hex.x", "hex.y")]
     #pDT <- pDT[frac > 0.25]
-    pDT.labels <- pDT[, .(hex.x = median(hex.x), hex.y=median(hex.y)), by=c("Clusters")]
+    pDT.labels <- pDT[, .(hex.x = median(hex.x, na.rm=TRUE), hex.y=median(hex.y, na.rm=TRUE)), by=c("Clusters")]
     pDT[, Clusters := cleanCelltypes(Clusters,twoLines = FALSE)]
     pDT.labels[, Clusters := cleanCelltypes(Clusters,twoLines = TRUE)]
     p <- ggplot(pDT, aes(x=hex.x, y=hex.y)) +
       themeNF() + xu + yu + scale_color_manual(values=COLORS.CELLTYPES.scRNA.ainhoa)
     if(!is.null(xDT.ref)) p <- p + geom_hex(data=xDT.ref, fill="lightgrey", bins=100, aes(x=UMAP_1, y=UMAP_2))
     p <- p +
-      geom_point(aes(color=Clusters), size=0.5) + 
+      geom_point(aes(color=Clusters,  alpha=N), size=0.5) + 
       geom_text(data=pDT.labels, aes(label=Clusters), lineheight = 0.8)
+    p
     ggsaveNF(out("UMAP_Celltypes_",x,".pdf"), w=1.5,h=1.5, plot=p)
   }
 }

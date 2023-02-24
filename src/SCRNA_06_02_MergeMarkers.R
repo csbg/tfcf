@@ -34,6 +34,32 @@ for(tx in names(mobjs)){
 
 
 
+
+# Double positives? -------------------------------------------------------
+# x <- merge(
+#   data.table(marker.signatures$in.vivo, keep.rownames = TRUE),
+#   data.table(reducedDims(mobjs[["in.vivo"]])$UMAP, keep.rownames = TRUE),
+#   by="rn"
+# )
+# 
+# x[, ery_max := pmax(EryA, EryB, MEP)]
+# x[, mye_max := pmax(GMP, Granulocyte, Mono, CMP)]
+# 
+# x$Cluster <- as.character(mobjs[["in.vivo"]]@clusters$UMAP$clusters[x$rn])
+# 
+# ggplot(x, aes(x=GMP, y=MEP)) + geom_hex()
+# 
+# ggplot(x[GMP > 0.3 & MEP > 0.2], aes(x=V1, y=V2)) + 
+#   geom_hex(data=x, fill="lightgrey", bins=100) +
+#   geom_hex(bins=100) +
+#   theme_bw()
+# 
+# ggplot(x,aes(x=V1, y=V2)) + 
+#   geom_hex(fill="grey") +
+#   geom_text(data=x[, .(median(V1), median(V2)), by="Cluster"], aes(x=V1, y=V2, label=Cluster))
+# 
+
+
 # merge results -----------------------------------------------------------
 (tx <- names(mobjs)[1])
 tx <- "leukemia"
@@ -41,7 +67,7 @@ goi <- fread("metadata/markers.csv", header = F)$V1
 for(tx in names(mobjs)){
   
   monocle.obj <- mobjs[[tx]]
-
+  
   # marker plot
   stopifnot(all(goi %in% row.names(monocle.obj)))
   p <- plot_cells_umap_hex_NF(monocle.obj, scale=TRUE, genes = goi, ncol=7)
@@ -51,6 +77,18 @@ for(tx in names(mobjs)){
   sx <- copy(singleR.res[db %in% c("izzo_label.main", "marrow10x_label.main")])
   sx$Cluster <- as.character(monocle.obj@clusters$UMAP$clusters[sx$cellname])
   sx <- sx[!is.na(Cluster)]
+  
+  # Plot UMAP with numeric clusters
+  x <- merge(
+    data.table(sx, keep.rownames = TRUE),
+    data.table(reducedDims(mobjs[[tx]])$UMAP, keep.rownames = TRUE),
+    by.x="cellname",
+    by.y="rn"
+  )
+  ggplot(x,aes(x=V1, y=V2)) +
+    geom_hex(fill="grey") +
+    geom_text(data=x[, .(median(V1), median(V2)), by="Cluster"], aes(x=V1, y=V2, label=Cluster))
+  ggsave(out("UMAP_", tx, "_NumericClusters.pdf"), w=8,h=8)
   
   # get clusters where tabula muris (10x) predictions are useful (manually defined)
   sxn <- sx[,.N, by=c("Cluster", "db", "labels")]
@@ -90,22 +128,51 @@ for(tx in names(mobjs)){
   )
   
   # Majority vote by cluster
+  
+  # Obtain counts per cluster
   xDT.vote <- xDT[,.N, by=c("Cluster", "labels")]
   xDT.vote[, sum := sum(N), by="Cluster"]
   xDT.vote[, fraction := N/sum]
   ggplot(xDT.vote, aes(x=Cluster, y=fraction, color=labels, shape=labels)) + geom_point() + theme_bw(12) +
     scale_shape_manual(values=rep(c(1,16,2,18,3,4), 20))
   ggsave(out("CellTypes_", tx, ".pdf"), w=10, h=5)
+  
+  # In vivo unclear cluster that contains MEPs and GMPs
+  xDT.vote[, label_unclear := FALSE]
+  if(tx == "in.vivo"){
+    unclear.cl <- xDT.vote[labels %in% c("MEP", "GMP")][fraction > 0.1][,.N, by="Cluster"][N == 2]$Cluster
+    
+    for(clx in unclear.cl){
+      if(xDT.vote[Cluster == clx & labels == "GMP"]$fraction >= xDT.vote[Cluster == clx & labels == "MEP"]$fraction){
+        xDT.vote[Cluster == clx, label_unclear := TRUE]
+      }
+      else{
+        xDT.vote[Cluster == clx & labels != "MEP", label_unclear := TRUE]
+      }
+    }
+  }
+  
   # Figure out which cells to reassign (< 10% in a cluster)
-  xDT.majority <- xDT.vote[order(fraction, decreasing = TRUE)][,head(.SD, n=1), by="Cluster"][, c("Cluster", "labels")]
-  xDT.keep <- xDT.vote[fraction >= 0.1][, c("Cluster", "labels"), with=F]
-  xDT.reassign <- xDT.vote[fraction < 0.1][, c("Cluster", "labels"), with=F]
-  # finalize
+  xDT.majority <- xDT.vote[order(label_unclear, fraction, decreasing = TRUE)][,head(.SD, n=1), by="Cluster"][, c("Cluster", "labels", "label_unclear")]
+  xDT.keep <- xDT.vote[fraction >= 0.1][, c("Cluster", "labels", "label_unclear"), with=F]
+  xDT.reassign <- xDT.vote[fraction < 0.1][, c("Cluster", "labels", "label_unclear"), with=F]
+  
+  # Reassign
   xDT.reassign <- merge(xDT.reassign, xDT, by=c("Cluster", "labels"))[,-"labels"]
-  xDT.reassign <- merge(xDT.reassign, xDT.majority, by=c("Cluster"))
+  xDT.reassign <- merge(xDT.reassign, xDT.majority[,-"label_unclear",with=F], by=c("Cluster"))
+  xDT.reassign[label_unclear == TRUE, labels := "unclear"]
+  #with(xDT.reassign[Cluster %in% c(35, 46)], table(labels, Cluster))
+  
+  # keep
   xDT.keep <- merge(xDT.keep, xDT, by=c("Cluster", "labels"))
+  xDT.keep[label_unclear == TRUE, labels := "unclear"]
+  #with(xDT.keep[Cluster %in% c(35, 46)], table(labels, Cluster))
+  
+  # Merge and clean up
   xDT.majvote <- rbind(xDT.keep, xDT.reassign)
+  xDT.majvote$label_unclear <- NULL
   stopifnot(nrow(xDT.majvote) == nrow(xDT))
+  
   
   # Cell types in leukemia
   if(tx == "leukemia"){
