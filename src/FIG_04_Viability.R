@@ -4,6 +4,7 @@ out <- dirout(base.dir)
 
 require(readxl)
 require(depmap)
+require(ggrepel)
 
 # LOAD DATA ---------------------------------------------------------------
 
@@ -41,6 +42,7 @@ scRNA.cnts <- scRNA.cnts[, .(cnt=sum(V1)), by=c("CRISPR_Cellranger", "tissue", "
 scRNA.cnts <- dcast.data.table(scRNA.cnts, CRISPR_Cellranger ~ paste("scRNA", tissue, timepoint), value.var = "cnt")
 scRNA.cnts[, CRISPR_Cellranger := toupper(CRISPR_Cellranger)]
 
+
 # Sabatini lab ------------------------------------------------------------
 sabatini <- readxl::read_xlsx("metadata/Viability_Sabatini_AML.xlsx", skip=1)
 sabatini <- data.table(sabatini)
@@ -74,24 +76,25 @@ if(file.exists(depmap.file)){
 
 
 # Our counts scRNA --------------------------------------------------------------
+
+# # Plot number of cells
+# pDT <- copy(scRNA.cnts)
+# pDT[, gene := gsub("_.+$", "", CRISPR_Cellranger)]
+# pDT <- pDT[, .(V1 = sum(V1)), by=c("gene", "timepoint", "tissue")]
+# ggplot(pDT[gene != "NTC"], aes(x=gene, y=V1 + 1)) + 
+#   geom_col() + 
+#   facet_grid(tissue + timepoint ~ .) + 
+#   themeNF(rotate = TRUE) +
+#   scale_y_log10()
+# ggsave(out("scRNA_Guide_counts.pdf"), w=15, h=8)
+
+# calculate CPMs
 our.cnts <- merge(ainhoa.cnts[,-"oPool_ID",with=F], scRNA.cnts, by.x="sgRNA_ID", by.y="CRISPR_Cellranger", all=TRUE)
 cMT <- as.matrix(our.cnts[, -"sgRNA_ID"])
 row.names(cMT) <- our.cnts$sgRNA_ID
 cMT[is.na(cMT)] <- 0
 fMT <- t(t(cMT) / colSums(cMT) * 1e6)
 stopifnot(all(colSums(fMT) == 1e6))
-
-# Plot number of cells
-pDT <- copy(scRNA.cnts)
-pDT[, gene := gsub("_.+$", "", CRISPR_Cellranger)]
-pDT <- pDT[, .(V1 = sum(V1)), by=c("gene", "timepoint", "tissue")]
-ggplot(pDT[gene != "NTC"], aes(x=gene, y=V1 + 1)) + 
-  geom_col() + 
-  facet_grid(tissue + timepoint ~ .) + 
-  themeNF(rotate = TRUE) +
-  scale_y_log10()
-ggsave(out("scRNA_Guide_counts.pdf"), w=15, h=8)
-
 
 # Plot of CPMs
 pDT <- melt(data.table(fMT, keep.rownames = TRUE), id.vars = "rn")
@@ -110,7 +113,7 @@ ggsave(out("scRNA_counts.pdf"), w=8,h=40, limitsize = FALSE)
 # logFCs 
 # aggregate by gene
 gMTx <- t(sapply(split(row.names(fMT), gsub("_.+$", "", row.names(fMT))), function(rows) colSums(fMT[rows,, drop=F])))
-quantile(gMT)
+quantile(gMTx)
 #for(typex in c("all", "cleaned")){
 typex <- "cleaned"
 gMT <- gMTx
@@ -121,11 +124,14 @@ gMT <- t(t(gMT) * (mean(gMT["NTC",]) / gMT["NTC",]))
 gMT <- log2(gMT + 0.1) - log2(gMT[,"Read_counts_d0"] + 0.1)
 
 
-# Plot of logFCs
+# Calculate values
 pDT <- melt(data.table(gMT, keep.rownames = TRUE), id.vars = "rn")
 pDT[, analysis := ifelse(grepl("^scRNA", variable), "scRNA", "Ainhoa")]
 pDT <- pDT[variable %in% pDT[,sum(value != 0, na.rm=TRUE), by="variable"][V1 > 1]$variable]
 pDT[, value.cap := sign(value) * pmin(5, abs(value))]
+write.tsv(pDT, out("scRNA_processed.tsv"))
+
+# Plot
 pDT <- pDT[analysis == "scRNA"]
 pDT <- pDT[variable != "scRNA in.vivo 28d"]
 pDT <- pDT[rn != "NTC"]

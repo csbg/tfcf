@@ -3,6 +3,7 @@ base.dir <- "FIG_03_scRNA_DE/"
 out <- dirout(base.dir)
 
 require(ggrepel)
+require(WriteXLS)
 
 
 # Read data ---------------------------------------------------------------
@@ -14,6 +15,7 @@ annList <- lapply(PATHS$SCRNA$MONOCLE.NAMES, function(tx){
   ann
 })
 annList <- rbindlist(annList, fill=TRUE)
+annList <- annList[Clusters != "unclear"]
 
 cMT <- as.matrix(read.csv(inDir("DEG_Cor.csv"), row.names = 1))
 fcMT <- as.matrix(read.csv(inDir("FoldChanges.csv"), row.names=1))
@@ -83,15 +85,17 @@ GOI.targets <- list(
 dla.vulcano.genes <- fread("metadata/FIGS_VulcanoGenes.tsv", header = FALSE)
 dla.vulcano.genes <- setdiff(unique(do.call(c, dla.vulcano.genes)), "")
 
-# dla.factors <- fread("metadata/FIGS_Order_Fig3_v2.tsv")
-# dla.factors <- lapply(as.list(dla.factors), function(ll) setdiff(ll, ""))
+# Factors
 dla.table <- fread("metadata/FIGS_02_CFs.main.txt")
-dla.factors <- list(
+dla.healthy <- list(
   supp=dla.table$CF,
   main=with(dla.table, CF[LargePlot]),
   main.small=with(dla.table, CF[SmallPlot]),
-  all = setdiff(sort(unique(annList$gene)), "NTC")
+  main.Feb28=fread("metadata/FIGS_02_CFs.main_Feb28.txt", header = FALSE)$V1
 )
+dla.healthy$all <- setdiff(sort(unique(annList$gene)), "NTC")
+for(x in names(dla.healthy)){ dla.healthy[[x]] <- setdiff(dla.healthy[[x]], "Smarcb1")}
+dla.factors <- dla.healthy
 
 # SETUP ENDS HERE ---------------------------------------------------------
 

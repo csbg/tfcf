@@ -34,7 +34,7 @@ colData(mobj)$sample <- gsub("^[ACTG]+\\-", "s", colnames(mobj))
 # Differential expression -------------------------------------------------
 steps <- 10
 (nrs <- floor(10**(seq(1, log10(ncol(mobj)), length.out = steps))))
-i <- 10
+i <- 1000
 j <- 1
 for(i in nrs){
   message("Run ",i)

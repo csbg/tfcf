@@ -490,8 +490,9 @@ stopifnot(all(do.call(c, merge.sigs) %in% colnames(mMT)))
 mMT <- cbind(mMT, sapply(merge.sigs, function(xx) apply(mMT[,xx, drop=F], 1, mean)))
 
 sx <- ann$sample_broad[13]
-registerDoMC(cores=8)
+registerDoMC(cores=6)
 resSDA <- foreach(sx = unique(ann$sample_broad)) %dopar% {
+  print(sx)
   resSDA <- data.table()
   annS <- ann[sample_broad == sx]
   if("lin-" %in% annS$markers) annS <- annS[markers=="lin-"]
@@ -503,6 +504,7 @@ resSDA <- foreach(sx = unique(ann$sample_broad)) %dopar% {
     (guidex <- guides[1])
     for(guidex in guides){
       x <- mMT[annS[guide == guidex & mixscape_class.global == "KO"]$rn, sigx]
+      if(sum(!is.na(x)) < 2) next
       resSDA <- rbind(resSDA, data.table(
         sample=sx,
         guide=guidex,

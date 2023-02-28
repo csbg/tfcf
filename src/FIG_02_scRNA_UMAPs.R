@@ -4,6 +4,7 @@ outBase <- dirout(base.dir)
 
 require(ggrepel)
 require(WriteXLS)
+require(patchwork)
 
 
 # FUNCTIONS ---------------------------------------------------------------
@@ -52,8 +53,8 @@ marker.signatures.bulk2 <- marker.signatures[DB == "BulkNew"]
 marker.signatures <- merge(marker.signatures, SIGS.USE, by.x=c("DB", "variable"), by.y=c("DB", "Celltype"))
 
 # signature differential analysis
-marker.signatures.DA <- lapply(TISSUES, function(tx) fread(inDir.funcs[[tx]]("SigDA.tsv")))
-names(marker.signatures.DA) <- TISSUES
+# marker.signatures.DA <- lapply(TISSUES, function(tx) fread(inDir.funcs[[tx]]("SigDA.tsv")))
+# names(marker.signatures.DA) <- TISSUES
 
 # Marker overlaps
 marker.overlaps <- fread(dirout_load("SCRNA_06_03_MarkerOverlaps")("Enrichments.tsv"))
@@ -66,6 +67,7 @@ annList <- lapply(names(inDir.funcs), function(inDir.current){
   ann
   })
 annList <- rbindlist(annList, fill=TRUE)
+annList <- annList[Clusters != "unclear"]
 
 # numeric clusters
 ann.numeric <- readRDS(dirout_load("SCRNA_10_collect_UMAPs")("ProjMonocle_Clusters.RDS"))
@@ -86,6 +88,10 @@ annList$Clusters.new <- cl.celltypes[paste0("cl", annList$Cluster.number)]
 annList[tissue == "leukemia", Clusters := Clusters.new]
 annList$Clusters.new <- NULL
 
+# Update cell types ex vivo
+annList[tissue == "ex.vivo" & Clusters == "MkP", Clusters := "MEP (early)"]
+annList[tissue == "ex.vivo" & Clusters == "MEP", Clusters := "MEP (early)"]
+
 
 # Other projections
 umap.proj <- list(
@@ -95,28 +101,16 @@ umap.proj <- list(
   in.vivo.X = readRDS(dirout_load("SCRNA_10_collect_UMAPs")("ProjVivoX.RDS"))
 )
 
-# # Update ex vivo and leukemia to use in.vivo.X UMAPs
-# res <- rbind(
-#   annList[tissue == "in.vivo"], 
-#   merge(
-#     annList[tissue != "in.vivo"][,-c("UMAP1", "UMAP2")], 
-#     setNames(umap.proj[["in.vivo.X"]][tissue != "in.vivo"][,c("rn", "UMAP_1", "UMAP_2")], c("rn", "UMAP1", "UMAP2")),
-#     by="rn"
-#     )
-# )
-# stopifnot(length(union(res$rn, annList$rn)) == length(intersect(res$rn, annList$rn)))
-# annList <- res
-
 # DLA factors to plot
 dla.table <- fread("metadata/FIGS_02_CFs.main.txt")
-
-# Factors
 dla.healthy <- list(
   supp=dla.table$CF,
   main=with(dla.table, CF[LargePlot]),
-  main.small=with(dla.table, CF[SmallPlot])
+  main.small=with(dla.table, CF[SmallPlot]),
+  main.Feb28=fread("metadata/FIGS_02_CFs.main_Feb28.txt", header = FALSE)$V1
 )
 dla.healthy$all <- setdiff(sort(unique(annList$gene)), "NTC")
+for(x in names(dla.healthy)){ dla.healthy[[x]] <- setdiff(dla.healthy[[x]], "Smarcb1")}
 dla.cancer <- dla.healthy
 
 
@@ -204,6 +198,7 @@ for(tx in names(inDir.funcs)){
     hex.obj <- hexbin::hexbin(x=xDT$UMAP_1, y=xDT$UMAP_2, xbins = 100, IDs=TRUE)
     pDT <- cbind(ann, data.table(hex.x=hex.obj@xcm, hex.y=hex.obj@ycm, hex.cell=hex.obj@cell)[match(hex.obj@cID, hex.cell),])
     pDT <- pDT[,.(N=.N), by=c("hex.x", "hex.y", "Clusters")]
+    pDT <- pDT[Clusters != "unclear"]
     pDT[, sum := sum(N), by=c("hex.x", "hex.y")]
     pDT[, frac := N / sum]
     pDT <- pDT[order(frac, decreasing = TRUE)][,head(.SD, 1), by=c("hex.x", "hex.y")]
@@ -215,7 +210,7 @@ for(tx in names(inDir.funcs)){
       themeNF() + xu + yu + scale_color_manual(values=COLORS.CELLTYPES.scRNA.ainhoa)
     if(!is.null(xDT.ref)) p <- p + geom_hex(data=xDT.ref, fill="lightgrey", bins=100, aes(x=UMAP_1, y=UMAP_2))
     p <- p +
-      geom_point(aes(color=Clusters,  alpha=N), size=0.5) + 
+      geom_point(aes(color=Clusters), size=0.5) + 
       geom_text(data=pDT.labels, aes(label=Clusters), lineheight = 0.8)
     p
     ggsaveNF(out("UMAP_Celltypes_",x,".pdf"), w=1.5,h=1.5, plot=p)
@@ -223,39 +218,39 @@ for(tx in names(inDir.funcs)){
 }
 
 
-# . Signatures --------------------------------------------------------------
-tx <- "in.vivo"
-tx <- "leukemia"
-tx <- "ex.vivo"
-for(tx in names(inDir.funcs)){
-  # out directory
-  out <- dirout(paste0(base.dir, "/", tx))
-  
-  # annotation
-  ann <- annList[tissue ==  tx & timepoint != "28d"]
-  
-  # Plot signatures scores in each cluster
-  pDT <- merge(
-    ann[, c("rn", "Clusters"),with=F],
-    marker.signatures[, c("rn", "DB", "value", "FinalName"),with=F],
-    by="rn")
-  pDT <- pDT[, mean(value), by=c("Clusters", "FinalName")]
-  pDT[, V1 := scale(V1), by="FinalName"]
-  pDT[, Clusters := cleanCelltypes(Clusters)]
-  #pDT <- hierarch.ordering(pDT, "Clusters", "FinalName", "V1")
-  pDT <- hierarch.ordering(pDT, "FinalName", "Clusters", "V1")
-  ggplot(pDT, aes(x=FinalName, y=Clusters, fill=V1)) + 
-    geom_tile() +
-    themeNF(rotate = TRUE) +
-    scale_fill_gradient2(low="blue", high="red") +
-    xlab("External gene signatures") +
-    ylab("Cell type\n(this study)")
-  ggsaveNF(out("Supp_Signatures.pdf"), w=1.2,h=length(unique(pDT$Clusters)) * 0.05 + 0.5)
-  
-  # Plot expression of marker genes in each cluster
-  
-  # Plot fraction of predicted cells in each cluster
-}
+# # . Signatures --------------------------------------------------------------
+# tx <- "in.vivo"
+# tx <- "leukemia"
+# tx <- "ex.vivo"
+# for(tx in names(inDir.funcs)){
+#   # out directory
+#   out <- dirout(paste0(base.dir, "/", tx))
+#   
+#   # annotation
+#   ann <- annList[tissue ==  tx & timepoint != "28d"]
+#   
+#   # Plot signatures scores in each cluster
+#   pDT <- merge(
+#     ann[, c("rn", "Clusters"),with=F],
+#     marker.signatures[, c("rn", "DB", "value", "FinalName"),with=F],
+#     by="rn")
+#   pDT <- pDT[, mean(value), by=c("Clusters", "FinalName")]
+#   pDT[, V1 := scale(V1), by="FinalName"]
+#   pDT[, Clusters := cleanCelltypes(Clusters)]
+#   #pDT <- hierarch.ordering(pDT, "Clusters", "FinalName", "V1")
+#   pDT <- hierarch.ordering(pDT, "FinalName", "Clusters", "V1")
+#   ggplot(pDT, aes(x=FinalName, y=Clusters, fill=V1)) + 
+#     geom_tile() +
+#     themeNF(rotate = TRUE) +
+#     scale_fill_gradient2(low="blue", high="red") +
+#     xlab("External gene signatures") +
+#     ylab("Cell type\n(this study)")
+#   ggsaveNF(out("Supp_Signatures.pdf"), w=1.2,h=length(unique(pDT$Clusters)) * 0.05 + 0.5)
+#   
+#   # Plot expression of marker genes in each cluster
+#   
+#   # Plot fraction of predicted cells in each cluster
+# }
 
 
 # # . Signatures DE with CRISPR KOs -------------------------------------------
@@ -430,10 +425,18 @@ ggplot(pDT, aes(x=Clusters, y=perc, fill=tissue)) +
     ylab("Percent of cells") + xlab("")
 ggsaveNF(outBase("CellCounts.pdf"), w=1.5,h=1, guides = TRUE)
 
+pDT <- annList[tissue == "in.vivo"][timepoint != "28d"][,.N, by=c("Clusters", "tissue")]
+pDT[, sum := sum(N), by="tissue"]
+pDT[, Clusters := cleanCelltypes(Clusters, reverse = FALSE)]
+ggplot(pDT, aes(x=Clusters, y=N)) + 
+  geom_bar(stat="identity") + 
+  #scale_y_log10() +
+  themeNF(rotate=TRUE) +
+  ylab("Number of cells") + xlab("") +
+  scale_y_log10()
+ggsaveNF(outBase("CellCounts_invivo.pdf"), w=1.5,h=1, guides = TRUE)
+
 pDT <- annList[tissue != "leukemia"][timepoint != "28d"][,.N, by=c("gene", "Clusters", "tissue")][!is.na(gene)]
-# ggplot(pDT,aes(x=N, group=CRISPR_Cellranger)) + 
-#   stat_ecdf() +
-#   facet_grid(tissue ~ .)
 pDT[, Clusters := cleanCelltypes(Clusters, reverse = TRUE)]
 ggplot(pDT,aes(x=Clusters, y=N, color=tissue)) + 
   themeNF(rotate=T) +
@@ -445,15 +448,15 @@ ggsaveNF(outBase("CellCounts_InVivoSparse.pdf"), w=1.5,h=1, guides = TRUE)
 
 # . Cell numbers per guide --------------------------------------------------
 pDT <- annList[tissue != "leukemia"][timepoint != "28d"][,.N, by=c("gene", "tissue")][!is.na(gene)]
-pDT <- pDT[gene %in% dla.healthy$supp]
-pDT$gene <- factor(pDT$gene, levels=dla.healthy$supp)
+pDT <- pDT[gene %in% dla.healthy$all]
+pDT$gene <- factor(pDT$gene, levels=dla.healthy$all)
 #pDT$gene <- factor(pDT$gene, levels=rev(pDT[,sum(N), by="gene"][order(V1)]$gene))
 ggplot(pDT, aes(x=gene,y=N, fill=tissue)) + 
   themeNF(rotate = TRUE) +
   geom_bar(stat="identity", position=position_dodge2(width = 0.9, preserve = "single")) +
   scale_y_log10() +
   xlab("CF") + ylab("Number of cells (log10)")
-ggsaveNF(outBase("CellCounts_CFs.pdf"), w=2,h=1, guides = TRUE)
+ggsaveNF(outBase("CellCounts_CFs.pdf"), w=4,h=1, guides = TRUE)
 
 
 # . NTC distributions to assess clonality effects -------------------------------------------------
@@ -473,7 +476,7 @@ ggplot(pDT,  aes(x=Clusters, y=frac, fill=factor(guide_i))) +
 ggsaveNF(outBase("NTC_clonality.pdf"), w=4, h=2)
 
 pDT <- dcast.data.table(pDT, Clusters + tissue + sample_broad ~ paste0("Guide", guide_i), value.var = "frac")
-pDT[, timepoint := gsub("^(.+)_(\\d+d)$", "\\2", sample_broad)]
+pDT[, timepoint := gsub("^(.+)_(\\d+d)(\\_\\d)?$", "\\2", sample_broad)]
 pDT[, batch := as.numeric(factor(sample_broad)), by=c("tissue", "timepoint")]
 ggplot(pDT, aes(x=Guide1, y=Guide2, shape=factor(paste("Batch", batch)), color=factor(paste("Batch", batch)))) + 
   geom_point() +
@@ -482,7 +485,7 @@ ggplot(pDT, aes(x=Guide1, y=Guide2, shape=factor(paste("Batch", batch)), color=f
   scale_y_log10() +
   facet_wrap(~ tissue + timepoint, ncol = 2) + 
   scale_shape_manual(values=rep(c(1,16,2,18,3,4), 20))
-ggsaveNF(outBase("NTC_clonalityScatter.pdf"), w=1.8, h=2)
+ggsaveNF(outBase("NTC_clonalityScatter.pdf"), w=3, h=2, guides = TRUE)
 
 # . Plot all guides ---------------------------------------------------------
 tx <- "in.vivo"
@@ -503,7 +506,9 @@ for(tx in names(inDir.funcs)){
     pDT.final <- rbind(pDT.final, pDTg)
   }
   pDT.final$plot <- relevel(factor(pDT.final$plot),ref = "NTC")
-  #pDT.final <- pDT.final[plot == "Wdr82"]
+  
+  n.factors <- length(unique(pDT.final$plot))
+  
   ggplot(pDT.final, aes(x=UMAP1, y=UMAP2)) + 
     themeNF(grid = FALSE) +
     geom_hex(data=pDT.final[mixscape_class.global == "NTC"], bins=100, fill="lightgrey") +
@@ -518,7 +523,7 @@ for(tx in names(inDir.funcs)){
       strip.background = element_blank(), 
       plot.background = element_blank()) +
     xu + yu
-  ggsaveNF(out("UMAP_Guides_all.pdf"), w=4,h=4)
+  ggsaveNF(out("UMAP_Guides_all.pdf"), w=4,h=ceiling(n.factors/6)*4/6)
   
   # pDT.final <- cbind(pDT.final, umap.proj[["in.vivo.X"]][match(pDT.final$rn, rn)][,c("UMAP_1", "UMAP_2"),with=F])
   # ggplot(pDT.final, aes(x=UMAP_1, y=UMAP_2)) + 
@@ -540,13 +545,14 @@ ann <- annList[tissue == inDir.current]
 # FIX MIXSCAPE
 list.files(dirout_load(base.dir)("cluster.enrichments"))
 fish.bcells <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments","_basic", "_in.vivo", "_noMixscape", "_14d",".tsv"))
-fish.enrich.broad <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_DavidSpecial_in.vivo_noMixscape_14d",".tsv"))
+fish.enrich.broad <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_DavidSpecial_in.vivo_noMixscape_14d",".tsv"))[Clusters != "unclear"]
 fish.EryVsMye <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments","_eryVsMye", "_in.vivo", "_noMixscape", "_14d",".tsv"))
 fish.early <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments","_earlyBranches", "_in.vivo", "_noMixscape", "_14d",".tsv"))
 fish.monoVsGran <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments","_monoVsGran", "_in.vivo", "_noMixscape", "_14d",".tsv"))
-fish.d28 <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_earlyBranches_in.vivo_noMixscape_28d.tsv"))
+fish.d28 <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_DavidSpecial_in.vivo_noMixscape_28d",".tsv"))[Clusters != "unclear"]
 
-
+viability <- fread(dirout_load("FIG_04_Viability")("scRNA_processed.tsv"))
+viability <- viability[variable == "scRNA in.vivo 14d"]
 
 # . supp table ------------------------------------------------------------
 exDT <- fish.enrich.broad[,c("Clusters", "gene", "log2OR", "padj", "N", "sig.perc"),with=F]
@@ -655,106 +661,139 @@ ggsaveNF(out("UMAP_Samples.pdf"), w=2,h=2)
 #   ylab("") + xlab("Enrichment in immature B-cells")
 # ggsaveNF(out("ClusterEnrichments_manual_BcellsOnly.pdf"), w=1,h=1.5)
 
-typex <- "supp"
+typex <- "all"
 for(typex in names(dla.healthy)){
   dla <- dla.healthy[[typex]]
-
+  h=length(unique(dla)) * 0.07 + 0.1
+  
   # Plot enrichments with DLA order
   pDT <- fish.enrich.broad[gene %in% dla]
   pDT$gene <- factor(pDT$gene, levels = rev(dla))
   pDT <- pDT[!(Clusters == "MEP (pert.)" & log2OR < 0)]
   pDT[Clusters == "Mega", Clusters := "MkP"]
   pDT[, Clusters := cleanCelltypes(Clusters, clean=TRUE, reverse=FALSE)]
-  h=length(unique(dla)) * 0.07 + 0.1
-  ggplot(pDT, aes(y=gene, x=Clusters, size=sig.perc, color=log2OR_cap)) + 
+  (p_broad <- ggplot(pDT, aes(y=gene, x=Clusters, size=sig.perc, color=log2OR_cap)) + 
     themeNF(rotate=T) +
     scale_color_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
     scale_size_continuous(name="% sign.", range = c(0,5)) +
     scale_y_discrete(position="right") +
     geom_point() +
     geom_point(shape=1, color="lightgrey") +
-    xlab("Lineage") + ylab("")
-  ggsaveNF(out("ClusterEnrichments_manual_cleaned_",typex,".pdf"), h=h,w=0.9)
+    xlab("Lineage") + ylab(""))
+  ggsaveNF(out("ClusterEnrichments_manual_cleaned_",typex,".pdf"), h=h,w=0.9, guides = TRUE)
   
   # Plot mye vs GMP enrichments with DLA order
   pDT <- fish.EryVsMye[Clusters == "GMP"][gene %in% dla]#[log2OR > 0 | log2OR < -2]
   #pDT$gene <- factor(pDT$gene, levels = pDT[order(log2OR)]$gene)
   pDT$gene <- factor(pDT$gene, levels = rev(dla))
-  ggplot(pDT, aes(x=log2OR, y=gene, alpha=sig.perc, fill=sign(log2OR_cap))) + 
+  (p_EryVsMye <- ggplot(pDT, aes(x=log2OR, y=gene, alpha=sig.perc, fill=sign(log2OR_cap))) + 
     themeNF(rotate=F) +
     geom_col() +
     scale_fill_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
     #scale_size_continuous(name="% sign.", range = c(0,5), limits = c(0,1)) +
     #geom_point() +
     scale_y_discrete(position="right") +
-    ylab("") + xlab("Myeloid enrichment vs erythroid (log2OR)") +
-    geom_vline(xintercept = 0)
-  ggsaveNF(out("ClusterEnrichments_manual_GMPvsMEP_",typex,".pdf"), w=1,h=h)
+    ylab("") + xlab("Myeloid enrichment\nvs erythroid (log2OR)") +
+    geom_vline(xintercept = 0))
+  ggsaveNF(out("ClusterEnrichments_manual_GMPvsMEP_",typex,".pdf"), w=1,h=h, guides = TRUE)
   
   pDT <- fish.early[Clusters == "GMP"][gene %in% dla]#[log2OR > 0 | log2OR < -2]
   #pDT$gene <- factor(pDT$gene, levels = pDT[order(log2OR)]$gene)
   pDT$gene <- factor(pDT$gene, levels = rev(dla))
-  ggplot(pDT, aes(x=log2OR, y=gene, alpha=sig.perc, fill=sign(log2OR_cap))) + 
+  (p_Early <- ggplot(pDT, aes(x=log2OR, y=gene, alpha=sig.perc, fill=sign(log2OR_cap))) + 
     themeNF(rotate=F) +
     geom_col() +
     scale_fill_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
     #scale_size_continuous(name="% sign.", range = c(0,5), limits = c(0,1)) +
     #geom_point() +
     scale_y_discrete(position="right") +
-    ylab("") + xlab("Myeloid enrichment vs erythroid (log2OR)") +
-    geom_vline(xintercept = 0)
-  ggsaveNF(out("ClusterEnrichments_manual_EarlyGMPvsMEP_",typex,".pdf"), w=1,h=h)
+    ylab("") + xlab("Early myeloid enrichment\nvs erythroid (log2OR)") +
+    geom_vline(xintercept = 0))
+  ggsaveNF(out("ClusterEnrichments_manual_EarlyGMPvsMEP_",typex,".pdf"), w=1,h=h, guides = TRUE)
   
   pDT <- fish.monoVsGran[Clusters == "Mono"][gene %in% dla]#[log2OR > 0 | log2OR < -2]
   #pDT$gene <- factor(pDT$gene, levels = pDT[order(log2OR)]$gene)
   pDT$gene <- factor(pDT$gene, levels = rev(dla))
-  ggplot(pDT, aes(x=log2OR, y=gene, alpha=sig.perc, fill=sign(log2OR_cap))) + 
+  (p_MonoVsGran <- ggplot(pDT, aes(x=log2OR, y=gene, alpha=sig.perc, fill=sign(log2OR_cap))) + 
     themeNF(rotate=F) +
     geom_col() +
     scale_fill_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
     #scale_size_continuous(name="% sign.", range = c(0,5), limits = c(0,1)) +
     #geom_point() +
     scale_y_discrete(position="right") +
-    ylab("") + xlab("Monocyte enrichment vs granulocyte (log2OR)") +
-    geom_vline(xintercept = 0)
-  ggsaveNF(out("ClusterEnrichments_manual_MonoVsGran_",typex,".pdf"), w=1,h=h)
+    ylab("") + xlab("Monocyte enrichment\nvs granulocyte (log2OR)") +
+    geom_vline(xintercept = 0))
+  ggsaveNF(out("ClusterEnrichments_manual_MonoVsGran_",typex,".pdf"), w=1,h=h, guides = TRUE)
+  
+  # Viability
+  pDT <- copy(viability)
+  pDT[, rn := gsub("^(.)", "\\U\\1", tolower(pDT$rn), perl=TRUE)]
+  pDT <- pDT[rn %in% dla]
+  pDT$gene <- factor(pDT$rn, levels = rev(dla))
+  (p_viability <- ggplot(pDT, aes(x=value, y=gene, fill=sign(value))) + 
+      themeNF(rotate=F) +
+      geom_col() +
+      scale_fill_gradient2(name="log2 fold change",low="blue", midpoint = 0, high="red") +
+      #scale_size_continuous(name="% sign.", range = c(0,5), limits = c(0,1)) +
+      #geom_point() +
+      scale_y_discrete(position="right") +
+      ylab("") + xlab("Viability (log2 fold change)") +
+      geom_vline(xintercept = 0))
+  ggsaveNF(out("ClusterEnrichments_manual_Viability_",typex,".pdf"), w=1,h=h, guides = TRUE)
+  
+  p_final <- 
+    (p_broad + guides(fill=FALSE, color=FALSE, size=FALSE, alpha=FALSE)) +
+    (p_Early + guides(fill=FALSE, color=FALSE, size=FALSE, alpha=FALSE)) +
+    (p_EryVsMye+ guides(fill=FALSE, color=FALSE, size=FALSE, alpha=FALSE)) +
+    (p_MonoVsGran + guides(fill=FALSE, color=FALSE, size=FALSE, alpha=FALSE)) +
+    (p_viability + guides(fill=FALSE, color=FALSE, size=FALSE, alpha=FALSE)) +
+    plot_layout(ncol=5)
+  
+  ggsaveNF(out("ClusterEnrichments_manual_Combined_",typex,".pdf"), w=5,h=h, plot=p_final, guides = TRUE)
 }
 
 # Plot mye vs GMP EARLY enrichments in d28
 gg <- c("Brd9", "Smarcd1", "Smarcd2")
-pDT <- fish.d28[Clusters == "GMP"][gene %in% gg]
-#pDT$gene <- factor(pDT$gene, levels = pDT[order(log2OR)]$gene)
+# Plot enrichments with DLA order
+pDT <- fish.enrich.broad[gene %in% gg]
 pDT$gene <- factor(pDT$gene, levels = rev(gg))
-ggplot(pDT, aes(x=log2OR, y=gene, size=sig.perc, color=log2OR_cap)) + 
-  themeNF(rotate=F) +
-  scale_color_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
-  scale_size_continuous(name="% sign.", range = c(2,5), limits = c(0,1)) +
-  geom_point() +
-  geom_point(shape=1,color="black") +
-  ylab("") + xlab("Myeloid enrichment vs Erythroid (log2OR)") +
-  geom_vline(xintercept = 0)
-ggsaveNF(out("ClusterEnrichments_manual_d28.pdf"), w=2,h=0.7)
+pDT <- pDT[!(Clusters == "MEP (pert.)" & log2OR < 0)]
+pDT[Clusters == "Mega", Clusters := "MkP"]
+pDT[, Clusters := cleanCelltypes(Clusters, clean=TRUE, reverse=FALSE)]
+h=length(unique(gg)) * 0.07 + 0.5
+(p <- ggplot(pDT, aes(y=gene, x=Clusters, size=sig.perc, color=log2OR_cap)) + 
+    themeNF(rotate=T) +
+    scale_color_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
+    scale_size_continuous(name="% sign.", range = c(0,5)) +
+    scale_y_discrete(position="right") +
+    geom_point() +
+    geom_point(shape=1, color="lightgrey") +
+    xlab("Lineage") + ylab(""))
+ggsaveNF(out("ClusterEnrichments_manual_d28.pdf"), h=h,w=1.5, guides = TRUE, plot=p)
 
 
 # . Plot displasia guides ---------------------------------------------------------
-pDT.top <- ann[timepoint == "28d"][grepl("OP1", sample)][mixscape_class.global == "NTC" | perturbed == TRUE]
-pDT.ntc <- pDT.top[mixscape_class.global == "NTC"]
-pDT.final <- copy(pDT.ntc)
-pDT.final$plot <- "NTC"
-for(x in c("Kmt2a","Kmt2d","Smarcd2","Smarcd1","Brd9")){
-  pDTg <- rbind(pDT.ntc, pDT.top[grepl(paste0("^", x), guide)])
+gg <- c("Brd9")
+pDT.top <- ann[timepoint == "28d"][grepl("OP1", sample)][gene %in% c("NTC", gg)]
+#pDT.ntc <- pDT.top[mixscape_class.global == "NTC"]
+pDT.ntc <- ann[timepoint == "14d" & gene == "NTC"]
+pDT.final <- data.table()
+#for(x in c("Kmt2a","Kmt2d","Smarcd2","Smarcd1","Brd9")){
+for(x in unique(pDT.top$gene)){
+  pDTg <- rbind(pDT.ntc, pDT.top[gene == x])
   pDTg$plot <- x
   pDT.final <- rbind(pDT.final, pDTg)
 }
-pDT.final$plot <- relevel(factor(pDT.final$plot), ref = "NTC")
+#pDT.final$plot <- relevel(factor(pDT.final$plot), ref = "NTC")
 ggplot(pDT.final, aes(x=UMAP1, y=UMAP2)) + 
   themeNF() +
-  geom_hex(data=pDT.final[mixscape_class.global == "NTC"], bins=100, fill="lightgrey") +
-  geom_hex(data=pDT.final[mixscape_class.global != "NTC" | plot == "NTC"], bins=100) +
+  geom_hex(data=pDT.final[timepoint == "14d"], bins=100, fill="lightgrey") +
+  geom_hex(data=pDT.final[timepoint == "28d"], bins=100) +
   scale_fill_gradientn(colours=c("#1f78b4", "#e31a1c")) +
   facet_wrap(~plot, ncol=3) +
   xu + yu
-ggsaveNF(out("UMAP_Guides_displasia.pdf"), w=2,h=1.5)
+ggsaveNF(out("UMAP_Guides_displasia.pdf"), w=2,h=1)
+
 
 # . Plot displasia numbers -----------------------------------------------
 pDT <- copy(ann[markers=="lin-"][grepl("OP1", sample)][mixscape_class.global == "NTC" | perturbed == TRUE][gene %in% c("Kmt2a","Kmt2d","Smarcd2","Smarcd1","Brd9", "NTC")])
@@ -884,7 +923,7 @@ abs$Cluster.number <- ann[match(abs$rn, rn)]$Cluster.number
 
 
 # . Define clustesr -------------------------------------------------------
-clusters.plot.cts <- list("Ery Prog."=20, "Late GMP"=c(18,19,21,25),"Eo/Ba"=11,"MkP"=26)
+clusters.plot.cts <- list("Ery Prog."=c(5,20), "Late GMP"=c(18,19,21,25),"Eo/Ba"=11,"MkP"=26)
 clusters.plot <- unlist(clusters.plot.cts)
 ann[, Clusters := "other"]
 for(xnam in names(clusters.plot.cts)){

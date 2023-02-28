@@ -56,8 +56,8 @@ for(i in nrs){
     
     # dataset
     dx <- counts(mobj)[, cells]
-    gfilter <- rowSums(dx) > 0
-    #gfilter <- filterByExpr(dx, design=mm, min.prop = 0.1, min.count=1)
+    #gfilter <- rowSums(dx) > 0
+    gfilter <- filterByExpr(dx, design=mm, min.prop = 0.1, min.count=1)
     table(gfilter)
     
     # Limma voom
