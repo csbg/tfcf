@@ -65,21 +65,7 @@ GOI <- list(
   Fig4 = c("")
 )
 
-GOI.targets <- list(
-  # markers = list(markers=c("Mpo","Elane","Ctsg","S100a9","S100a8","Mtf2","Car1","Car2","Epor","Pklr","Pf4","Cpa3","Hba","Hbb","Tfrc","Cpox","Mt2","Trem2","Mefv","F13a1","Ly6c2","Fcgr3","Cd34","Kit","Itgam")),
-  # tfs = list(tfs=c("Spi1","Cebpa","Cebpb","Cebpe","Klf4","Gfi1","Irf8","Mef2c","Gata2","Gata1","Klf1","Gfi1b", "Zfpm1","Mafk",
-  #         "Sox6","Klf9","Lmo4","Nfia","Nfix","Nfe2","Nfe2l2","Tal1","Cited4")),
-  # markers2 = list(
-  #   Prog=c("Cd34","Kit","Meis1","Hoxa5","Hoxa7","Hoxa9"),
-  #   Mye=c("Elane","Mpo","Csf1r","Spi1","Cebpa","Cebpb","Cebpe","Gfi1","Irf8"," Mef2c"),
-  #   "Mega-ery"=c("Car1","Gypa","Hbb-bt","Hbb-1","Hba-a1","Gata2","Gata1","Gfi1b","Klf1","Sox6","Klf9","Nfe2l2","Cited4","Tal1"),
-  #   "Mega-only"=c("Itga2b","Cavin2","Vwf","Gp1ba","Gp1bb","Nfix","Nfia"),
-  #   Baso=c("Cpa3","Prss34","Fcer1a"),
-  #   "B-cell"=c("Il7r","Cd19","Pax5","Ebf1"))
-  markers2 = with(fread("metadata/FIGS_02_DE_Genes.tsv", check.names = TRUE), split(Gene.list, Programme))
-)
-# GOI.targets$LSC <- list(LSC=c("Hif1a", "Myc", "Bcat1", grep("Hox", unique(deDT$gene_id), value=TRUE)))
-# GOI.targets$ISGs <- list("Interferon stimulated genes"=fread("metadata/FIGS_02_ISG_Core.txt")$Gene)
+GOI.targets <- fread("metadata/FIGS_02_DE_Genes.tsv", check.names = TRUE)
 
 
 dla.vulcano.genes <- fread("metadata/FIGS_VulcanoGenes.tsv", header = FALSE)
@@ -125,20 +111,37 @@ write.tsv(pDT, out("Supplementary_Table_GSEA.tsv"))
 (tx <- deDT[use == TRUE]$tissue[1])
 for(tx in unique(deDT[use == TRUE]$tissue)){
   pDT <- deDT[tissue == tx]
-  (lnam <- names(GOI.targets)[1])
-  for(lnam in names(GOI.targets)){
-    goi <- rbindlist(lapply(GOI.targets[[lnam]], data.table), idcol = "celltype")
-    goi[! V1 %in% pDT$gene_id]
-    xDT <- merge(pDT, goi, by.x="gene_id", by.y="V1")
-    xDT$gene_id <- factor(xDT$gene_id, levels = goi$V1)
-    xDT$celltype <- factor(xDT$celltype, levels = rev(unique(goi$celltype)))
-    #xDT$guide <- factor(xDT$guide, levels = GOI$BAF)
-    xDT <- hierarch.ordering(xDT, "guide", "gene_id", value.var = "estimate")
-    # xDT <- hierarch.ordering(xDT, "gene_id", "guide", value.var = "estimate")
-    w=length(unique(xDT$gene_id)) * 0.05 + length(unique(xDT$celltype)) * 0.05 + 0.5
-    h=length(unique(xDT$guide)) * 0.05 + 0.5
-    xDT[abs(estimate) > 5, estimate := pmin(abs(estimate),5) * sign(estimate)]
-    ggplot(xDT, aes(y=guide, x=gene_id, color=estimate, size=pmin(5, -log10(q_value)))) + 
+  (lnam <- "x")
+  
+  xDT <- merge(pDT, GOI.targets, by.x="gene_id", by.y="Gene.list")
+  xDT$gene_id <- factor(xDT$gene_id, levels = GOI.targets$Gene.list)
+  xDT$celltype <- factor(xDT$Programme, levels = unique(GOI.targets$Programme))
+  #xDT$guide <- factor(xDT$guide, levels = GOI$BAF)
+  xDT <- hierarch.ordering(xDT, "guide", "gene_id", value.var = "estimate")
+  # xDT <- hierarch.ordering(xDT, "gene_id", "guide", value.var = "estimate")
+  w=length(unique(xDT$gene_id)) * 0.05 + length(unique(xDT$celltype)) * 0.05 + 0.5
+  h=length(unique(xDT$guide)) * 0.05 + 0.5
+  xDT[abs(estimate) > 5, estimate := pmin(abs(estimate),5) * sign(estimate)]
+  ggplot(xDT, aes(y=guide, x=gene_id, color=estimate, size=pmin(5, -log10(q_value)))) + 
+    themeNF(rotate=TRUE) +
+    geom_point() +
+    scale_color_gradient2(name="log2FC", low="blue", high="red") +
+    scale_size_continuous(name="-log10(padj)", range = c(0,5)) +
+    scale_x_discrete(position = "top") +
+    theme(axis.text.x = element_text(vjust=1, hjust=0)) +
+    ggtitle(tx) +
+    facet_grid(. ~ celltype, space = "free", scales = "free") +
+    xlab("Gene expression") + ylab("CRISPR targets")
+  ggsaveNF(out("GeneDE_", tx, "_", lnam, "_allGuides.pdf"),w=w,h=h, guides = TRUE)
+  
+  (dla.nam <- names(dla.factors)[3])
+  for(dla.nam in names(dla.factors)){
+    dla <- dla.factors[[dla.nam]]
+    xDT2 <- xDT[guide %in% dla]
+    if(nrow(xDT2) == 0) next
+    xDT2$guide <- factor(xDT2$guide, levels=rev(dla))
+    h=length(unique(xDT2$guide)) * 0.05 + 0.5
+    ggplot(xDT2, aes(y=guide, x=gene_id, color=estimate, size=pmin(5, -log10(q_value)))) + 
       themeNF(rotate=TRUE) +
       geom_point() +
       scale_color_gradient2(name="log2FC", low="blue", high="red") +
@@ -148,27 +151,7 @@ for(tx in unique(deDT[use == TRUE]$tissue)){
       ggtitle(tx) +
       facet_grid(. ~ celltype, space = "free", scales = "free") +
       xlab("Gene expression") + ylab("CRISPR targets")
-    ggsaveNF(out("GeneDE_", tx, "_", lnam, "_allGuides.pdf"),w=w,h=h, guides = TRUE)
-    
-    (dla.nam <- names(dla.factors)[3])
-    for(dla.nam in names(dla.factors)){
-      dla <- dla.factors[[dla.nam]]
-      xDT2 <- xDT[guide %in% dla]
-      if(nrow(xDT2) == 0) next
-      xDT2$guide <- factor(xDT2$guide, levels=dla)
-      h=length(unique(xDT2$guide)) * 0.05 + 0.5
-      ggplot(xDT2, aes(y=guide, x=gene_id, color=estimate, size=pmin(5, -log10(q_value)))) + 
-        themeNF(rotate=TRUE) +
-        geom_point() +
-        scale_color_gradient2(name="log2FC", low="blue", high="red") +
-        scale_size_continuous(name="-log10(padj)", range = c(0,5)) +
-        scale_x_discrete(position = "top") +
-        theme(axis.text.x = element_text(vjust=1, hjust=0)) +
-        ggtitle(tx) +
-        facet_grid(. ~ celltype, space = "free", scales = "free") +
-        xlab("Gene expression") + ylab("CRISPR targets")
-      ggsaveNF(out("GeneDE_", tx, "_", lnam, "_", dla.nam,".pdf"),w=w,h=h, guides = TRUE)}
-  }
+    ggsaveNF(out("GeneDE_", tx, "_", lnam, "_", dla.nam,".pdf"),w=w,h=h, guides = TRUE)}
 }
 
 
@@ -190,28 +173,28 @@ for(tx in unique(deDT[use == TRUE]$tissue)){
 # ggsaveNF(out("ATAC_correlation.pdf"), w=4,h=1)
 
 
-# Vulcano plots -----------------------------------------------------------
-dir.create(out("Vulcanos/"))
-tissuex <- deDT$tissue[1]
-for(tissuex in unique(deDT$tissue)){
-  pDT <- deDT[tissue == tissuex]
-  # pDT.examples <- rbind(
-  #   pDT[order(estimate)][,head(.SD,n=5), by=c("tissue")],
-  #   pDT[order(-estimate)][,head(.SD,n=5), by=c("tissue")],
-  #   pDT[estimate > 0][order(p_value)][,head(.SD,n=5), by=c("tissue")],
-  #   pDT[estimate < 0][order(p_value)][,head(.SD,n=5), by=c("tissue")]
-  # )
-  pDT.examples <- pDT[gene_id %in% dla.vulcano.genes]
-  cnt <- length(unique(pDT$guide))
-  ncol=5
-  p <- ggplot(pDT, aes(x=estimate, y=pmin(30, -log10(p_value)))) + 
-    facet_wrap(~ guide, scale="free", ncol = ncol) +
-    stat_binhex(aes(fill=log10(..count..))) +
-    scale_fill_gradient(low="lightgrey", high="blue")+ 
-    geom_text_repel(data=pDT.examples, aes(label=gene_id)) +
-    themeNF()
-  ggsaveNF(out("Vulcanos/Vulcano_",tissuex,".pdf"), h=ceiling(cnt/ncol),w=ncol, limitsize=FALSE, plot=p)
-}
+# # Vulcano plots -----------------------------------------------------------
+# dir.create(out("Vulcanos/"))
+# tissuex <- deDT$tissue[1]
+# for(tissuex in unique(deDT$tissue)){
+#   pDT <- deDT[tissue == tissuex]
+#   # pDT.examples <- rbind(
+#   #   pDT[order(estimate)][,head(.SD,n=5), by=c("tissue")],
+#   #   pDT[order(-estimate)][,head(.SD,n=5), by=c("tissue")],
+#   #   pDT[estimate > 0][order(p_value)][,head(.SD,n=5), by=c("tissue")],
+#   #   pDT[estimate < 0][order(p_value)][,head(.SD,n=5), by=c("tissue")]
+#   # )
+#   pDT.examples <- pDT[gene_id %in% dla.vulcano.genes]
+#   cnt <- length(unique(pDT$guide))
+#   ncol=5
+#   p <- ggplot(pDT, aes(x=estimate, y=pmin(30, -log10(p_value)))) + 
+#     facet_wrap(~ guide, scale="free", ncol = ncol) +
+#     stat_binhex(aes(fill=log10(..count..))) +
+#     scale_fill_gradient(low="lightgrey", high="blue")+ 
+#     geom_text_repel(data=pDT.examples, aes(label=gene_id)) +
+#     themeNF()
+#   ggsaveNF(out("Vulcanos/Vulcano_",tissuex,".pdf"), h=ceiling(cnt/ncol),w=ncol, limitsize=FALSE, plot=p)
+# }
 
 
 

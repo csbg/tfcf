@@ -110,8 +110,11 @@ dla.healthy <- list(
   main.Feb28=fread("metadata/FIGS_02_CFs.main_Feb28.txt", header = FALSE)$V1
 )
 dla.healthy$all <- setdiff(sort(unique(annList$gene)), "NTC")
-for(x in names(dla.healthy)){ dla.healthy[[x]] <- setdiff(dla.healthy[[x]], "Smarcb1")}
-dla.cancer <- dla.healthy
+#for(x in names(dla.healthy)){ dla.healthy[[x]] <- setdiff(dla.healthy[[x]], "Smarcb1")}
+dla.cancer <- list(
+  supp=dla.healthy$all,
+  main=c("Setd1b","Wdr82","Kmt2d","Kmt2a","Men1","Prmt1","Carm1","Prmt5","Smarcb1","Smarcd2","Smarcd1","Brd9","Pbrm1","Smarca5","Chd4","Rbbp4","Hdac3","Setdb1","Atf7ip","Setdb2","Hdac1","Rcor1","Rcor2","Ezh2","Stag2","Ash1l")
+)
 
 
 # load Monocle Objects
@@ -909,6 +912,27 @@ for(suppx in names(dla.healthy)){
 
 # LEUKEMIA---------------------------------------------------------
 
+# . Define clustesr -------------------------------------------------------
+clusters.plot.cts <- list()
+
+clusters.plot.cts$main <- list(
+  "Gran"=24,
+  "Gran Prog."=c(18,21,25),
+  "Eo/Ba"=11,
+  "Ery Prog."=c(5,20), 
+  "MkP"=26
+)
+
+clusters.plot.cts$supp <- c(
+  list(
+    "unclear"=c(1, 22, 8, 10, 17, 9, 23, 12, 14, 15, 7, 2, 28),
+    "GMP"=c(19, 16, 3, 13, 6),
+    "Mono"=c(27,4)
+    ),
+  clusters.plot.cts$main
+)
+#clusters.plot <- unlist(clusters.plot.cts)
+
 # . load data ---------------------------------------------------------
 inDir.current <- "leukemia"
 out <- dirout(paste0(base.dir, "/", inDir.current))
@@ -919,21 +943,25 @@ abs <- fread(inDir.funcs[[inDir.current]]("Antibodies.tsv"))
 abs <- merge(abs[,-c("UMAP1", "UMAP2"),with=F], setNames(umap.proj[["in.vivo.X"]][,c("rn", "UMAP_1", "UMAP_2")], c("rn", "UMAP1", "UMAP2")), by="rn")
 abs$Clusters <- ann[match(abs$rn, rn)]$Clusters
 abs$Cluster.number <- ann[match(abs$rn, rn)]$Cluster.number
+abs.main.dla <- toupper(c("CD34","CD41","CD55","FCeR1","CD11b","Ly6C"))
+
 #clusters.plot <- c(8,16,12,5,11,15,6,7,18)
 
-
-# . Define clustesr -------------------------------------------------------
-clusters.plot.cts <- list("Ery Prog."=c(5,20), "Late GMP"=c(18,19,21,25),"Eo/Ba"=11,"MkP"=26)
-clusters.plot <- unlist(clusters.plot.cts)
+# update ann with cluster numbers
 ann[, Clusters := "other"]
 for(xnam in names(clusters.plot.cts)){
-  ann[Cluster.number %in% clusters.plot.cts[[xnam]], Clusters := xnam]
+  ann[Cluster.number %in% clusters.plot.cts$main[[xnam]], Clusters := xnam]
+}
+
+abs[, Clusters := "other"]
+for(xnam in names(clusters.plot.cts)){
+  abs[Cluster.number %in% clusters.plot.cts$main[[xnam]], Clusters := xnam]
 }
 
 
 # FIX MIXSCAPE
 fish.enrich <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_numeric_leukemia_noMixscape_6d.tsv"))
-fish.enrich$celltype <- unique(ann[,c("Cluster.number", "Clusters"),with=F])[match(fish.enrich$Clusters, paste("cl", Cluster.number))]$Clusters
+#fish.enrich$celltype <- unique(ann[,c("Cluster.number", "Clusters"),with=F])[match(fish.enrich$Clusters, paste("cl", Cluster.number))]$Clusters
 
 
 # . supp table ------------------------------------------------------------
@@ -978,20 +1006,34 @@ ggsaveNF(out("Antibodies_UMAP.pdf"), w=2, h=2)
 
 
 # . Summarize Antibodies in clusters --------------------------------------
-pDT <- abs[, .(Signal=mean(Signal.norm, na.rm=TRUE)), by=c("Cluster.number", "Antibody", "Clusters")]
+pDT <- abs[, .(Signal=mean(Signal.norm, na.rm=TRUE)), by=c("Cluster.number", "Antibody")]
 #pDT[, Clusters := cleanCelltypes(Clusters)]
 #pDT <- hierarch.ordering(pDT, "Clusters", "Antibody", "Signal")
 pDT <- hierarch.ordering(pDT, "Antibody", "Cluster.number", "Signal")
+suppx <- "main"
 for(suppx in c("main", "supp")){
-  pDTx <- if(suppx == "main") pDT[Cluster.number %in% clusters.plot] else pDT
+  cl.labels <- clusters.plot.cts[[suppx]]
+  
+  pDTx <- pDT[Cluster.number %in% unlist(cl.labels)]
+  pDTx[, Cluster.number := as.numeric(Cluster.number)]
+  
+  pDTx <- merge(pDTx, melt(cl.labels), by.x="Cluster.number", by.y="value")
+  pDTx[, celltype := factor(L1, levels=rev(names(cl.labels)))]
+  
+  if(suppx == "main"){
+    pDTx <- pDTx[Antibody %in% abs.main.dla]
+    pDTx$Antibody <- factor(pDTx$Antibody, levels = abs.main.dla)
+  }
   ggplot(pDTx, aes(y=factor(as.numeric(Cluster.number)),x=Antibody, fill=Signal)) +
     themeNF() +
     geom_tile() +
     scale_fill_gradient2(low="blue", high="red") +
     xRot() +
-    facet_grid(Clusters ~ ., space = "free", scales = "free") +
+    facet_grid(celltype ~ ., space = "free", scales = "free") +
     ylab("Clusters")
-  ggsaveNF(out("Antibodies_Average_",suppx,".pdf"), w=1, h=length(unique(pDTx$Cluster.number)) * 0.05 + 0.3)
+  ggsaveNF(out("Antibodies_Average_",suppx,".pdf"), 
+           w=length(unique(pDTx$Antibody)) * 0.05 + 0.3, 
+           h=length(unique(pDTx$Cluster.number)) * 0.05 + 0.3)
 }
 
 
@@ -1050,12 +1092,19 @@ pDT <- copy(fish.enrich)
 #pDT$Complex <- dla[match(pDT$gene, Factor)]$Complex
 #pDT[, celltype := cleanCelltypes(celltype, clean=TRUE, twoLines = FALSE, order = TRUE, reverse = TRUE)]
 pDT[, log2OR_cap := pmin(2, abs(log2OR)) * sign(log2OR)]
+suppx <- "supp"
 for(suppx in names(dla.cancer)){
   dla <- dla.cancer[[suppx]]
-  pDTx <- if(suppx == "main") pDT[Clusters %in% paste("cl", setdiff(clusters.plot, 15))] else pDT
+  cl.labels <- clusters.plot.cts[[suppx]]
+  
+  pDTx <- pDT[Clusters %in% paste("cl", unlist(cl.labels))]
   pDTx <- pDTx[gene %in% dla]
   pDTx$gene <- factor(pDTx$gene, levels = dla)
   pDTx[,Clusters := as.numeric(gsub("cl ", "", Clusters))]
+  
+  pDTx <- merge(pDTx, melt(cl.labels), by.x="Clusters", by.y="value")
+  pDTx[, celltype := factor(L1, levels=rev(names(cl.labels)))]
+  pDTx <- pDTx[!(Clusters == 24 & log2OR < 0)]
   w=length(unique(pDTx$gene)) * 0.04 + 1
   h=length(unique(pDTx$Clusters)) * 0.06 + 0.3
   ggplot(pDTx, aes(x=gene, y=factor(Clusters), size=sig.perc*100, color=log2OR_cap)) + 
@@ -1108,31 +1157,40 @@ for(suppx in names(dla.cancer)){
 
 # . LSC marker plot ---------------------------------------------------------
 #gg <- c("Bcat1", "Hif1a", "Myc", "Gata1", "Prss34", "Hba-a1", "Irf8", "S100a9", "Ltf")
-gg <- c("Itgam","Ly6c1","Ltf","S100a9","Cd55","Fcer1a","Prss34","Gata1","Hba-a1","Itga2b","Pf4")
+#gg <- c("Itgam","Ly6c1","Ltf","S100a9","Cd55","Fcer1a","Prss34","Gata1","Hba-a1","Itga2b","Pf4")
+gg <- list(
+  main=c("Pf4","Itga2b","Hba-a1","Gata1","Cd55","Prss34","S100a9","Itgam","Ltf"),
+  supp=c("Bcat1","Meis1","Kit","Sox4","Pf4","Itga2b","Hba-a1","Gata1","Cd55","Prss34","Mpo","S100a9","Itgam","Ltf","Csf1r","F13a1")
+)
 
 cds <- mobjs[["leukemia"]]
 stopifnot(all(gg %in% row.names(cds)))
 cds$Cluster.number <- monocle3::clusters(cds)
-pDT <- DotPlotData(cds = cds, markers = gg, cols = "Cluster.number")
-#pDT <- pDT[Gene %in% pDT[,max(percentage), by="Gene"][V1 > 75]$Gene]
-pDT[, scale := scale(mean), by=c("Gene")]
-pDT <- hierarch.ordering(pDT, "Gene", "Cluster.number", "scale", aggregate = TRUE)
-pDT <- merge(pDT, unique(ann[,c("Clusters", "Cluster.number"),with=F]),by=c("Cluster.number"))
+
 suppx <- "main"
 for(suppx in c("supp", "main")){
-    pDTx <- if(suppx == "main") pDT[Cluster.number %in% clusters.plot] else pDT
-    h=length(unique(pDTx$Cluster.number)) * 0.07 + 0.2
-    ggplot(pDTx, aes(y=factor(as.numeric(Cluster.number)), x=Gene, color=scale, size=percentage)) + 
-      geom_point() +
-      #geom_point(color="black", shape=1) + 
-      scale_size_continuous(range=c(0,5), limits = c(0,100)) +
-      scale_color_gradientn(colours = c("lightgrey", "grey", "#1f78b4", "black")) +
-      facet_grid(Clusters ~ ., space="free", scales = "free") +
-      themeNF(rotate = TRUE) +
-      ylab("Cluster") + xlab("Gene")
-    ggsaveNF(out("Markers_Leukemia_",suppx,".pdf"), w=0.8,h=h)
+  pDT <- DotPlotData(cds = cds, markers = gg[[suppx]], cols = "Cluster.number")
+  pDT[, scale := scale(mean), by=c("Gene")]
+  pDT$Gene <- factor(pDT$Gene, levels=gg[[suppx]])
+  pDT[,Cluster.number := as.numeric(Cluster.number)]
+  
+  cl.labels <- clusters.plot.cts[[suppx]]
+  pDTx <- merge(pDT, melt(cl.labels), by.x="Cluster.number", by.y="value")
+  pDTx[, celltype := factor(L1, levels=rev(names(cl.labels)))]
+  
+  pDTx <- pDTx[Cluster.number %in% unlist(cl.labels)]
+  h=length(unique(pDTx$Cluster.number)) * 0.08 + 0.2
+  w=length(unique(pDTx$Gene)) * 0.08 + 0.2
+  ggplot(pDTx, aes(y=factor(as.numeric(Cluster.number)), x=Gene, color=scale, size=percentage)) + 
+    geom_point() +
+    #geom_point(color="black", shape=1) + 
+    scale_size_continuous(range=c(0,5), limits = c(0,100)) +
+    scale_color_gradientn(colours = c("lightgrey", "grey", "#1f78b4", "black")) +
+    facet_grid(celltype ~ ., space="free", scales = "free") +
+    themeNF(rotate = TRUE) +
+    ylab("Cluster") + xlab("Gene")
+  ggsaveNF(out("Markers_Leukemia_",suppx,".pdf"), w=w,h=h)
 }
-
 
 
 
