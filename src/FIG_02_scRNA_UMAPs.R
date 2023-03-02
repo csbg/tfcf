@@ -62,7 +62,7 @@ marker.overlaps <- fread(dirout_load("SCRNA_06_03_MarkerOverlaps")("Enrichments.
 # Cell annotations
 annList <- lapply(names(inDir.funcs), function(inDir.current){
   ann <- fread(inDir.funcs[[inDir.current]]("Annotation.tsv"))
-  ann[, perturbed := !(mixscape_class.global %in% c("NP", "NTC") | is.na(mixscape_class.global))]
+  #ann[, perturbed := !(mixscape_class.global %in% c("NP", "NTC") | is.na(mixscape_class.global))]
   ann[, gene := gsub("_.+", "", guide)]
   ann
   })
@@ -501,10 +501,10 @@ for(tx in names(inDir.funcs)){
   pDT.ntc <- pDT.top[mixscape_class.global == "NTC"]
   pDT.final <- copy(pDT.ntc)
   pDT.final$plot <- "NTC"
-  for(x in unique(pDT.top[perturbed == TRUE]$gene)){
+  for(x in unique(pDT.top[!is.na(gene)]$gene)){
     # FIX MIXSCAPE
     #pDTg <- rbind(pDT.ntc, pDT.top[grepl(paste0("^", x), guide) & mixscape_class.global == "KO"])
-    pDTg <- rbind(pDT.ntc, pDT.top[grepl(paste0("^", x), guide)])
+    pDTg <- rbind(pDT.ntc, pDT.top[gene == x])
     pDTg$plot <- x
     pDT.final <- rbind(pDT.final, pDTg)
   }
@@ -565,20 +565,6 @@ WriteXLS(x=exDT, ExcelFileName=out("Supplementary_Table_CellTypes_invivo.xls"), 
 write.tsv(exDT, out("Supplementary_Table_CellTypes_invivo.tsv"))
 
 
-# . Plot distribution of one gene -------------------------------------------
-pDT <- ann[markers == "lin-"][timepoint == "14d"]
-gg <- "Rbbp4"
-pDT <- pDT[(gene == gg & perturbed == TRUE) | mixscape_class == "NTC"]
-pDT <- pDT[, .N, by=c("gene", "Clusters")]
-pDT[, sum := sum(N), by=c("Clusters")]
-pDT[, rel2NTCs := N/(sum-N)]
-pDT[rel2NTCs == Inf, rel2NTCs := 1]
-pDT <- pDT[gene != "NTC"]
-ggplot(pDT, aes(x=cleanCelltypes(Clusters, reverse = FALSE), y=rel2NTCs)) + 
-  themeNF(rotate=TRUE) +
-  geom_bar(stat="identity") +
-  ggtitle(gg)
-
 
 # . NTC Clusters depletion ------------------------------------------------------------
 pDT <- copy(ann)
@@ -612,16 +598,16 @@ ggsaveNF(out("NTC_depleted_clusters_UMAP.pdf"),w=1.5,h=1.5)
 
 
 # . UMAP of timepoint / markers ---------------------------------------------------------
-ggplot(ann[perturbed == FALSE], aes(x=UMAP1, y=UMAP2)) + 
+ggplot(ann[gene == "NTC"], aes(x=UMAP1, y=UMAP2)) + 
   themeNF() +
   geom_hex(bins=100) +
   scale_fill_gradient(low="lightgrey", high="blue") +
   facet_wrap(~markers + timepoint, ncol=2) +
   xu + yu
-ggsaveNF(out("UMAP_Groups.pdf"), w=1,h=1)
+ggsaveNF(out("UMAP_Groups.pdf"), w=1.4,h=1.4, guides=TRUE)
 
 # . UMAP of samples -------------------------------------------------------
-ggplot(ann[perturbed == FALSE], aes(x=UMAP1, y=UMAP2)) + 
+ggplot(ann[gene == "NTC"], aes(x=UMAP1, y=UMAP2)) + 
   themeNF() +
   geom_hex(bins=100) +
   scale_fill_gradient(low="lightgrey", high="blue") +
@@ -629,41 +615,9 @@ ggplot(ann[perturbed == FALSE], aes(x=UMAP1, y=UMAP2)) +
   xu + yu
 ggsaveNF(out("UMAP_Samples.pdf"), w=2,h=2)
 
-# . Plot top guides ---------------------------------------------------------
-# pDT.top <- ann[timepoint == "14d"]
-# pDT.ntc <- pDT.top[mixscape_class.global == "NTC"]
-# pDT.final <- copy(pDT.ntc)
-# pDT.final$plot <- "NTC"
-# for(x in c("Wdr82", "Rcor1", "Ehmt1", "Setdb1", "Hdac3")){
-#   pDTg <- rbind(pDT.ntc, pDT.top[grepl(paste0("^", x), guide) & perturbed == TRUE])
-#   pDTg$plot <- x
-#   pDT.final <- rbind(pDT.final, pDTg)
-# }
-# pDT.final$plot <- relevel(factor(pDT.final$plot), ref = "NTC")
-# ggplot(pDT.final, aes(x=UMAP1, y=UMAP2)) + 
-#   themeNF() +
-#   geom_hex(data=pDT.final[mixscape_class.global == "NTC"], bins=100, fill="lightgrey") +
-#   geom_hex(data=pDT.final[mixscape_class.global != "NTC" | plot == "NTC"], bins=100) +
-#   scale_fill_gradientn(colours=c("#1f78b4", "#e31a1c")) +
-#   facet_wrap(~plot, ncol=3) +
-#   xu + yu
-# ggsaveNF(out("UMAP_Guides.pdf"), w=2,h=2)
 
 
 # . Plot manual enrichments -------------------------------------------------
-# B cell enrichments
-# pDT <- fish.bcells[Clusters == "Imm. B-cell"][abs(log2OR) > 0.5]
-# pDT$gene <- factor(pDT$gene, levels = pDT[order(log2OR)]$gene)
-# ggplot(pDT, aes(x=log2OR, y=gene, size=sig.perc, color = log2OR)) + 
-#   themeNF(12) +
-#   geom_vline(xintercept = 0) +
-#   scale_size_continuous(range = c(1,4)) +
-#   geom_point() + 
-#   geom_point(shape=1, color="lightgrey") + 
-#   scale_color_gradient2(low="blue", high="red") +
-#   ylab("") + xlab("Enrichment in immature B-cells")
-# ggsaveNF(out("ClusterEnrichments_manual_BcellsOnly.pdf"), w=1,h=1.5)
-
 typex <- "all"
 for(typex in names(dla.healthy)){
   dla <- dla.healthy[[typex]]
@@ -779,19 +733,20 @@ ggsaveNF(out("ClusterEnrichments_manual_d28.pdf"), h=h,w=1.5, guides = TRUE, plo
 gg <- c("Brd9")
 pDT.top <- ann[timepoint == "28d"][grepl("OP1", sample)][gene %in% c("NTC", gg)]
 #pDT.ntc <- pDT.top[mixscape_class.global == "NTC"]
-pDT.ntc <- ann[timepoint == "14d" & gene == "NTC"]
+pDT.ntc <- ann[timepoint == "28d"]
+pDT.ntc[, type := "Background"]
 pDT.final <- data.table()
 #for(x in c("Kmt2a","Kmt2d","Smarcd2","Smarcd1","Brd9")){
 for(x in unique(pDT.top$gene)){
-  pDTg <- rbind(pDT.ntc, pDT.top[gene == x])
+  pDTg <- rbind(pDT.ntc, pDT.top[gene == x], fill=TRUE)
   pDTg$plot <- x
-  pDT.final <- rbind(pDT.final, pDTg)
+  pDT.final <- rbind(pDT.final, pDTg, fill=TRUE)
 }
 #pDT.final$plot <- relevel(factor(pDT.final$plot), ref = "NTC")
 ggplot(pDT.final, aes(x=UMAP1, y=UMAP2)) + 
   themeNF() +
-  geom_hex(data=pDT.final[timepoint == "14d"], bins=100, fill="lightgrey") +
-  geom_hex(data=pDT.final[timepoint == "28d"], bins=100) +
+  geom_hex(data=pDT.final[type == "Background"], bins=100, fill="lightgrey") +
+  geom_hex(data=pDT.final[is.na(type)], bins=100) +
   scale_fill_gradientn(colours=c("#1f78b4", "#e31a1c")) +
   facet_wrap(~plot, ncol=3) +
   xu + yu
@@ -799,7 +754,7 @@ ggsaveNF(out("UMAP_Guides_displasia.pdf"), w=2,h=1)
 
 
 # . Plot displasia numbers -----------------------------------------------
-pDT <- copy(ann[markers=="lin-"][grepl("OP1", sample)][mixscape_class.global == "NTC" | perturbed == TRUE][gene %in% c("Kmt2a","Kmt2d","Smarcd2","Smarcd1","Brd9", "NTC")])
+pDT <- copy(ann[markers=="lin-"][grepl("OP1", sample)][mixscape_class.global == "NTC" | gene %in% c("Kmt2a","Kmt2d","Smarcd2","Smarcd1","Brd9", "NTC")])
 pDT[, group := gsub("_.+", "", guide)]
 pDT <- pDT[!is.na(group)]
 pDT <- pDT[,.N, by=c("timepoint", "group")]
@@ -872,21 +827,23 @@ ggsaveNF(out("BulkSignatures_Supp.pdf"), w=2.5,h=1)
 suppx <- "main"
 for(suppx in names(dla.healthy)){
   dla <- dla.healthy[[suppx]]
-  pDT <- fish.enrich[gene %in% dla][(Clusters %in% c("GMP", "MkP", "Eo/Ba", "HSC", "EBMP") & day=="day7") | (Clusters == "GMP (late)" & day=="day9")]
-  pDT$Clusters <- factor(pDT$Clusters, levels = c("HSC", "EBMP", "GMP", "GMP (late)", "MkP", "Eo/Ba"))
+  pDT <- fish.enrich[gene %in% dla]
+  pDT <- pDT[Clusters %in% unique(ann$Clusters)]
+  pDT <- pDT[(Clusters == "GMP (late)" & day == "day9") | (Clusters != "GMP (late)" & day == "day7")]
+  with(pDT, table(Clusters, day))
+  #pDT$Clusters <- factor(pDT$Clusters, levels = c("HSC", "EBMP", "GMP", "GMP (late)", "MkP", "Eo/Ba"))
   pDT$gene <- factor(pDT$gene, levels = rev(dla))
-  #pDT$Complex <- dla[match(pDT$gene, Factor)]$Complex
-  #pDT[, Clusters := cleanCelltypes(Clusters, clean=FALSE, twoLines = FALSE, order = TRUE, reverse = TRUE)]
-  h=length(unique(dla)) * 0.07 + 0.1
-  ggplot(pDT, aes(y=gene, x=Clusters, size=sig.perc, color=log2OR_cap)) + 
+  pDT[, celltype := cleanCelltypes(Clusters, clean=TRUE, twoLines = FALSE, order = TRUE, reverse = FALSE)]
+  h=length(unique(dla)) * 0.03 + 0.2
+  ggplot(pDT, aes(y=gene, x=celltype, size=sig.perc, color=log2OR_cap)) + 
     themeNF(rotate=TRUE) +
     scale_color_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
     scale_size_continuous(name="% sign.", range = c(0,4)) +
+    #facet_grid(. ~ day, space = "free", scales = "free") +
     geom_point() +
     geom_point(shape=1, color="lightgrey") +
     scale_y_discrete(position="right") +
     xlab("Gene") + ylab("Cell type") +
-    #facet_grid(Clusters ~ . , space="free", scales = "free") +
     theme(strip.text.y = element_text(angle=0))
   ggsaveNF(out("ClusterEnrichments_manual_combined7and9_",suppx,".pdf"), w=0.7,h=h)
 }
@@ -1071,7 +1028,7 @@ ggsaveNF(out("CellCycle_UMAP_single.pdf"), w=1,h=1)
 
 
 # Percentage
-pDT <- ann[perturbed == TRUE | mixscape_class == "NTC"][,.N, by=c("Phase", "CRISPR_Cellranger", "timepoint", "markers")]
+pDT <- ann[!is.na(gene)][,.N, by=c("Phase", "CRISPR_Cellranger", "timepoint", "markers")]
 pDT[,sum := sum(N), by=c("CRISPR_Cellranger", "timepoint", "markers")]
 pDT[, perc := N/sum*100]
 pDT[, gene := gsub("_.+", "", CRISPR_Cellranger)]
