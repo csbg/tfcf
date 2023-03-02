@@ -33,7 +33,7 @@ cells <- list(
 cl.use <- "noClusters"
 (tissue.name <- "in.vivo")
 for(cl.use in c("useClusters", "noClusters")){
-  for(tissue.name in "in.vivo"){
+  for(tissue.name in "ex.vivo"){
   #for(tissue.name in TISSUES){
     
     (timex <- mobjs[[tissue.name]]$timepoint[1])

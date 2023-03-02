@@ -849,23 +849,6 @@ for(suppx in names(dla.healthy)){
 }
 
 
-# . Plot enrichments with late GMPs from day 9
-# dla <- fread("metadata/FIGS_Order_Fig2_CFs.tsv")
-# pDT <- fish.enrich[day == "day9"][gene %in% dla$Factor][Clusters %in% c("Late GMP")][log2OR != 0]
-# pDT$gene <- factor(pDT$gene, levels = pDT[order(log2OR)]$gene)
-# #pDT$Complex <- dla[match(pDT$gene, Factor)]$Complex
-# pDT[, Clusters := cleanCelltypes(Clusters, clean=FALSE, twoLines = FALSE, order = TRUE, reverse = TRUE)]
-# ggplot(pDT, aes(y=gene, x=log2OR_cap, size=sig.perc, color=log2OR_cap)) + 
-#   themeNF(rotate=TRUE) +
-#   scale_color_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
-#   scale_size_continuous(name="% sign.", range = c(0,4)) +
-#   geom_point() +
-#   geom_point(shape=1, color="lightgrey") +
-#   xlab("log2 OR") + ylab("Gene") +
-#   #facet_grid(Clusters ~ . , space="free", scales = "free") +
-#   theme(strip.text.y = element_text(angle=0))
-# ggsaveNF(out("ClusterEnrichments_manual_lateGMPs_day9.pdf"), w=1,h=1)
-
 
 # LEUKEMIA---------------------------------------------------------
 
@@ -1078,40 +1061,6 @@ for(suppx in names(dla.cancer)){
 }
 
 
-# # . ChIP seq target gene sets ---------------------------------------------------------------
-# targets <- fread("metadata/FIGS_06_ChIPtargetsJulen.txt")
-# #gplots::venn(split(targets$Gene, paste(targets$CF, targets$Population)))
-# #targets <- targets[Gene %in% targets[, .N, by="Gene"][N == 1]$Gene]
-# targets[,id := paste(CF, Population)]
-# mt <- monocle3::aggregate_gene_expression(norm_method = "log", cds = mobjs[["leukemia"]], gene_group_df = targets[,c("Gene", "id")])
-# pDT <- merge(ann, melt(data.table(data.frame(t(mt)), keep.rownames = TRUE), id.vars = "rn"), by="rn")
-# pDT[, chip_target := gsub("\\..+$", "", variable)]
-# pDT[, chip_target_population := gsub("^.+?\\.", "", variable)]
-# p <- ggplot(pDT, aes(x=UMAP1, y=UMAP2)) +
-#   stat_summary_hex(aes(z=value),fun=mean, bins=100) +
-#   facet_grid(chip_target_population ~ chip_target) +
-#   scale_fill_gradient2(high="#e31a1c", low="#1f78b4") +
-#   themeNF()
-# ggsaveNF(out("ChIP_targets.pdf"), w=5,h=3)
-# 
-# pDT.cl <- pDT[, .(sig=mean(value)), by=c("Cluster.number", "chip_target", "chip_target_population", "Clusters")]
-# suppx <- "main"
-# popx <- "subset"
-# for(suppx in c("supp", "main")){
-#   for(popx in c("all", "subset")){
-#     pDTx <- if(suppx == "main") pDT.cl[Cluster.number %in% clusters.plot] else pDT.cl
-#     pDTx <- if(popx == "subset") pDTx[chip_target_population %in% c("Leukemia", "MatureMye")] else pDTx
-#     w=length(unique(pDTx$chip_target_population)) * 0.2 + 0.4
-#     h=length(unique(pDTx$Cluster.number)) * 0.07 + 0.2
-#     ggplot(pDTx, aes(x=chip_target_population, y=factor(as.numeric(Cluster.number)), fill=sig)) + geom_tile() +
-#       facet_grid(Clusters ~ chip_target, space="free", scales = "free") +
-#       themeNF(rotate = TRUE) +
-#       scale_fill_gradient2(high="#e31a1c", low="#1f78b4")
-#     ggsaveNF(out("ChIP_targets_aggregate_", suppx,"_population_", popx, ".pdf"), w=w, h=h)
-#   }
-# }
-
-
 # . LSC marker plot ---------------------------------------------------------
 #gg <- c("Bcat1", "Hif1a", "Myc", "Gata1", "Prss34", "Hba-a1", "Irf8", "S100a9", "Ltf")
 #gg <- c("Itgam","Ly6c1","Ltf","S100a9","Cd55","Fcer1a","Prss34","Gata1","Hba-a1","Itga2b","Pf4")
@@ -1151,23 +1100,19 @@ for(suppx in c("supp", "main")){
 
 
 
-# # Cancer vs Healthy -------------------------------------------------------
-# out <- dirout(paste0(base.dir, "/", "CvH"))
-# 
-# pDT <- list(
-#   leukemia = fread(outBase("leukemia/Cluster_enrichments_basic_all.tsv")),
-#   normal = fread(outBase("ex.vivo/Cluster_enrichments_basic_all.tsv"))
-# )
-# pDT <- rbindlist(pDT, idcol = "tissue")
-# pDT[, Clusters := cleanCelltypes(Clusters, reverse = FALSE, clean=FALSE)]
-# 
-# ggplot(pDT, aes(x=Clusters, y=tissue, size=sig.perc, color=log2OR_cap)) + 
-#   themeNF(rotate = TRUE) +
-#   scale_color_gradient2(name = "log2(OR)", low="blue", midpoint = 0, high="red") +
-#   scale_size_continuous(name = "% sign", range=c(0,5)) +
-#   geom_point() +
-#   geom_point(shape=1, color="lightgrey") +
-#   facet_grid(gene ~ .) +
-#   theme(strip.text.y = element_text(angle=0)) +
-#   xlab("Cell types") + ylab("")
-# ggsaveNF(out("Cluster_enrichments.pdf"), w=1.5,h=4.5, guides = TRUE)
+# Larry Barplot -----------------------------------------------------------
+gg <- c("Smarcd2","Smarcd1","Brd9","Kmt2d","Ncoa6","Kmt2a","Men1","Wdr82","Setd1a","Setd1b","Chd4", "Hdac3","Setdb1","Stag2")
+ctx <- c("HSC","GMP","Granulocyte","Mono", "B","MEP","EryA")
+refx <- fread(dirout_load("SCRNA_06_01_Markers")("GEO.txt.gz"), skip = 1)
+x <- melt(refx[NAME %in% gg], id.vars = c("UNIQUD", "NAME"))
+#refx[grepl("Ncoa", NAME)]
+x <- x[variable %in% ctx]
+x[, celltype := factor(variable, levels=ctx)]     
+x[, gene := factor(NAME, levels=gg)]     
+x <- x[, .(value = mean(value)),by=c("gene", "celltype")]
+ggplot(x, aes(x=celltype,y=value)) + 
+  geom_col() +
+  facet_wrap(~gene, ncol = 7, scales = "free") +
+  themeNF(rotate=TRUE) +
+  labs(x="", y="")
+ggsaveNF(outBase("Larry_Genes.pdf"), w=3,h=1.5, guides=TRUE)
