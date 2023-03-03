@@ -16,17 +16,19 @@ ann <- data.table(data.frame(colData(mobj)), keep.rownames = TRUE)
 # annotate cell types
 ann.cts <- readRDS(dirout_load("SCRNA_06_02_MergeMarkers")("CellTypes_", tissuex,".RDS"))
 mobj$celltype <- ann.cts[match(colnames(mobj), cellname),]$labels
+CELLTYPES <- unique(mobj$celltype)
 
 # Clusters
-cl.test <- fread(dirout_load("SCRNA_21_02_ClusterEnrichments_simple")("ClustersRemoved_in.vivo.tsv"))$Cluster.number
-cl.test <- unique(c(cl.test, ann.cts[labels == "MEP (pert.)"][,.N, by="Cluster"][order(N, decreasing = TRUE)][1]$Cluster))
+#cl.test <- fread(dirout_load("SCRNA_21_02_ClusterEnrichments_simple")("ClustersRemoved_in.vivo.tsv"))$Cluster.number
+(cl.test <- unique(ann.cts[labels == "MEP (pert.)"][,.N, by="Cluster"][order(N, decreasing = TRUE)][1]$Cluster))
 
 (clx <- cl.test[1])
 for(clx in cl.test){
   message(clx)
-  cellx <- names(sort(table(mobj$celltype[clusters(mobj) %in% clx]), decreasing = TRUE))[1]
+  cellx <- CELLTYPES[grepl("MEP",CELLTYPES)]
   print(cellx)
-  mobj.test <- mobj[,mobj$celltype == cellx]
+  
+  mobj.test <- mobj[,mobj$celltype %in% cellx]
   mobj.test$de.group <- factor(ifelse(clusters(mobj.test) == clx, "x", "ref"), levels=c("ref", "x"))
   res <- fit_models(mobj.test, model_formula_str = "~de.group")
   res <- coefficient_table(res)

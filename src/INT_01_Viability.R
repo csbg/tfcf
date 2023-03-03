@@ -1,5 +1,5 @@
 source("src/00_init.R")
-base.dir <- "FIG_04_Viability/"
+base.dir <- "INT_04_Viability/"
 out <- dirout(base.dir)
 
 require(readxl)
@@ -15,9 +15,15 @@ RESULTS.wt.agg.clean <- RESULTS.wt.agg %>%
   filter(!grepl("^GMP\\.", Population) & !Population %in% c("Mye", "Und"))
 
 # Ainhoa's table ----------------------------------------------
-ainhoa.cnts <- readxl::read_xlsx("metadata/Viability_Ainhoa_from_scRNA.xlsx")
+ainhoa.cnts.old <- readxl::read_xlsx("metadata/Viability_Ainhoa_from_scRNA.xlsx")
+ainhoa.cnts <- readxl::read_xlsx("metadata/Viability_Ainhoa_from_scRNA_v2.xlsx")
 ainhoa.cnts <- data.table(ainhoa.cnts)
 ainhoa.cnts[, sgRNA_ID := toupper(gsub("NonTargetingControlGuideForMouse", "NTC", sgRNA_ID))]
+i <- 3
+for(i in 3:ncol(ainhoa.cnts)){
+  ainhoa.cnts[[i]] <- as.numeric(ainhoa.cnts[[i]])
+  ainhoa.cnts[[i]][is.na(ainhoa.cnts[[i]])] <- 0
+}
 
 # scData ------------------------------------------------------------------
 scRNA.file <- out("scRNA.RDS")

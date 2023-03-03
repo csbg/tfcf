@@ -60,7 +60,8 @@ mm <- mm[,colSums(mm) != 0]
 nebRes <- nebula(
   count = counts(obj.de),
   id = obj.de$sample_broad,
-  pred = mm
+  pred = mm,
+  model="NBLMM"
 )
 
 # export results

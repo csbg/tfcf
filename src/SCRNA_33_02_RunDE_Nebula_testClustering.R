@@ -33,7 +33,7 @@ cells <- list(
 cl.use <- "noClusters"
 (tissue.name <- "in.vivo")
 for(cl.use in c("useClusters", "noClusters")){
-  for(tissue.name in "ex.vivo"){
+  for(tissue.name in "in.vivo"){
   #for(tissue.name in TISSUES){
     
     (timex <- mobjs[[tissue.name]]$timepoint[1])
@@ -50,10 +50,7 @@ for(cl.use in c("useClusters", "noClusters")){
       # Filter only celltypes of interest
       ann <- fread(dirout_load(paste0("SCRNA_20_Summary/",tissue.name, "_", ANALYSIS))("Annotation.tsv"))
       ann <- ann[rn %in% colnames(monocle.obj)]
-      sort(unique(ann$Clusters))
-      # for(x in c("B.cell", "CLP", "T.cell")){ann <- ann[!grepl(x, Clusters)]}
-      # sort(unique(ann$Clusters))
-    
+
       # Assign clusters to use as covariate (to avoid seeing shifts in populations but changes within populations)
       monocle.obj <- monocle.obj[, ann$rn]
       monocle.obj$clusterDE <- ann$Clusters

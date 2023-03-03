@@ -116,6 +116,10 @@ dla.cancer <- list(
   main=c("Setd1b","Wdr82","Kmt2d","Kmt2a","Men1","Prmt1","Carm1","Prmt5","Smarcb1","Smarcd2","Smarcd1","Brd9","Pbrm1","Smarca5","Chd4","Rbbp4","Hdac3","Setdb1","Atf7ip","Setdb2","Hdac1","Rcor1","Rcor2","Ezh2","Stag2","Ash1l")
 )
 
+# SIMPLE SETUP ENDS HERE ---------------------------------------------------------
+
+
+
 
 # load Monocle Objects
 mobjs <- list()
@@ -554,7 +558,7 @@ fish.early <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichmen
 fish.monoVsGran <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments","_monoVsGran", "_in.vivo", "_noMixscape", "_14d",".tsv"))
 fish.d28 <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_DavidSpecial_in.vivo_noMixscape_28d",".tsv"))[Clusters != "unclear"]
 
-viability <- fread(dirout_load("FIG_04_Viability")("scRNA_processed.tsv"))
+viability <- fread(dirout_load("INT_04_Viability")("scRNA_processed.tsv"))
 viability <- viability[variable == "scRNA in.vivo 14d"]
 
 # . supp table ------------------------------------------------------------
@@ -857,21 +861,24 @@ clusters.plot.cts <- list()
 
 clusters.plot.cts$main <- list(
   "Gran"=24,
-  "Gran Prog."=c(18,21,25),
+  "Gran Prog."=c(21, 18, 25),
   "Eo/Ba"=11,
-  "Ery Prog."=c(5,20), 
+  "Ery Prog."=c(20, 5), 
   "MkP"=26
 )
 
 clusters.plot.cts$supp <- c(
   list(
-    "unclear"=c(1, 22, 8, 10, 17, 9, 23, 12, 14, 15, 7, 2, 28),
-    "GMP"=c(19, 16, 3, 13, 6),
-    "Mono"=c(27,4)
+    "unclear"=c(22, 8, 7),
+    "HSC"=c(10, 17, 9, 23, 12, 14, 15),
+    "GMP"=c(19, 16, 3, 13, 6, 1, 2),
+    "Mono"=c(28, 27,4)
     ),
   clusters.plot.cts$main
 )
-#clusters.plot <- unlist(clusters.plot.cts)
+
+stopifnot(all(table(unlist(clusters.plot.cts$supp)) == 1))
+
 
 # . load data ---------------------------------------------------------
 inDir.current <- "leukemia"
@@ -947,10 +954,7 @@ ggsaveNF(out("Antibodies_UMAP.pdf"), w=2, h=2)
 
 # . Summarize Antibodies in clusters --------------------------------------
 pDT <- abs[, .(Signal=mean(Signal.norm, na.rm=TRUE)), by=c("Cluster.number", "Antibody")]
-#pDT[, Clusters := cleanCelltypes(Clusters)]
-#pDT <- hierarch.ordering(pDT, "Clusters", "Antibody", "Signal")
-pDT <- hierarch.ordering(pDT, "Antibody", "Cluster.number", "Signal")
-suppx <- "main"
+suppx <- "supp"
 for(suppx in c("main", "supp")){
   cl.labels <- clusters.plot.cts[[suppx]]
   
@@ -964,7 +968,9 @@ for(suppx in c("main", "supp")){
     pDTx <- pDTx[Antibody %in% abs.main.dla]
     pDTx$Antibody <- factor(pDTx$Antibody, levels = abs.main.dla)
   }
-  ggplot(pDTx, aes(y=factor(as.numeric(Cluster.number)),x=Antibody, fill=Signal)) +
+  pDTx[, Cluster.number.fac := factor(as.character(Cluster.number), levels=rev(as.character(unlist(cl.labels))))]
+  
+  ggplot(pDTx, aes(y=Cluster.number.fac,x=Antibody, fill=Signal)) +
     themeNF() +
     geom_tile() +
     scale_fill_gradient2(low="blue", high="red") +
@@ -1045,9 +1051,12 @@ for(suppx in names(dla.cancer)){
   pDTx <- merge(pDTx, melt(cl.labels), by.x="Clusters", by.y="value")
   pDTx[, celltype := factor(L1, levels=rev(names(cl.labels)))]
   pDTx <- pDTx[!(Clusters == 24 & log2OR < 0)]
+  
+  pDTx[, Cluster.number.fac := factor(as.character(Clusters), levels=rev(as.character(unlist(cl.labels))))]
+  
   w=length(unique(pDTx$gene)) * 0.04 + 1
   h=length(unique(pDTx$Clusters)) * 0.06 + 0.3
-  ggplot(pDTx, aes(x=gene, y=factor(Clusters), size=sig.perc*100, color=log2OR_cap)) + 
+  ggplot(pDTx, aes(x=gene, y=Cluster.number.fac, size=sig.perc*100, color=log2OR_cap)) + 
     themeNF(rotate=TRUE) +
     scale_color_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
     scale_size_continuous(name="% sign.", range = c(0,4)) +
@@ -1070,7 +1079,7 @@ gg <- list(
 )
 
 cds <- mobjs[["leukemia"]]
-stopifnot(all(gg %in% row.names(cds)))
+stopifnot(all(unlist(gg) %in% row.names(cds)))
 cds$Cluster.number <- monocle3::clusters(cds)
 
 suppx <- "main"
@@ -1085,9 +1094,11 @@ for(suppx in c("supp", "main")){
   pDTx[, celltype := factor(L1, levels=rev(names(cl.labels)))]
   
   pDTx <- pDTx[Cluster.number %in% unlist(cl.labels)]
+  pDTx[, Cluster.number.fac := factor(as.character(Cluster.number), levels=rev(as.character(unlist(cl.labels))))]
+  
   h=length(unique(pDTx$Cluster.number)) * 0.08 + 0.2
   w=length(unique(pDTx$Gene)) * 0.08 + 0.2
-  ggplot(pDTx, aes(y=factor(as.numeric(Cluster.number)), x=Gene, color=scale, size=percentage)) + 
+  ggplot(pDTx, aes(y=Cluster.number.fac, x=Gene, color=scale, size=percentage)) + 
     geom_point() +
     #geom_point(color="black", shape=1) + 
     scale_size_continuous(range=c(0,5), limits = c(0,100)) +
@@ -1101,7 +1112,8 @@ for(suppx in c("supp", "main")){
 
 
 # Larry Barplot -----------------------------------------------------------
-gg <- c("Smarcd2","Smarcd1","Brd9","Kmt2d","Ncoa6","Kmt2a","Men1","Wdr82","Setd1a","Setd1b","Chd4", "Hdac3","Setdb1","Stag2")
+#gg <- c("Smarcd2","Smarcd1","Brd9","Kmt2d","Ncoa6","Kmt2a","Men1","Wdr82","Setd1a","Setd1b","Chd4", "Hdac3","Setdb1","Stag2")
+gg <- dla.healthy$all
 ctx <- c("HSC","GMP","Granulocyte","Mono", "B","MEP","EryA")
 refx <- fread(dirout_load("SCRNA_06_01_Markers")("GEO.txt.gz"), skip = 1)
 x <- melt(refx[NAME %in% gg], id.vars = c("UNIQUD", "NAME"))
@@ -1112,7 +1124,7 @@ x[, gene := factor(NAME, levels=gg)]
 x <- x[, .(value = mean(value)),by=c("gene", "celltype")]
 ggplot(x, aes(x=celltype,y=value)) + 
   geom_col() +
-  facet_wrap(~gene, ncol = 7, scales = "free") +
+  facet_wrap(~gene, ncol = 10, scales = "free") +
   themeNF(rotate=TRUE) +
   labs(x="", y="")
-ggsaveNF(outBase("Larry_Genes.pdf"), w=3,h=1.5, guides=TRUE)
+ggsaveNF(outBase("Larry_Genes.pdf"), w=4.5,h=6, guides=TRUE)
