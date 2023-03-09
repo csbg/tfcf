@@ -26,6 +26,8 @@ fcMT <- as.matrix(read.csv(inDir("FoldChanges.csv"), row.names=1))
 gseaDT <- readRDS(dirout_load("SCRNA_41_01_GSEA")("FGSEA.RDS"))
 deDT <- readRDS(inDir("DEG_Statistics_simple.RDS"))
 deDT$use <- TRUE
+
+deDT2 <- fread(inDir("DEG_Statistics_significant.tsv"))
 #deDT[tissue %in% grep("_s", unique(deDT$tissue), value=TRUE), use := TRUE]
 
 # Reformat correlations
@@ -66,7 +68,7 @@ GOI <- list(
 )
 
 GOI.targets <- fread("metadata/FIGS_02_DE_Genes.tsv", check.names = TRUE)
-
+GOI.targets.TFs <- c("Runx1","Runx2","Cebpa","Fos","Jun","Nfil3","Hlf","Atf4","Atf1","Atf3","Elf4","Spib","Spi1","Gabpa","Irf1","Irf8","Gata1","Gata2","Nfia","Nfix","Nrf1","Klf1","Klf6","Klf9","Klf10")
 
 dla.vulcano.genes <- fread("metadata/FIGS_VulcanoGenes.tsv", header = FALSE)
 dla.vulcano.genes <- setdiff(unique(do.call(c, dla.vulcano.genes)), "")
@@ -153,6 +155,53 @@ for(tx in unique(deDT[use == TRUE]$tissue)){
       xlab("Gene expression") + ylab("CRISPR targets")
     ggsaveNF(out("GeneDE_", tx, "_", lnam, "_", dla.nam,".pdf"),w=w,h=h, guides = TRUE)}
 }
+
+
+# Specific TF genes -------------------------------------------------------
+# Plot specific genes -----------------------------------------------------
+(tx <- deDT2$tissue[1])
+for(tx in unique(deDT2[grepl("ex.vivo", tissue)]$tissue)){
+  pDT <- deDT2[tissue == tx]
+  (lnam <- "x")
+  
+  xDT <- pDT[gene_id %in% GOI.targets.TFs]
+  xDT$gene_id <- factor(xDT$gene_id, levels = GOI.targets.TFs)
+  xDT <- hierarch.ordering(xDT, "guide", "gene_id", value.var = "estimate")
+  w=length(unique(xDT$gene_id)) * 0.05 + 1
+  h=length(unique(xDT$guide)) * 0.05 + 0.5
+  xDT[abs(estimate) > 5, estimate := pmin(abs(estimate),5) * sign(estimate)]
+  ggplot(xDT, aes(y=guide, x=gene_id, color=estimate, size=pmin(5, -log10(q_value)))) + 
+    themeNF(rotate=TRUE) +
+    geom_point() +
+    scale_color_gradient2(name="log2FC", low="blue", high="red") +
+    scale_size_continuous(name="-log10(padj)", range = c(0,5)) +
+    scale_x_discrete(position = "top") +
+    theme(axis.text.x = element_text(vjust=1, hjust=0)) +
+    ggtitle(tx) +
+    facet_grid(. ~ ., space = "free", scales = "free") +
+    xlab("Gene expression") + ylab("CRISPR targets")
+  ggsaveNF(out("TF_DE_", tx, "_", lnam, "_allGuides.pdf"),w=w,h=h, guides = TRUE)
+  
+  (dla.nam <- names(dla.factors)[3])
+  for(dla.nam in names(dla.factors)){
+    dla <- dla.factors[[dla.nam]]
+    xDT2 <- xDT[guide %in% dla]
+    if(nrow(xDT2) == 0) next
+    xDT2$guide <- factor(xDT2$guide, levels=rev(dla))
+    h=length(unique(xDT2$guide)) * 0.05 + 0.5
+    ggplot(xDT2, aes(y=guide, x=gene_id, color=estimate, size=pmin(5, -log10(q_value)))) + 
+      themeNF(rotate=TRUE) +
+      geom_point() +
+      scale_color_gradient2(name="log2FC", low="blue", high="red") +
+      scale_size_continuous(name="-log10(padj)", range = c(0,5)) +
+      scale_x_discrete(position = "top") +
+      theme(axis.text.x = element_text(vjust=1, hjust=0)) +
+      ggtitle(tx) +
+      facet_grid(. ~ ., space = "free", scales = "free") +
+      xlab("Gene expression") + ylab("CRISPR targets")
+    ggsaveNF(out("TF_DE_", tx, "_", lnam, "_", dla.nam,".pdf"),w=w,h=h, guides = TRUE)}
+}
+
 
 
 # ATAC-seq comparison -----------------------------------------------------

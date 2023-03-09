@@ -45,6 +45,7 @@ annList[tissue == "leukemia" & Cluster.number %in% clDT.remove$Cluster.number, C
 write.tsv(clDT.remove, out("ClustersRemoved_leukemia.tsv"))
 
 # remove clusters to remove
+annList.allClusters <- copy(annList)
 annList <- annList[Clusters != "remove"]
 
 
@@ -66,9 +67,9 @@ for(tx in TISSUES){
   fish.test.sets[[paste("broad", tx, sep="_")]] <- x
 }
 
-# Numeric clusters
+# Numeric clusters - uses all clusters
 for(tx in TISSUES){
-  x <- annList[tissue == tx]
+  x <- annList.allClusters[tissue == tx]
   x[, Clusters := paste("cl", Cluster.number)]
   fish.test.sets[[paste("numeric", tx, sep="_")]] <- x
 }

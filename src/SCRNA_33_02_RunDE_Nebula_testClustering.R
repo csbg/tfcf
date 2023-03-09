@@ -31,9 +31,10 @@ cells <- list(
   leukemia = fread(dirout_load("SCRNA_21_02_ClusterEnrichments_simple")("Guides_Fisher_Mixscape_basic_leukemia_noMixscape_Cells.tsv"))$rn
 )
 cl.use <- "noClusters"
-(tissue.name <- "in.vivo")
-for(cl.use in c("useClusters", "noClusters")){
-  for(tissue.name in "in.vivo"){
+(tissue.name <- "ex.vivo")
+#for(cl.use in c("useClusters", "noClusters")){
+for(cl.use in c("noClusters")){
+  for(tissue.name in "ex.vivo"){
   #for(tissue.name in TISSUES){
     
     (timex <- mobjs[[tissue.name]]$timepoint[1])
@@ -57,7 +58,7 @@ for(cl.use in c("useClusters", "noClusters")){
       
       out <- dirout(paste0(basedir, tissue.name, "_", timex, "_", cl.use))
     
-      source("src/SCRNA_33_01_DE_FUNC_nebula_testClustering.R")
+      source("src/SCRNA_33_03_DE_FUNC_nebula_testClustering.R")
     }
   }
 }

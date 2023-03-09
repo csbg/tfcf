@@ -225,6 +225,43 @@ for(tx in names(inDir.funcs)){
 }
 
 
+# . NTC Clusters depletion ------------------------------------------------------------
+tx <- "in.vivo"
+for(tx in names(inDir.funcs)){
+  # out directory
+  out <- dirout(paste0(base.dir, "/", tx))
+  
+  # Prepare data
+  pDT.full <- annList[tissue ==  tx]
+  
+  # Calculate fraction
+  pDT <- pDT.full[!is.na(gene)][, .(sum=.N, sumNTC = sum(!is.na(gene) & gene=="NTC")), by=c("Cluster.number", "Clusters", "timepoint")]
+  pDT[, perc := sumNTC / sum * 100]
+  pDT[, sumKO := sum-sumNTC]
+  pDT[, Clusters := cleanCelltypes(Clusters)]
+  ggplot(pDT, aes(x=sumKO+1, y=sumNTC+1, color=Clusters, shape=Clusters)) + 
+    geom_point() +
+    themeNF() +
+    geom_abline() +
+    scale_x_log10() +
+    scale_y_log10() +
+    facet_grid(. ~ timepoint) +
+    scale_shape_manual(values=rep(c(1,16,2,18,3,4), 20)) +
+    scale_color_manual(values=COLORS.CELLTYPES.scRNA.ainhoa) +
+    geom_text_repel(data=pDT[sumKO / 10 > sumNTC], aes(label=Cluster.number), color="black") +
+    xlab("Number of cells with KO guide + 1") + ylab("Number of cells with NTC guide + 1")
+  ggsaveNF(out("NTC_depleted_clusters.pdf"),w=length(unique(pDT$timepoint)) * 1.5, h=1.5)
+  
+  # plot on UMAP
+  ggplot(pDT.full, aes(x=UMAP1, y=UMAP2)) + 
+    themeNF() +
+    geom_hex(bins=100) +
+    scale_fill_gradient(low="lightgrey", high="#ff7f00") +
+    geom_text(data=pDT.full[,.(UMAP1 = median(UMAP1), UMAP2 = median(UMAP2)), by=c("Cluster.number")], aes(label=Cluster.number))
+  ggsaveNF(out("NTC_depleted_clusters_UMAP.pdf"),w=1.5,h=1.5)
+}
+
+
 # # . Signatures --------------------------------------------------------------
 # tx <- "in.vivo"
 # tx <- "leukemia"
@@ -551,7 +588,7 @@ out <- dirout(paste0(base.dir, "/", inDir.current))
 ann <- annList[tissue == inDir.current]
 # FIX MIXSCAPE
 list.files(dirout_load(base.dir)("cluster.enrichments"))
-fish.bcells <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments","_basic", "_in.vivo", "_noMixscape", "_14d",".tsv"))
+fish.numeric <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_numeric_in.vivo_noMixscape_14d.tsv"))
 fish.enrich.broad <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments_DavidSpecial_in.vivo_noMixscape_14d",".tsv"))[Clusters != "unclear"]
 fish.EryVsMye <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments","_eryVsMye", "_in.vivo", "_noMixscape", "_14d",".tsv"))
 fish.early <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichments","_earlyBranches", "_in.vivo", "_noMixscape", "_14d",".tsv"))
@@ -567,37 +604,6 @@ exDT[, sig.perc := sig.perc * 100]
 colnames(exDT) <- c("Cell type", "CF-KO", "log2 odds ratio", "adjusted p-value", "Count", "Percent significant")
 WriteXLS(x=exDT, ExcelFileName=out("Supplementary_Table_CellTypes_invivo.xls"), AdjWidth=TRUE, BoldHeaderRow=TRUE, FreezeRow=1, SheetNames="Table")
 write.tsv(exDT, out("Supplementary_Table_CellTypes_invivo.tsv"))
-
-
-
-# . NTC Clusters depletion ------------------------------------------------------------
-pDT <- copy(ann)
-clx <- readRDS(dirout_load("SCRNA_10_collect_UMAPs")("ProjMonocle_Clusters.RDS"))
-pDT$cluster.numeric <- clx[match(pDT$rn, rn)]$functional.cluster
-pDT.full <- copy(pDT)
-pDT <- pDT[!is.na(gene)][, .(sum=.N, sumNTC = sum(!is.na(gene) & gene=="NTC")), by=c("cluster.numeric", "Clusters", "timepoint")]
-pDT[, perc := sumNTC / sum * 100]
-pDT[, sumKO := sum-sumNTC]
-pDT[, Clusters := cleanCelltypes(Clusters)]
-ggplot(pDT, aes(x=sumKO+1, y=sumNTC+1, color=Clusters, shape=Clusters)) + 
-  geom_point() +
-  themeNF() +
-  geom_abline() +
-  scale_x_log10() +
-  scale_y_log10() +
-  facet_grid(. ~ timepoint) +
-  scale_shape_manual(values=rep(c(1,16,2,18,3,4), 20)) +
-  scale_color_manual(values=COLORS.CELLTYPES.scRNA.ainhoa) +
-  geom_text_repel(data=pDT[sumKO / 10 > sumNTC], aes(label=cluster.numeric), color="black") +
-  xlab("Number of cells with KO guide + 1") + ylab("Number of cells with NTC guide + 1")
-ggsaveNF(out("NTC_depleted_clusters.pdf"),w=3,h=1.5)
-
-ggplot(pDT.full, aes(x=UMAP1, y=UMAP2)) + 
-  themeNF() +
-  geom_hex(bins=100) +
-  scale_fill_gradient(low="lightgrey", high="#ff7f00") +
-  geom_text(data=pDT.full[,.(UMAP1 = median(UMAP1), UMAP2 = median(UMAP2)), by=c("cluster.numeric")], aes(label=cluster.numeric))
-ggsaveNF(out("NTC_depleted_clusters_UMAP.pdf"),w=1.5,h=1.5)
 
 
 
@@ -618,7 +624,6 @@ ggplot(ann[gene == "NTC"], aes(x=UMAP1, y=UMAP2)) +
   facet_wrap(~sample_broad, ncol=3) +
   xu + yu
 ggsaveNF(out("UMAP_Samples.pdf"), w=2,h=2)
-
 
 
 # . Plot manual enrichments -------------------------------------------------
@@ -713,7 +718,70 @@ for(typex in names(dla.healthy)){
   ggsaveNF(out("ClusterEnrichments_manual_Combined_",typex,".pdf"), w=5,h=h, plot=p_final, guides = TRUE)
 }
 
-# Plot mye vs GMP EARLY enrichments in d28
+# . Special clusters -----------------------------------------------------------------------
+cx <- 26
+for(cx in c(26, 45, 51)){
+  (title <- paste0(
+    "NTCs: ",
+    round(nrow(ann[Cluster.number == cx & gene == "NTC"])/nrow(ann[Cluster.number == cx & gene != "NTC"]) * 100,2),
+    "% of ",
+    nrow(ann[Cluster.number == cx & !is.na(gene)]),
+    " cells"
+    ))
+  pDT <- fish.numeric[Clusters == paste("cl", cx)]
+  pDT[, gene := factor(gene, levels=rev(pDT[order(log2OR)]$gene))]
+  pDT <- pDT[sig.perc > 0.5 & log2OR > 0]
+  ggplot(pDT, aes(x=gene, y=log2OR)) + 
+    geom_col() +
+    themeNF(rotate = TRUE) +
+    labs(y="log2(OR)", x="") +
+    ggtitle(title)
+  ggsaveNF(out("ClusterEnrichment_",cx,".pdf"), w=length(unique(pDT$gene)) * 0.05 + 0.5,h=0.7, guides=TRUE)
+}
+
+
+# . Characterize cluster 26 (MEP Pert) --------------------------------------
+
+# enrichments
+gsea <- fread(dirout("SCRNA_22_01_SpecialClustersDE")("GSEA_significant.tsv"))
+dbs <- c("ENCODE_and_ChEA_Consensus_TFs_from_ChIP-X", "TRANSFAC_and_JASPAR_PWMs", "TRRUST_Transcription_Factors_2019", "KEGG_2019_Mouse", "MSigDB_Hallmark_2020","WikiPathways_2019_Mouse")
+gsea <- gsea[db %in% dbs][cluster == "Markers_26.tsv"][ES > 0]
+gsea[, db := factor(db, levels=dbs)]
+gsea[, pathway := factor(pathway, levels = unique(gsea[order(ES)]$pathway))]
+ggplot(gsea, aes(x=ES, y=pathway, size=-log10(padj))) + 
+  geom_point() + 
+  facet_grid(db ~ . , space = "free", scales = "free") +
+  themeNF() +
+  scale_x_continuous(limits=c(0, NA))
+ggsaveNF(out("SpecialCluster_26_enrichments.pdf"), w=2.5,h=1.8, guides=FALSE)
+
+# marker genes
+cl <- c(28, 16, 26, 29, 11, 38, 45, 51, 1, 25, 30, 54, 49)
+gg <- c("Hoxa9", "Gata2", "Gfi1b", "Hba-a1", "Hba-a2", "Hbb-bs", "Mcub", "Mgst1", "Phf13", "Kcne3", "Hmgn3", "Cebpa", "Cebpe", "Irf8", "Spi1", "Thbs1", "Thbs4", "Pecam1", "Dmwd", "Ddit4", "Itgb7", "Lat2")
+names(gg) <- gg
+cds <- mobjs[["in.vivo"]]
+stopifnot(all(gg %in% row.names(cds)))
+cds$Cluster.number <- monocle3::clusters(cds)
+pDT <- DotPlotData(cds = cds, markers = gg, cols = "Cluster.number")
+pDT[, scale := scale(mean), by=c("Gene")]
+pDT$Gene <- factor(pDT$Gene, levels=gg)
+pDT[,Cluster.number := as.numeric(Cluster.number)]
+pDT <- pDT[Cluster.number %in% cl]
+pDT[, Cluster.number.fac := factor(as.character(Cluster.number), levels=rev(as.character(cl)))]
+h=length(unique(pDT$Cluster.number)) * 0.08 + 0.2
+w=length(unique(pDT$Gene)) * 0.08 + 0.2
+ggplot(pDT, aes(y=Cluster.number.fac, x=Gene, color=scale, size=percentage)) + 
+  geom_point() +
+  #geom_point(color="black", shape=1) + 
+  scale_size_continuous(range=c(0,5), limits = c(0,100)) +
+  scale_color_gradientn(colours = c("lightgrey", "grey", "#1f78b4", "black")) +
+  facet_grid(. ~ ., space="free", scales = "free") +
+  themeNF(rotate = TRUE) +
+  ylab("Cluster") + xlab("Gene")
+ggsaveNF(out("SpecialCluster_26_markers.pdf"), w=w,h=h)
+
+
+# . Plot displasia (d28) mye vs GMP EARLY enrichments -----------------------------------------------------------------------
 gg <- c("Brd9", "Smarcd1", "Smarcd2")
 # Plot enrichments with DLA order
 pDT <- fish.enrich.broad[gene %in% gg]
@@ -733,7 +801,7 @@ h=length(unique(gg)) * 0.07 + 0.5
 ggsaveNF(out("ClusterEnrichments_manual_d28.pdf"), h=h,w=1.5, guides = TRUE, plot=p)
 
 
-# . Plot displasia guides ---------------------------------------------------------
+# . Plot displasia (d28) guides ---------------------------------------------------------
 gg <- c("Brd9")
 pDT.top <- ann[timepoint == "28d"][grepl("OP1", sample)][gene %in% c("NTC", gg)]
 #pDT.ntc <- pDT.top[mixscape_class.global == "NTC"]
@@ -757,7 +825,7 @@ ggplot(pDT.final, aes(x=UMAP1, y=UMAP2)) +
 ggsaveNF(out("UMAP_Guides_displasia.pdf"), w=2,h=1)
 
 
-# . Plot displasia numbers -----------------------------------------------
+# . Plot displasia (d28) numbers -----------------------------------------------
 pDT <- copy(ann[markers=="lin-"][grepl("OP1", sample)][mixscape_class.global == "NTC" | gene %in% c("Kmt2a","Kmt2d","Smarcd2","Smarcd1","Brd9", "NTC")])
 pDT[, group := gsub("_.+", "", guide)]
 pDT <- pDT[!is.na(group)]
@@ -896,12 +964,12 @@ abs.main.dla <- toupper(c("CD34","CD41","CD55","FCeR1","CD11b","Ly6C"))
 
 # update ann with cluster numbers
 ann[, Clusters := "other"]
-for(xnam in names(clusters.plot.cts)){
+for(xnam in names(clusters.plot.cts$main)){
   ann[Cluster.number %in% clusters.plot.cts$main[[xnam]], Clusters := xnam]
 }
 
 abs[, Clusters := "other"]
-for(xnam in names(clusters.plot.cts)){
+for(xnam in names(clusters.plot.cts$main)){
   abs[Cluster.number %in% clusters.plot.cts$main[[xnam]], Clusters := xnam]
 }
 
@@ -928,9 +996,10 @@ for(typex in c("original", "in.vivo.X")){
   pDT[, sum := sum(N), by=c("hex.x", "hex.y")]
   pDT[, frac := N / sum]
   pDT <- pDT[order(frac, decreasing = TRUE)][,head(.SD, 1), by=c("hex.x", "hex.y")]
-  pDT.labels <- pDT[, .(hex.x = median(hex.x), hex.y=median(hex.y)), by=c("Cluster.number")]
   cols <- COLORS.CELLTYPES.scRNA.ainhoa
   cols["other"] <- "grey"
+  pDT[Cluster.number %in% clusters.plot.cts$supp$HSC, Clusters := "LSK"]
+  pDT.labels <- pDT[, .(hex.x = median(hex.x), hex.y=median(hex.y)), by=c("Cluster.number")]
   #pDT[, Clusters := cleanCelltypes(Clusters)]
   #pDT[!Cluster.number %in% clusters.plot, Clusters := "other"]
   p <- ggplot(pDT, aes(x=hex.x, y=hex.y)) +

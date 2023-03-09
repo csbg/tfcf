@@ -8,6 +8,7 @@ require(igraph)
 require(ggtext)
 require(WriteXLS)
 require(ComplexHeatmap)
+require(GGally)
 
 
 # Load data ---------------------------------------------------------------

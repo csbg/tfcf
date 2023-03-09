@@ -1,7 +1,7 @@
 source("src/00_init.R")
-out <- dirout("SCRNA_22_01_SpecialClustersDE/")
+out <- dirout("SCRNA_22_03_SpecialClustersDE_leukemia/")
 
-tissuex <- "in.vivo"
+tissuex <- "leukemia"
 
 require(fgsea)
 (load(PATHS$RESOURCES$Enrichr.mouse))
@@ -28,7 +28,7 @@ mobj$celltype <- ann.cts[match(colnames(mobj), cellname),]$labels
 # ggplot(x, aes(x=frac)) + geom_density()
 # x[order(frac)][grepl("4.", Cluster.number) | grepl("5.", Cluster.number)][order(Cluster.number)]
 # x[frac < 0.1]
-cl.test <- fread(dirout_load("SCRNA_21_02_ClusterEnrichments_simple")("ClustersRemoved_in.vivo.tsv"))$Cluster.number
+cl.test <- fread(dirout_load("SCRNA_21_02_ClusterEnrichments_simple")("ClustersRemoved_leukemia.tsv"))$Cluster.number
 #cl.test <- unique(c(cl.test, ann.cts[labels == "MEP (pert.)"][,.N, by="Cluster"][order(N, decreasing = TRUE)][1]$Cluster))
 
 (clx <- cl.test[1])

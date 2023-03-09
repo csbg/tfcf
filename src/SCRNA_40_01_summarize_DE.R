@@ -19,7 +19,7 @@ ds <- function(path){load(path); return(monocle.obj)}
 
 # Load data ---------------------------------------------------------------
 list.files(dirout_load("SCRNA_33_DE_Nebula_testClustering")("in.vivo_14d_noClusters"))
-ff <- list.files(dirout_load("SCRNA_33_DE_Nebula_testClustering")(""), pattern="DEG_Results_all.tsv", full.names = TRUE, recursive = TRUE)
+ff <- list.files(dirout_load("SCRNA_33_DE_Nebula_testClustering_OLD")(""), pattern="DEG_Results_all.tsv", full.names = TRUE, recursive = TRUE)
 # ff <- c(ff, list.files(dirout_load("SCRNA_30_DE_Nebula_OLD")(""), pattern="DEG_Results_all.tsv", full.names = TRUE, recursive = TRUE))
 # ff2 <- list.files(dirout_load("SCRNA_32_DE_Nebula_simple")(""), pattern="DEG_Results_all.tsv", full.names = TRUE, recursive = TRUE)
 names(ff) <- gsub("^.+\\/", "", dirname(ff))
