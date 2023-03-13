@@ -127,6 +127,12 @@ write.tsv(xDT, out("Supplementary_Table_FACSscreen.tsv"))
 
 
 
+# Number of hits ----------------------------------------------------------
+length(unique(RESULTS.wt.agg.gene[!grepl("NTC", Gene)][percSig >= 50]$Gene))
+ggplot(RESULTS.wt.agg.gene[!grepl("NTC", Gene)][,.(max=max(percSig)), by="Gene"], aes(x=max)) + stat_ecdf()
+length(unique(RESULTS.wt.agg.gene[!grepl("NTC", Gene)]$Gene)) * 0.18
+length(unique(RESULTS.wt.agg.gene[!grepl("NTC", Gene)][percSig >= 50]$Gene))
+
 # Check inconsistencies ---------------------------------------------------
 pDT <- merge(RESULTS.wt[Genotype == "Cas9"], RESULTS.wt.agg.gene[sig.down != 0 & sig.up != 0][,c("Gene", "Comparison"),with=F],by=c("Gene", "Comparison"))
 ggplot(pDT, aes(x="x", y=paste(Guide, Library), color=z, size=pmin(5, -log10(padj)))) + 
