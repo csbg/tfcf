@@ -601,7 +601,7 @@ viability <- viability[variable == "scRNA in.vivo 14d"]
 # . supp table ------------------------------------------------------------
 exDT <- fish.enrich.broad[,c("Clusters", "gene", "log2OR", "padj", "N", "sig.perc"),with=F]
 exDT[, sig.perc := sig.perc * 100]
-colnames(exDT) <- c("Cell type", "CF-KO", "log2 odds ratio", "adjusted p-value", "Count", "Percent significant")
+colnames(exDT) <- c("cell type", "CF-KO", "log2 odds ratio", "significant guides (count)", "total guides (count)", "significant guides (percent)")
 WriteXLS(x=exDT, ExcelFileName=out("Supplementary_Table_CellTypes_invivo.xls"), AdjWidth=TRUE, BoldHeaderRow=TRUE, FreezeRow=1, SheetNames="Table")
 write.tsv(exDT, out("Supplementary_Table_CellTypes_invivo.tsv"))
 
@@ -868,7 +868,7 @@ fish.enrich <- rbindlist(fish.enrich, idcol="day")
 # . supp table ------------------------------------------------------------
 exDT <- fish.enrich[,c("day", "Clusters", "gene", "log2OR", "padj", "N", "sig.perc"),with=F]
 exDT[, sig.perc := sig.perc * 100]
-colnames(exDT) <- c("Day", "Cell type", "CF-KO", "log2 odds ratio", "adjusted p-value", "Count", "Percent significant")
+colnames(exDT) <- c("timepoint", "cell type", "CF-KO", "log2 odds ratio", "significant guides (count)", "total guides (count)", "significant guides (percent)")
 WriteXLS(x=exDT, ExcelFileName=out("Supplementary_Table_CellTypes_exvivo.xls"), AdjWidth=TRUE, BoldHeaderRow=TRUE, FreezeRow=1, SheetNames="Table")
 write.tsv(exDT, out("Supplementary_Table_CellTypes_exvivo.tsv"))
 
@@ -982,7 +982,7 @@ fish.enrich <- fread(dirout_load(base.dir)("cluster.enrichments/Cluster_enrichme
 # . supp table ------------------------------------------------------------
 exDT <- fish.enrich[,c("Clusters", "gene", "log2OR", "padj", "N", "sig.perc"),with=F]
 exDT[, sig.perc := sig.perc * 100]
-colnames(exDT) <- c("Cluster", "CF-KO", "log2 odds ratio", "adjusted p-value", "Count", "Percent significant")
+colnames(exDT) <- c("cluster", "CF-KO", "log2 odds ratio", "significant guides (count)", "total guides (count)", "significant guides (percent)")
 WriteXLS(x=exDT, ExcelFileName=out("Supplementary_Table_Clusters_leukemia.xls"), AdjWidth=TRUE, BoldHeaderRow=TRUE, FreezeRow=1, SheetNames="Table")
 write.tsv(exDT, out("Supplementary_Table_Clusters_leukemia.tsv"))
 
