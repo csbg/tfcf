@@ -5,6 +5,7 @@ out <- dirout(base.dir)
 require(readxl)
 require(depmap)
 require(ggrepel)
+require(WriteXLS)
 
 # LOAD DATA ---------------------------------------------------------------
 
@@ -70,10 +71,9 @@ if(file.exists(depmap.file)){
   depmap.ann <- depmap.metdata %>% 
     filter(lineage_subtype == "AML") %>%
     select(depmap_id, cell_line_name)
-  crispr <- crispr %>%
-    filter(gene_name %in% GENES)
   depmap <- merge(crispr, depmap.ann, by="depmap_id")
-  saveRDS(data.table(depmap), depmap.file)
+  depmap <- data.table(depmap)
+  saveRDS(depmap, depmap.file)
 }
 
 
@@ -175,6 +175,9 @@ ggplot(pDT, aes(x=Population, y=Gene, fill=log2FC)) +
   labs(x="Population", y="CRISPR Target")
 ggsave(out("POOLED_counts_cleaned.pdf"), w=3,h=8, limitsize = FALSE)
 
+WriteXLS(x=RESULTS.wt.agg.clean, ExcelFileName=out("Supplementary_Table_Viability_pooled.xls"), AdjWidth=TRUE, BoldHeaderRow=TRUE, FreezeRow=1, SheetNames="Table")
+write.tsv(RESULTS.wt.agg.clean, out("Supplementary_Table_Viability_pooled.tsv"))
+
 
 # Sabitini ----------------------------------------------------------------
 pDT <- melt(sabatini[,-"sgRNAs included",with=F][Gene %in% toupper(GENES)], id="Gene")
@@ -210,20 +213,32 @@ x2 <- RESULTS.wt.agg.clean %>%
   group_by(Gene) %>%
   summarize(pooled=min(log2FC))
 
-pDT <- inner_join(x1, x2, by="Gene")
-cor(pDT$depmap, pDT$pooled)
-cor(pDT$depmap, pDT$pooled, method="spearman")
+for(typex in c("all", "selected")){
+  
+  pDT <- inner_join(x1, x2, by="Gene")
+  
+  if(typex == "selected") pDT <- pDT %>% filter(Gene %in% GENES)
+  
+  c1 <- cor(pDT$depmap, pDT$pooled)
+  c2 <- cor(pDT$depmap, pDT$pooled, method="spearman")
+  
+  pDT2 <- data.table(pDT)[order(-abs(depmap - pooled))][1:10]
+  
+  ggplot(pDT[], aes(x=pooled, y=depmap)) + 
+    theme_bw() +
+    geom_hline(yintercept = 0, color="grey") +
+    geom_vline(xintercept = 0, color="grey") +
+    geom_abline(color="#1f78b4") +
+    geom_point(shape=1) +
+    geom_point(data=pDT2, color="red") +
+    geom_text_repel(data=pDT2, aes(label=Gene), color="red") +
+    labs(x="log fold change (this study)", y="DepMap dependency") +
+    annotate(geom="text",
+             x=min(pDT$pooled), y=0, hjust=0, vjust=1,
+             label=paste(
+               "Spearman's rho =", round(c2, 3), 
+               "\nPearson's R =", round(c1, 3)))
+  ggsave(out("Diff_PooledVsDepMap_",typex,".pdf"),w=5,h=4)  
+}
 
-
-pDT2 <- data.table(pDT)[order(-abs(depmap - pooled))][1:10]
-ggplot(pDT, aes(x=pooled, y=depmap)) + 
-  theme_bw() +
-  geom_hline(yintercept = 0, color="grey") +
-  geom_vline(xintercept = 0, color="grey") +
-  geom_abline(color="#1f78b4") +
-  geom_point() +
-  geom_point(data=pDT2, color="red") +
-  geom_text_repel(data=pDT2, aes(label=Gene), color="red") +
-  labs(x="log fold change (this study)", y="DepMap dependency")
-ggsave(out("Diff_PooledVsDepMap.pdf"),w=5,h=4)  
   

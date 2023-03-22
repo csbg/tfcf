@@ -19,7 +19,7 @@ ds <- function(path){load(path); return(monocle.obj)}
 
 # Load data ---------------------------------------------------------------
 list.files(dirout_load("SCRNA_33_DE_Nebula_testClustering")("in.vivo_14d_noClusters"))
-ff <- list.files(dirout_load("SCRNA_33_DE_Nebula_testClustering_OLD")(""), pattern="DEG_Results_all.tsv", full.names = TRUE, recursive = TRUE)
+ff <- list.files(dirout_load("SCRNA_33_DE_Nebula_testClustering")(""), pattern="DEG_Results_all.tsv", full.names = TRUE, recursive = TRUE)
 # ff <- c(ff, list.files(dirout_load("SCRNA_30_DE_Nebula_OLD")(""), pattern="DEG_Results_all.tsv", full.names = TRUE, recursive = TRUE))
 # ff2 <- list.files(dirout_load("SCRNA_32_DE_Nebula_simple")(""), pattern="DEG_Results_all.tsv", full.names = TRUE, recursive = TRUE)
 names(ff) <- gsub("^.+\\/", "", dirname(ff))
@@ -29,6 +29,50 @@ ff <- lapply(ff, fread)
 DE.RES <- rbindlist(ff, idcol = "tissue")
 stopifnot(all(grepl("^GuideDE", DE.RES$term)))
 DE.RES[abs(estimate) > 15, estimate := min(15,  abs(estimate)) * sign(estimate)]
+
+
+# Clean up -----------------------------------------------------------
+
+# check that results from NBLMM and default settings are very similar
+ol <- merge(
+  DE.RES[tissue == "in.vivo_14d_noClusters"],
+  DE.RES[tissue == "in.vivo_14d_noClusters_NBLMM"], 
+  by=c("gene_id", "guide", "term"),
+  suffixes=c("_def", "_nb")
+  )
+stopifnot(with(ol, cor(estimate_def, estimate_nb)) > 0.95)
+stopifnot(with(ol, corS(estimate_def, estimate_nb)) > 0.95)
+qmin <- sort(unique(ol$q_value_def))[2]
+stopifnot(with(ol, cor(-log10(q_value_def + qmin), -log10(q_value_nb + qmin), use="pairwise.complete.obs")) > 0.95)
+stopifnot(with(ol, corS(-log10(q_value_def + qmin), -log10(q_value_nb + qmin), use="pairwise.complete.obs")) > 0.95)
+
+# Remove duplicated results
+tx <- "in.vivo_14d_noClusters"
+for(tx in grep("NBLMM", unique(DE.RES$tissue), invert = TRUE, value = TRUE)){
+  
+  message(tx)
+  
+  # Find genes analyzed in duplicates
+  (g.rm <- unique(DE.RES[tissue %in% c(tx, paste0(tx, "_NBLMM"))][,.N, by=c("gene_id", "term")][N == 2]$gene_id))
+  print(g.rm)
+  
+  # remove their data from the NBLMM model (was just used to double-check above)
+  DE.RES <- DE.RES[!(tissue == paste0(tx, "_NBLMM") & gene_id %in% g.rm)]
+  # rename tissues
+  DE.RES[tissue == paste0(tx, "_NBLMM"), tissue := tx]
+}
+stopifnot(!any(grepl("_NBLMM", unique(DE.RES$tissue))))
+
+
+
+# Make unique (not sure why but it seems that the NBLMM adds multi --------
+DE.RES[,.N, by=c("gene_id", "guide", "tissue")][N != 1]
+DE.RES <- unique(DE.RES)
+DE.RES[,.N, by=c("gene_id", "guide", "tissue")][N != 1]
+stopifnot(all(DE.RES[,.N, by=c("gene_id", "guide", "tissue")]$N == 1))
+
+
+# Export and transform ----------------------------------------------------
 write.tsv(DE.RES[, -c("se", "convergence", "estimate_raw", "term"), with=F], out("DEG_Statistics.tsv"))
 #saveRDS(DE.RES[grepl("_s$", tissue)][, -c("se", "convergence", "estimate_raw", "term"), with=F], out("DEG_Statistics_simple.RDS"))
 saveRDS(DE.RES[grepl("14d", tissue)][, -c("se", "convergence", "estimate_raw", "term"), with=F], out("DEG_Statistics_simple.RDS"))
@@ -92,13 +136,11 @@ set.seed(1212)
 
 
 tx <- "ex.vivo_myeloid"
-for(tx in c(unique(DE.RES$tissue), "all")){
-  cMTx <- cMT
-  if(tx != "all"){
-    cMTx <- cMTx[grepl(tx, row.names(cMTx)),grepl(tx, colnames(cMTx))]
-  } else {
-    next
-  }
+for(tx in unique(DE.RES$tissue)){
+  cMTx <- cMTx[grepl(tx, row.names(cMTx)),grepl(tx, colnames(cMTx))]
+  
+  if(all(cMTx == 1)) next
+  
   mds.res <- data.table(cmdscale(d=as.dist(1-cMTx), k=2), keep.rownames=TRUE)
   mds.res <- cbind(mds.res, setNames(data.table(do.call(rbind, strsplit(mds.res$rn, " "))), c("gene", "tissue")))
   ggplot(mds.res, aes(x=V1, y=V2, color=tissue, label=gene)) + 

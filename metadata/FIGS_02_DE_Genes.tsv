@@ -4,25 +4,36 @@ Kit	HSC
 Meis1	HSC
 Hoxa7	HSC
 Hoxa9	HSC
-FcgR3	Mye
-Mpo	Mye
-Ctsg	Mye
-Elane	Mye
-Cebpa	Mye
-Cebpb	Mye
-Cebpe	Mye
-Gfi1	Mye
-Lyz1	Mye
-Chil1	Mye
-Camp	Mye
-Ly6c	Mye
-Ltf	Mye
-Csf1r	Mye
-F13a1	Mye
-S100a4	Mye
-Ly86	Mye
-Ass1	Mye
-Irf8	Mye
+Mycn	HSC
+Mecom	HSC
+Slamf1	HSC
+Hlf	HSC
+Fcgr3	Early Mye
+Fcgr2b	Early Mye
+Mpo	Early Mye
+Prtn3	Early Mye
+Cst7	Early Mye
+Elane	Early Mye
+Cebpa	Early Mye
+Cebpb	Early Mye
+Cebpe	Granulocyte
+Gfi1	Granulocyte
+Lyz1	Granulocyte
+Ly6g	Granulocyte
+Sfn1	Granulocyte
+S100a9	Granulocyte
+Ly86	Mono
+Cd14	Mono
+Csf1r	Mono
+S100a4	Mono
+Ass1	Mono
+Irf8	Mono
+Gata2	Ery
+Gata1	Ery
+Gfi1b	Ery
+Klf1	Ery
+Sox6	Ery
+Klf9	Ery
 Mt2	Ery
 Car1	Ery
 Car2	Ery
@@ -30,26 +41,21 @@ Gypa	Ery
 Hbb-bt	Ery
 Hbb-bs	Ery
 Hba-a1	Ery
-Gata2	Ery
-Gata1	Ery
-Gfi1b	Ery
-Klf1	Ery
-Sox6	Ery
-Klf9	Ery
 Nfe2l2	Ery
 Itga2b	Mega
 Pf4	Mega
 Gp1ba	Mega
-Gp1bb	Mega
 Vwf	Mega
 Nfix	Mega
 Cited4	Mega
-Il7r	Bcell
-Cd19	Bcell
-Vpreb1	Bcell
-Cd79b	Bcell
-Pax5	Bcell
-Ebf1	Bcell
-Prss34	Baso
 Cpa3	Baso
 Fcer1a	Baso
+Prss34	Baso
+Ms4a2	Baso
+Mcpt8	Baso
+Pax5	Bcell
+Ebf1	Bcell
+Il7r	Bcell
+Cd19	Bcell
+Cd79a	Bcell
+Ighm	Bcell

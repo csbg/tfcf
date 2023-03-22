@@ -61,7 +61,7 @@ nebRes <- nebula(
   count = counts(obj.de),
   id = obj.de$sample_broad,
   pred = mm,
-  model="NBLMM"
+  model=nebula.model
 )
 
 # export results

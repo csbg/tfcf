@@ -11,7 +11,8 @@ outB <- dirout(basedir)
 # Sample annotation -------------------------------------------------------
 SANN <- fread(PATHS$SCRNA$ANN)
 
-TISSUES <- PATHS$SCRNA$MONOCLE.NAMES
+#TISSUES <- PATHS$SCRNA$MONOCLE.NAMES
+TISSUES <- "in.vivo"
 
 # load datasets -----------------------------------------------------------
 mobjs <- list()
@@ -26,8 +27,8 @@ ANALYSIS <- "monocle.singleR"
 
 
 # Which nebula model to use -----------------------------------------------
-nebula.model <- "NBGMM"
-#"NBLMM"
+nebula.model <- "NBLMM"
+
 
 # Analysis of most/all cells in vivo ---------------------------------------------------------------
 cells <- list(
@@ -36,18 +37,27 @@ cells <- list(
   leukemia = fread(dirout_load("SCRNA_21_02_ClusterEnrichments_simple")("Guides_Fisher_Mixscape_basic_leukemia_noMixscape_Cells.tsv"))$rn
 )
 cl.use <- "noClusters"
-(tissue.name <- "ex.vivo")
+(tissue.name <- TISSUES[1])
 #for(cl.use in c("useClusters", "noClusters")){
 for(cl.use in c("noClusters")){
-  for(tissue.name in "leukemia"){
-  #for(tissue.name in TISSUES){
+  for(tissue.name in TISSUES){
     
     (timex <- mobjs[[tissue.name]]$timepoint[1])
-    #for(timex in "28d"){#unique(mobjs[[tissue.name]]$timepoint)){
     for(timex in unique(mobjs[[tissue.name]]$timepoint)){
-  
+      
+      labelx <- paste0(basedir, tissue.name, "_", timex, "_", cl.use)
+      
+      message(labelx)
+      
+      existing.file <- dirout(labelx)("Nebular.RDS")
+      if(!file.exists(existing.file)) next
+      existing.results <- readRDS(existing.file)
+      
+      gx <- unique(existing.results[convergence < -15]$gene_id)
+      gx <- c(gx, unique(existing.results[order(q_value)]$gene_id)[1:10])
+      
       # Monocle object
-      monocle.obj <- mobjs[[tissue.name]]
+      monocle.obj <- mobjs[[tissue.name]][gx,]
       monocle.obj <- monocle.obj[, monocle.obj$timepoint == timex]
       monocle.obj <- monocle.obj[, monocle.obj$sample != "WT-LSK_OP0_NM_7d_1"]
       monocle.obj <- monocle.obj[, colnames(monocle.obj) %in% cells[[tissue.name]]]
@@ -61,7 +71,7 @@ for(cl.use in c("noClusters")){
       monocle.obj <- monocle.obj[, ann$rn]
       monocle.obj$clusterDE <- ann$Clusters
       
-      out <- dirout(paste0(basedir, tissue.name, "_", timex, "_", cl.use))
+      out <- dirout(paste0(labelx, "_", nebula.model))
     
       source("src/SCRNA_33_01_DE_FUNC_nebula_testClustering.R")
     }
