@@ -149,7 +149,7 @@ for batch in ATAC6; do
 
                     sort -T '.' -k1,1 -k2,2n ${allPeaks} \
                                     | mergeBed -c $mergecols -o collapse > ${outdir}/${cell}/${prefix_ko}/${cell}_consenus.txt
-                    python ${scriptsPath}/ChIP/cluster/02_NR_macs2_merged_expand.py ${outdir}/${cell}/${prefix_ko}/${cell}_consenus.txt \
+                    python ${scriptsPath}/subscripts/01_NR_macs2_merged_expand.py ${outdir}/${cell}/${prefix_ko}/${cell}_consenus.txt \
                                         ${fileLabels} \
                                         ${outdir}/${cell}/${prefix_ko}/${cell}_consenus.boolean.txt \
                                         $expandparam
