@@ -336,7 +336,8 @@ dla.list <- list(
   #supp = fread("metadata/FIGS_Order_Fig1E_supp.tsv"),
   all = data.table(Factor=sort(unique(RESULTS.wt.agg.gene[hit == TRUE]$Gene)), Complex="NA")
 )
-(dla.nam <- names(dla.list)[3])
+
+(dla.nam <- names(dla.list)[1])
 for(dla.nam in names(dla.list)){
   dla <- dla.list[[dla.nam]]
   #if(is.null(dla$Heatmap)) dla$Heatmap <- 1
@@ -352,6 +353,15 @@ for(dla.nam in names(dla.list)){
   pDT.stats <- merge(pDT.stats, ANN.genes, by.x="Gene", by.y="GENE", all.x=TRUE)
   #pDT.stats <- hierarch.ordering(pDT.stats, toOrder = "Gene", orderBy = "Comparison", value.var="z")
   write.tsv(pDT.stats, out("SimpleHM_",dla.nam,".tsv"))
+  
+  if(dla.nam %in% c("main21", "all")){
+    nam <- if(dla.nam == "main21") "Figure1d" else "Extended_Data_Fig_1e"
+    sDT <- pDT.stats[Genotype == "Cas9",c("Gene", "Comparison", "z", "percSig"),with=F]
+    sDT[, Comparison := gsub("\\.", " vs ", Comparison)]
+    names(sDT) <- c("Gene", "Comparison", "Lineage score", "%sig")
+    WriteXLS::WriteXLS(sDT, out(nam, ".xls"), SheetNames = nam, BoldHeaderRow = TRUE, FreezeRow = 1)
+  }
+
   
   # Plot
   pDT.stats[, z.cap := pmin(5, abs(z)) * sign(z)]
@@ -413,6 +423,7 @@ xxx <- list(
   c("MYE.UND", "GMPcd11.DN")
 )
 
+cx <- xxx[[1]]
 for(cx in xxx){
   # Prepare data
   pDT <- rbind(RESULTS.wt.agg.gene.wt, RESULTS.wt.agg.gene)
@@ -443,6 +454,14 @@ for(cx in xxx){
   
   write.tsv(pDT, out("Comparison_2D_Scatter_", paste(cx, collapse = "vs"),".tsv"))
   
+  if(cx[1] == "GMP.MEP"){
+    sDT <- pDT[,c("Gene", "Genotype", cx[[1]], cx[[2]], "sig"), with=F]
+    sDT[Genotype == "WT", sig := "NA"]
+    sDT <- sDT[!is.na(get(cx[[1]])) & !is.na(get(cx[[2]]))]
+    names(sDT) <- c("Gene", "Genotype", gsub("\\.", " vs ", cx[[1]]), gsub("\\.", " vs ", cx[[2]]), "Significant")
+    WriteXLS::WriteXLS(sDT, out("Figure1c.xls"), SheetNames = "Figure1c", BoldHeaderRow = TRUE, FreezeRow = 1)
+  }
+
   dlim <- cap
   ggplot(pDT, aes(x=dim1, y=dim2)) + 
     themeNF() +

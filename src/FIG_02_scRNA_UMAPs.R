@@ -212,6 +212,14 @@ for(tx in names(inDir.funcs)){
     #pDT <- pDT[frac > 0.25]
     pDT.labels <- pDT[, .(hex.x = median(hex.x, na.rm=TRUE), hex.y=median(hex.y, na.rm=TRUE)), by=c("Clusters")]
     pDT[, Clusters := cleanCelltypes(Clusters,twoLines = FALSE)]
+    
+    # Source Data
+    if(x == "original" & tx == "in.vivo"){
+      sDT <- pDT[,c("hex.x", "hex.y", "Clusters"), with=F]
+      names(sDT) <- c("UMAP1", "UMAP2", "Clusters")
+      WriteXLS::WriteXLS(sDT, outBase("Figure2b.xls"), SheetNames = "Figure2b", BoldHeaderRow = TRUE, FreezeRow = 1)
+    }
+    
     pDT.labels[, Clusters := cleanCelltypes(Clusters,twoLines = TRUE)]
     p <- ggplot(pDT, aes(x=hex.x, y=hex.y)) +
       themeNF() + xu + yu + scale_color_manual(values=COLORS.CELLTYPES.scRNA.ainhoa)
@@ -553,6 +561,21 @@ for(tx in names(inDir.funcs)){
   
   n.factors <- length(unique(pDT.final$plot))
   
+  if(tx %in% c("in.vivo")){
+    sDT <- pDT.final[,c("UMAP1", "UMAP2", "mixscape_class.global", "plot"),with=F]
+    sDT[mixscape_class.global == "NP", mixscape_class.global := "KO"]
+    names(sDT) <- c("UMAP1", "UMAP2", "KO", "Gene")
+    sDT[,.N, by=c("KO", "Gene")]
+    sDT <- sDT[KO != "NTC"][,-"KO",with=F]
+    goi <- c("Cebpa", "Klf1", "Pax5", "Setd1b", "Kmt2d", "Smarcd2", "Pbrm1", "Chd4", "Rbbp4")
+    
+    nam <-  "Figure2c"
+    WriteXLS::WriteXLS(sDT[Gene %in% c("NTC", goi)], outBase(nam, ".xls"), SheetNames = nam, BoldHeaderRow = TRUE, FreezeRow = 1)
+    nam <-  "ExtendedDataFig3e"
+    sDT2 <- sDT[!Gene %in% c(goi, "Brd9", "Chmp2a", "Gata2", "Gltscr1", "Hdac3", "Hhex", "Hmgxb4", "Kmt2a", "Smarcb1", "Smarcc1", "Smarcd1", "Smarce1", "Smc2", "Smc3", "Smc4", "Tal1", "Wdr82")]
+    WriteXLS::WriteXLS(sDT2, outBase(nam, ".xls"), SheetNames = nam, BoldHeaderRow = TRUE, FreezeRow = 1)
+  }
+  
   ggplot(pDT.final, aes(x=UMAP1, y=UMAP2)) + 
     themeNF(grid = FALSE) +
     geom_hex(data=pDT.final[mixscape_class.global == "NTC"], bins=100, fill="lightgrey") +
@@ -627,7 +650,9 @@ ggsaveNF(out("UMAP_Samples.pdf"), w=2,h=2)
 
 
 # . Plot manual enrichments -------------------------------------------------
-typex <- "all"
+"Hoxa7" %in% dla.healthy$main
+
+typex <- "main.Feb28"
 for(typex in names(dla.healthy)){
   dla <- dla.healthy[[typex]]
   h=length(unique(dla)) * 0.07 + 0.1
@@ -638,6 +663,13 @@ for(typex in names(dla.healthy)){
   pDT <- pDT[!(Clusters == "MEP (pert.)" & log2OR < 0)]
   pDT[Clusters == "Mega", Clusters := "MkP"]
   pDT[, Clusters := cleanCelltypes(Clusters, clean=TRUE, reverse=FALSE)]
+  # SourceData
+  if(typex %in% c("main.Feb28", "all")){
+    nam <-  if(typex == "main.Feb28") nam <- "Figure2e" else "ExtendedDataFig4a"
+    sDT <- pDT[,c("Clusters", "gene", "log2OR", "sig.perc"),with=F]
+    names(sDT) <- c("Cell type", "Gene", "log2OR", "%sig")
+    WriteXLS::WriteXLS(sDT, outBase(nam, ".xls"), SheetNames = nam, BoldHeaderRow = TRUE, FreezeRow = 1)
+  }
   (p_broad <- ggplot(pDT, aes(y=gene, x=Clusters, size=sig.perc, color=log2OR_cap)) + 
     themeNF(rotate=T) +
     scale_color_gradient2(name="log2(OR)",low="blue", midpoint = 0, high="red") +
@@ -651,6 +683,12 @@ for(typex in names(dla.healthy)){
   # Plot mye vs GMP enrichments with DLA order
   pDT <- fish.EryVsMye[Clusters == "GMP"][gene %in% dla]#[log2OR > 0 | log2OR < -2]
   #pDT$gene <- factor(pDT$gene, levels = pDT[order(log2OR)]$gene)
+  if(typex %in% c("all")){
+    nam <-  "ExtendedDataFig4c"
+    sDT <- pDT[,c("Clusters", "gene", "log2OR"),with=F]
+    names(sDT) <- c("Cell type", "Gene", "log2OR")
+    WriteXLS::WriteXLS(sDT, outBase(nam, ".xls"), SheetNames = nam, BoldHeaderRow = TRUE, FreezeRow = 1)
+  }
   pDT$gene <- factor(pDT$gene, levels = rev(dla))
   (p_EryVsMye <- ggplot(pDT, aes(x=log2OR, y=gene, alpha=sig.perc, fill=sign(log2OR_cap))) + 
     themeNF(rotate=F) +
@@ -663,8 +701,14 @@ for(typex in names(dla.healthy)){
     geom_vline(xintercept = 0))
   ggsaveNF(out("ClusterEnrichments_manual_GMPvsMEP_",typex,".pdf"), w=1,h=h, guides = TRUE)
   
+  # Plot mye vs GMP EARLY enrichments with DLA order
   pDT <- fish.early[Clusters == "GMP"][gene %in% dla]#[log2OR > 0 | log2OR < -2]
-  #pDT$gene <- factor(pDT$gene, levels = pDT[order(log2OR)]$gene)
+  if(typex %in% c("all")){
+    nam <-  if(typex == "main.Feb28") nam <- "Figure2f" else "ExtendedDataFig4b"
+    sDT <- pDT[,c("Clusters", "gene", "log2OR"),with=F]
+    names(sDT) <- c("Cell type", "Gene", "log2OR")
+    WriteXLS::WriteXLS(sDT, outBase(nam, ".xls"), SheetNames = nam, BoldHeaderRow = TRUE, FreezeRow = 1)
+  }
   pDT$gene <- factor(pDT$gene, levels = rev(dla))
   (p_Early <- ggplot(pDT, aes(x=log2OR, y=gene, alpha=sig.perc, fill=sign(log2OR_cap))) + 
     themeNF(rotate=F) +
@@ -677,8 +721,14 @@ for(typex in names(dla.healthy)){
     geom_vline(xintercept = 0))
   ggsaveNF(out("ClusterEnrichments_manual_EarlyGMPvsMEP_",typex,".pdf"), w=1,h=h, guides = TRUE)
   
+  # Mono vs Gran
   pDT <- fish.monoVsGran[Clusters == "Mono"][gene %in% dla]#[log2OR > 0 | log2OR < -2]
-  #pDT$gene <- factor(pDT$gene, levels = pDT[order(log2OR)]$gene)
+  if(typex %in% c("all")){
+    nam <-  "ExtendedDataFig4d"
+    sDT <- pDT[,c("Clusters", "gene", "log2OR"),with=F]
+    names(sDT) <- c("Cell type", "Gene", "log2OR")
+    WriteXLS::WriteXLS(sDT, outBase(nam, ".xls"), SheetNames = nam, BoldHeaderRow = TRUE, FreezeRow = 1)
+  }
   pDT$gene <- factor(pDT$gene, levels = rev(dla))
   (p_MonoVsGran <- ggplot(pDT, aes(x=log2OR, y=gene, alpha=sig.perc, fill=sign(log2OR_cap))) + 
     themeNF(rotate=F) +
@@ -695,6 +745,12 @@ for(typex in names(dla.healthy)){
   pDT <- copy(viability)
   pDT[, rn := gsub("^(.)", "\\U\\1", tolower(pDT$rn), perl=TRUE)]
   pDT <- pDT[rn %in% dla]
+  if(typex %in% c("all")){
+    nam <-  "ExtendedDataFig4e"
+    sDT <- pDT[,c("rn", "value"),with=F]
+    names(sDT) <- c("Gene", "log2OR")
+    WriteXLS::WriteXLS(sDT, outBase(nam, ".xls"), SheetNames = nam, BoldHeaderRow = TRUE, FreezeRow = 1)
+  }
   pDT$gene <- factor(pDT$rn, levels = rev(dla))
   (p_viability <- ggplot(pDT, aes(x=value, y=gene, fill=sign(value))) + 
       themeNF(rotate=F) +
@@ -815,6 +871,14 @@ for(x in unique(pDT.top$gene)){
   pDT.final <- rbind(pDT.final, pDTg, fill=TRUE)
 }
 #pDT.final$plot <- relevel(factor(pDT.final$plot), ref = "NTC")
+# Source Data
+nam <- "Figure4c"
+sDT <- pDT.final[,c("UMAP1", "UMAP2", "plot", "type"),with=F]
+sDT[,.N, by=c("plot", "type")]
+sDT[is.na(type), type := "Targets"]
+names(sDT) <- c("UMAP1", "UMAP2", "Plot", "Type")
+WriteXLS::WriteXLS(sDT, outBase(nam, ".xls"), SheetNames = nam, BoldHeaderRow = TRUE, FreezeRow = 1)
+# Plot
 ggplot(pDT.final, aes(x=UMAP1, y=UMAP2)) + 
   themeNF() +
   geom_hex(data=pDT.final[type == "Background"], bins=100, fill="lightgrey") +
@@ -834,6 +898,12 @@ pDT[, sum := sum(N), by="timepoint"]
 pDT[, perc := N/sum*100]
 #pDT <- pDT[mixscape_class.global != "NP"]
 #pDT <- pDT[group %in% pDT[, .N, by="group"][N == 2]$group]
+
+# Source Data
+nam <- "Figure4b"
+sDT <- pDT[!grepl("Kmt2", group),c("timepoint", "group", "perc"),with=F]
+names(sDT) <- c("Timepoint", "Gene", "% cells with sgRNA")
+WriteXLS::WriteXLS(sDT, outBase(nam, ".xls"), SheetNames = nam, BoldHeaderRow = TRUE, FreezeRow = 1)
 
 # Bar plot
 pDT$group <- factor(pDT$group, levels=unique(rev(pDT[order(timepoint, N)]$group)))
@@ -874,7 +944,7 @@ write.tsv(exDT, out("Supplementary_Table_CellTypes_exvivo.tsv"))
 
 
 # . BULK Signatures ---------------------------------------------------------
-pDT <- merge(umap.proj$izzo, marker.signatures.bulk, by="rn")
+pDT <- merge(umap.proj$izzo, marker.signatures.bulk, by="rn")[tissue.x == "ex.vivo"]
 pDT[, value.norm := scale(value), by="variable"]
 ggplot(pDT, aes(x=UMAP_1, y=UMAP_2)) +
   stat_summary_hex(aes(z=pmin(3, value.norm)),fun=mean, bins=100) +
@@ -884,7 +954,7 @@ ggplot(pDT, aes(x=UMAP_1, y=UMAP_2)) +
   xu + yu
 ggsaveNF(out("BulkSignatures.pdf"), w=2.5,h=1)
 
-pDT <- merge(umap.proj$izzo, marker.signatures.bulk2[variable != "LSK"], by="rn")
+pDT <- merge(umap.proj$izzo, marker.signatures.bulk2[variable != "LSK"], by="rn")[tissue.x == "ex.vivo"]
 pDT[, value.norm := scale(value), by="variable"]
 ggplot(pDT, aes(x=UMAP_1, y=UMAP_2)) +
   stat_summary_hex(aes(z=pmin(3, value.norm)),fun=mean, bins=100) +
@@ -1002,6 +1072,12 @@ for(typex in c("original", "in.vivo.X")){
   pDT.labels <- pDT[, .(hex.x = median(hex.x), hex.y=median(hex.y)), by=c("Cluster.number")]
   #pDT[, Clusters := cleanCelltypes(Clusters)]
   #pDT[!Cluster.number %in% clusters.plot, Clusters := "other"]
+  
+  nam <- if(typex == "original") "Figure5a" else "ExtendedDataFig9a"
+  sDT <- pDT[,c("hex.x", "hex.y", "Cluster.number"), with=F]
+  names(sDT) <- c("UMAP1", "UMAP2", "Cluster")
+  WriteXLS::WriteXLS(sDT, outBase(nam, ".xls"), SheetNames = nam, BoldHeaderRow = TRUE, FreezeRow = 1)
+  
   p <- ggplot(pDT, aes(x=hex.x, y=hex.y)) +
     themeNF() + xu + yu +
     geom_point(aes(color=Clusters), size=0.5) + 
@@ -1038,6 +1114,12 @@ for(suppx in c("main", "supp")){
     pDTx$Antibody <- factor(pDTx$Antibody, levels = abs.main.dla)
   }
   pDTx[, Cluster.number.fac := factor(as.character(Cluster.number), levels=rev(as.character(unlist(cl.labels))))]
+  
+  # Source Data
+  sDT <- pDTx[,c("Cluster.number", "Antibody", "Signal", "celltype"),with=F]
+  names(sDT) <- c("Cluster", "Antibody", "Signal", "Celltype")
+  nam <- if(suppx== "main") "Figure5b_2" else "ExtendedDataFig9d_2"
+  WriteXLS::WriteXLS(sDT, outBase(nam, ".xls"), SheetNames = nam, BoldHeaderRow = TRUE, FreezeRow = 1)
   
   ggplot(pDTx, aes(y=Cluster.number.fac,x=Antibody, fill=Signal)) +
     themeNF() +
@@ -1123,6 +1205,13 @@ for(suppx in names(dla.cancer)){
   
   pDTx[, Cluster.number.fac := factor(as.character(Clusters), levels=rev(as.character(unlist(cl.labels))))]
   
+  # Source Data
+  nam <- if(suppx == "main") "Figure5e"  else "ExtendedDataFig9f"
+  sDT <- pDTx[,c("Clusters", "mixscape_class", "celltype", "log2OR", "sig.perc"),with=F]
+  names(sDT) <- c("Cluster", "Gene", "Celltype", "log2OR", "%sig")
+  WriteXLS::WriteXLS(sDT, outBase(nam, ".xls"), SheetNames = nam, BoldHeaderRow = TRUE, FreezeRow = 1)
+  
+  
   w=length(unique(pDTx$gene)) * 0.04 + 1
   h=length(unique(pDTx$Clusters)) * 0.06 + 0.3
   ggplot(pDTx, aes(x=gene, y=Cluster.number.fac, size=sig.perc*100, color=log2OR_cap)) + 
@@ -1164,6 +1253,12 @@ for(suppx in c("supp", "main")){
   
   pDTx <- pDTx[Cluster.number %in% unlist(cl.labels)]
   pDTx[, Cluster.number.fac := factor(as.character(Cluster.number), levels=rev(as.character(unlist(cl.labels))))]
+  
+  # Source data
+  sDT <- pDTx[,c("Cluster.number", "Gene", "mean", "percentage", "celltype"),with=F]
+  names(sDT) <- c("Cluster", "Antibody", "Signal", "%cells", "Celltype")
+  nam <- if(suppx== "main") "Figure5b_1" else "ExtendedDataFig9d_1"
+  WriteXLS::WriteXLS(sDT, outBase(nam, ".xls"), SheetNames = nam, BoldHeaderRow = TRUE, FreezeRow = 1)
   
   h=length(unique(pDTx$Cluster.number)) * 0.08 + 0.2
   w=length(unique(pDTx$Gene)) * 0.08 + 0.2
