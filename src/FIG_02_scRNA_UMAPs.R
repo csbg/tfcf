@@ -576,11 +576,16 @@ for(tx in names(inDir.funcs)){
     WriteXLS::WriteXLS(sDT2, outBase(nam, ".xls"), SheetNames = nam, BoldHeaderRow = TRUE, FreezeRow = 1)
   }
   
-  ggplot(pDT.final, aes(x=UMAP1, y=UMAP2)) + 
+  n.bins = 50
+  p <- ggplot(pDT.final, aes(x=UMAP1, y=UMAP2)) + 
     themeNF(grid = FALSE) +
-    geom_hex(data=pDT.final[mixscape_class.global == "NTC"], bins=100, fill="lightgrey") +
-    geom_hex(data=pDT.final[mixscape_class.global != "NTC" | plot == "NTC"], bins=100) +
-    scale_fill_gradientn(colours=c("#1f78b4", "#e31a1c")) +
+    stat_binhex(
+      data=pDT.final[mixscape_class.global == "NTC"], 
+      mapping = aes(fill="x"), 
+      bins=n.bins, 
+      fill="lightgrey") +
+    geom_hex(data=pDT.final[mixscape_class.global != "NTC" | plot == "NTC"], bins=n.bins) +
+    scale_fill_gradientn(colours=c("#ffff99", "#e31a1c")) +
     facet_wrap(~plot, ncol=6) + 
     theme(
       axis.text = element_blank(),
@@ -590,17 +595,32 @@ for(tx in names(inDir.funcs)){
       strip.background = element_blank(), 
       plot.background = element_blank()) +
     xu + yu
-  ggsaveNF(out("UMAP_Guides_all.pdf"), w=4,h=ceiling(n.factors/6)*4/6)
+  ggsaveNF(out("UMAP_Guides_all.pdf"), w=4,h=ceiling(n.factors/6)*4/6, plot=p)
   
-  # pDT.final <- cbind(pDT.final, umap.proj[["in.vivo.X"]][match(pDT.final$rn, rn)][,c("UMAP_1", "UMAP_2"),with=F])
-  # ggplot(pDT.final, aes(x=UMAP_1, y=UMAP_2)) + 
-  #   themeNF() +
-  #   geom_hex(data=pDT.final[mixscape_class.global == "NTC"], bins=100, fill="lightgrey") +
-  #   geom_hex(data=pDT.final[mixscape_class.global != "NTC" | plot == "NTC"], bins=100) +
-  #   scale_fill_gradientn(colours=c("#1f78b4", "#e31a1c")) +
-  #   facet_wrap(~plot, ncol=6) + 
-  #   xu + yu
-  # ggsaveNF(out("UMAP_Guides_all_Crossprojected.pdf"), w=4,h=4)
+  dir.create(out("UMAP_Guides_separate/"))
+  px <- pDT.final$plot[1]
+  for(px in unique(pDT.final$plot)){
+    n.bins = 50
+    p <- ggplot(pDT.final[plot == px], aes(x=UMAP1, y=UMAP2)) + 
+      themeNF(grid = FALSE) +
+      stat_binhex(
+        data=pDT.final[plot == px][mixscape_class.global == "NTC"], 
+        mapping = aes(fill="x"), 
+        bins=n.bins, 
+        fill="lightgrey") +
+      geom_hex(data=pDT.final[plot == px][mixscape_class.global != "NTC" | plot == "NTC"], bins=n.bins) +
+      scale_fill_gradientn(colours=c("#ffff99", "#e31a1c")) +
+      facet_wrap(~plot, ncol=6) + 
+      theme(
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        panel.background = element_blank(), 
+        panel.border = element_blank(),
+        strip.background = element_blank(), 
+        plot.background = element_blank()) +
+      xlab("") + ylab("") + noGuides()
+    ggsaveNF(out("UMAP_Guides_separate/", px, ".pdf"), w=1,h=1, plot=p, guides = TRUE)
+  }
 }
 
 
@@ -879,11 +899,16 @@ sDT[is.na(type), type := "Targets"]
 names(sDT) <- c("UMAP1", "UMAP2", "Plot", "Type")
 WriteXLS::WriteXLS(sDT, outBase(nam, ".xls"), SheetNames = nam, BoldHeaderRow = TRUE, FreezeRow = 1)
 # Plot
-ggplot(pDT.final, aes(x=UMAP1, y=UMAP2)) + 
+n.bins = 50
+ggplot(pDT.final[is.na(type)], aes(x=UMAP1, y=UMAP2)) + 
   themeNF() +
-  geom_hex(data=pDT.final[type == "Background"], bins=100, fill="lightgrey") +
-  geom_hex(data=pDT.final[is.na(type)], bins=100) +
-  scale_fill_gradientn(colours=c("#1f78b4", "#e31a1c")) +
+  stat_binhex(
+    data=pDT.final[type == "Background"], 
+    mapping = aes(fill="x"), 
+    bins=n.bins, 
+    fill="lightgrey") +
+  geom_hex(data=pDT.final[is.na(type)], bins=n.bins) +
+  scale_fill_gradientn(colours=c("#ffff99", "#e31a1c")) +
   facet_wrap(~plot, ncol=3) +
   xu + yu
 ggsaveNF(out("UMAP_Guides_displasia.pdf"), w=2,h=1)
