@@ -467,7 +467,7 @@ for(cx in xxx){
     themeNF() +
     geom_hline(yintercept = 0, color="lightgrey", alpha=0.5) +
     geom_vline(xintercept = 0, color="lightgrey", alpha=0.5) +
-    stat_density_2d(geom = "polygon", contour = TRUE, aes(fill = after_stat(level)), colour = NA, bins = 10) +
+    #stat_density_2d(geom = "polygon", contour = TRUE, aes(fill = after_stat(level)), colour = NA, bins = 10) +
     #scale_fill_distiller(palette = "Blues", direction = 1) +
     scale_fill_gradientn(colours=c("white", "#a6cee3", "#fdbf6f")) +
     geom_point(data=pDT[Genotype == "Cas9" & grepl("NTC", Gene)], size=1, shape=3, color="#1f78b4") +

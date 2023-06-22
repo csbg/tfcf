@@ -530,6 +530,7 @@ ggsaveNF(outBase("NTC_clonality.pdf"), w=4, h=2)
 pDT <- dcast.data.table(pDT, Clusters + tissue + sample_broad ~ paste0("Guide", guide_i), value.var = "frac")
 pDT[, timepoint := gsub("^(.+)_(\\d+d)(\\_\\d)?$", "\\2", sample_broad)]
 pDT[, batch := as.numeric(factor(sample_broad)), by=c("tissue", "timepoint")]
+write.tsv(pDT[, cor.test(Guide1, Guide2, use="p"), by=c("tissue", "timepoint")], outBase("NTC_clonalityScatter_cor.tsv"))
 ggplot(pDT, aes(x=Guide1, y=Guide2, shape=factor(paste("Batch", batch)), color=factor(paste("Batch", batch)))) + 
   geom_point() +
   themeNF() +
@@ -584,7 +585,10 @@ for(tx in names(inDir.funcs)){
       mapping = aes(fill="x"), 
       bins=n.bins, 
       fill="lightgrey") +
-    geom_hex(data=pDT.final[mixscape_class.global != "NTC" | plot == "NTC"], bins=n.bins) +
+    stat_binhex(
+      data=pDT.final[mixscape_class.global != "NTC" | plot == "NTC"], 
+      mapping = aes(fill=log10(..count..)),
+      bins=n.bins) +
     scale_fill_gradientn(colours=c("#ffff99", "#e31a1c")) +
     facet_wrap(~plot, ncol=6) + 
     theme(
@@ -597,18 +601,25 @@ for(tx in names(inDir.funcs)){
     xu + yu
   ggsaveNF(out("UMAP_Guides_all.pdf"), w=4,h=ceiling(n.factors/6)*4/6, plot=p)
   
-  dir.create(out("UMAP_Guides_separate/"))
-  px <- pDT.final$plot[1]
-  for(px in unique(pDT.final$plot)){
+  if(tx %in% "in.vivo"){
+    gg.use <- c(
+      "NTC", "Cebpa", "Klf1", "Pax5", "Wdr82", "Kmt2a", 
+      "Setd1b", "Kmt2d", "Smarcd2", "Pbrm1", "Chd4", "Rbbp4"
+      )
+    pDT <- pDT.final[plot %in% gg.use]
+    pDT$plot <- factor(pDT$plot, levels=gg.use)
     n.bins = 50
-    p <- ggplot(pDT.final[plot == px], aes(x=UMAP1, y=UMAP2)) + 
+    p <- ggplot(pDT, aes(x=UMAP1, y=UMAP2)) + 
       themeNF(grid = FALSE) +
       stat_binhex(
-        data=pDT.final[plot == px][mixscape_class.global == "NTC"], 
+        data=pDT[mixscape_class.global == "NTC"], 
         mapping = aes(fill="x"), 
         bins=n.bins, 
         fill="lightgrey") +
-      geom_hex(data=pDT.final[plot == px][mixscape_class.global != "NTC" | plot == "NTC"], bins=n.bins) +
+      stat_binhex(
+        data=pDT[mixscape_class.global != "NTC" | plot == "NTC"], 
+        mapping = aes(fill=log10(..count..)),
+        bins=n.bins) +
       scale_fill_gradientn(colours=c("#ffff99", "#e31a1c")) +
       facet_wrap(~plot, ncol=6) + 
       theme(
@@ -618,8 +629,8 @@ for(tx in names(inDir.funcs)){
         panel.border = element_blank(),
         strip.background = element_blank(), 
         plot.background = element_blank()) +
-      xlab("") + ylab("") + noGuides()
-    ggsaveNF(out("UMAP_Guides_separate/", px, ".pdf"), w=1,h=1, plot=p, guides = TRUE)
+      xu + yu
+    ggsaveNF(out("UMAP_Guides_selection.pdf"), w=4,h=1.3, plot=p)
   }
 }
 
