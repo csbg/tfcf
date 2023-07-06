@@ -888,7 +888,7 @@ h=length(unique(gg)) * 0.07 + 0.5
 ggsaveNF(out("ClusterEnrichments_manual_d28.pdf"), h=h,w=1.5, guides = TRUE, plot=p)
 
 
-# . Plot displasia (d28) guides ---------------------------------------------------------
+# . Plot displasia (d28) guides on UMAP ---------------------------------------------------------
 gg <- c("Brd9")
 pDT.top <- ann[timepoint == "28d"][grepl("OP1", sample)][gene %in% c("NTC", gg)]
 #pDT.ntc <- pDT.top[mixscape_class.global == "NTC"]
@@ -924,6 +924,21 @@ ggplot(pDT.final[is.na(type)], aes(x=UMAP1, y=UMAP2)) +
   xu + yu
 ggsaveNF(out("UMAP_Guides_displasia.pdf"), w=2,h=1)
 
+ggplot(pDT.final[is.na(type)], aes(x=UMAP1, y=UMAP2)) + 
+  themeNF() +
+  stat_binhex(
+    data=pDT.final[type == "Background"], 
+    mapping = aes(fill="x"), 
+    bins=n.bins, 
+    fill="lightgrey") +
+  stat_binhex(
+    data=pDT.final[is.na(type)], 
+    mapping = aes(fill=log10(..count..)),
+    bins=n.bins) +
+  scale_fill_gradientn(colours=c("#ffff99", "#e31a1c")) +
+  facet_wrap(~plot, ncol=3) +
+  xu + yu
+ggsaveNF(out("UMAP_Guides_displasia_log10.pdf"), w=2,h=1)
 
 # . Plot displasia (d28) numbers -----------------------------------------------
 pDT <- copy(ann[markers=="lin-"][grepl("OP1", sample)][mixscape_class.global == "NTC" | gene %in% c("Kmt2a","Kmt2d","Smarcd2","Smarcd1","Brd9", "NTC")])
